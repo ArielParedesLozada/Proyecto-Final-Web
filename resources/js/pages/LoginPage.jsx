@@ -2,7 +2,10 @@ import AuthLayout from "../layouts/AuthLayout";
 import LoginForm from "../components/login/LoginForm";
 
 export default function LoginPage() {
-  const handleSuccess = () => (window.location.href = "/dashboard");
+  const handleSuccess = () => {
+    // Luego se reemplaza por redirección real tras guardar token
+    window.location.href = "/dashboard";
+  };
 
   return (
     <AuthLayout
