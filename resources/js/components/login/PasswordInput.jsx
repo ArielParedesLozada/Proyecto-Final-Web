@@ -7,12 +7,13 @@ export default function PasswordInput(props) {
       <input
         {...props}
         type={show ? "text" : "password"}
-        className="w-full border rounded-lg px-3 py-2 pr-10 border-gray-300 focus:border-gray-400 outline-none focus:ring-2 ring-indigo-200 transition"
+        className="input-base pr-10 transition"
       />
       <button
         type="button"
-        onClick={() => setShow(s => !s)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500"
+        onClick={() => setShow((s) => !s)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700 focus-ring rounded-md px-1"
+        aria-pressed={show}
         aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
       >
         {show ? "Ocultar" : "Ver"}

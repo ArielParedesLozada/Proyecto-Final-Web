@@ -4,10 +4,8 @@ import Button from "../common/Button";
 import FormError from "../common/FormError";
 import PasswordInput from "./PasswordInput";
 
-// Simulación local: reemplázalo por services/auth.js cuando conecten backend
 async function fakeLogin({ email, password }) {
-  await new Promise(r => setTimeout(r, 700));
-  // Puedes fallar si quieres probar errores:
+  await new Promise((r) => setTimeout(r, 700));
   if (email === "fail@demo.com") throw new Error("invalid");
   return { token: "demo-token", email };
 }
@@ -20,8 +18,8 @@ export default function LoginForm({ onSuccess }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setValues(v => ({ ...v, [name]: type === "checkbox" ? checked : value }));
-    setErrors(e2 => ({ ...e2, [name]: "" }));
+    setValues((v) => ({ ...v, [name]: type === "checkbox" ? checked : value }));
+    setErrors((e2) => ({ ...e2, [name]: "" }));
   };
 
   const validate = () => {
@@ -42,7 +40,6 @@ export default function LoginForm({ onSuccess }) {
     setFormError("");
 
     try {
-      // Sustituir por: const res = await login(values.email, values.password);
       await fakeLogin(values);
       onSuccess?.();
     } catch {
@@ -70,7 +67,7 @@ export default function LoginForm({ onSuccess }) {
       />
 
       <label className="block mb-4" htmlFor="password">
-        <span className="block mb-1 text-sm text-gray-700">Contraseña</span>
+        <span className="block mb-1 text-sm">Contraseña</span>
         <PasswordInput
           id="password"
           name="password"
@@ -82,17 +79,17 @@ export default function LoginForm({ onSuccess }) {
       </label>
 
       <div className="mb-4 flex items-center justify-between">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-600">
+        <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
           <input
             type="checkbox"
             name="remember"
             checked={values.remember}
             onChange={handleChange}
-            className="rounded border-gray-300"
+            className="checkbox"
           />
           Recordarme
         </label>
-        <a href="/forgot-password" className="text-sm text-indigo-600 hover:underline">
+        <a href="/forgot-password" className="text-sm text-primary-600 hover:underline">
           ¿Olvidaste tu contraseña?
         </a>
       </div>
@@ -105,8 +102,8 @@ export default function LoginForm({ onSuccess }) {
         </Button>
       </div>
 
-      <p className="mt-6 text-center text-sm text-gray-600">
-        ¿No tienes cuenta? <a href="/register" className="text-indigo-600 hover:underline">Crear cuenta</a>
+      <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
+        ¿No tienes cuenta? <a href="/register" className="text-primary-600 hover:underline">Crear cuenta</a>
       </p>
     </form>
   );

@@ -3,7 +3,6 @@ import LoginForm from "../components/login/LoginForm";
 
 export default function LoginPage() {
   const handleSuccess = () => {
-    // Luego se reemplaza por redirección real tras guardar token
     window.location.href = "/dashboard";
   };
 
