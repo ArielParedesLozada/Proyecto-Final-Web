@@ -44,7 +44,11 @@ body {
   @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition;
 }
 .btn-primary {
-  @apply bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed;
+  @apply text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed;
+  background: linear-gradient(to right, #6366f1, #4f46e5); /* Indigo 500 → 600 */
+}
+.btn-primary:hover {
+  background: linear-gradient(to right, #4f46e5, #4338ca);
 }
 .btn-ghost {
   @apply bg-white text-primary-600 border border-primary-100 hover:bg-primary-50
