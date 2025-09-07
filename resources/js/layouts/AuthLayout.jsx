@@ -4,7 +4,13 @@ export default function AuthLayout({ title = "FinSave", subtitle, children }) {
       {/* Header compacto */}
       <header className="px-6 py-4">
         <div className="mx-auto max-w-6xl flex items-center gap-3">
-          <div className="h-9 w-9 grid place-items-center rounded-xl bg-primary-600 text-white font-bold">FS</div>
+          <div className="h-9 w-9">
+            <img
+              src="/assets/icons/Logo_FinSave.png"
+              alt="FinSave logo"
+              className="h-full w-full object-contain"
+            />
+          </div>
           <div>
             <p className="font-semibold">FinSave</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Simulador de Ahorro y Metas</p>
