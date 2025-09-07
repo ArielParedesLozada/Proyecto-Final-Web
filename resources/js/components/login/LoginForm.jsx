@@ -91,9 +91,12 @@ export default function LoginForm({ onSuccess }) {
           Recordarme
         </label>
 
-        <a href="/forgot-password" className="text-sm text-primary-600 hover:underline">
-          ¿Olvidaste tu contraseña?
-        </a>
+        <p className="mt-4 text-center text-sm">
+  <a href="/forgot-password" className="text-indigo-600 hover:underline">
+    ¿Olvidaste tu contraseña?
+  </a>
+</p>
+
       </div>
 
       {/* ACCIÓN PRINCIPAL */}
