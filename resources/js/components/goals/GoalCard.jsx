@@ -1,8 +1,8 @@
 export default function GoalCard({
   goal,
-  onAddTx,      // callback para "Agregar Ingreso/Gasto"
-  onEdit,       // callback para editar
-  onDelete,     // callback para eliminar
+  onAddTx,
+  onEdit,
+  onDelete,
 }) {
   const {
     id,
@@ -23,14 +23,24 @@ export default function GoalCard({
   return (
     <div className="fin-card p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold">{name}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        {/* Columna de texto: min-w-0 permite que truncate funcione */}
+        <div className="min-w-0">
+          <h3
+            className="font-semibold truncate whitespace-nowrap overflow-hidden"
+            title={name}
+          >
+            {name}
+          </h3>
+          <p
+            className="text-sm text-gray-500 dark:text-gray-400 truncate whitespace-nowrap overflow-hidden"
+            title={`${category} • Creada el ${new Date(createdAt).toLocaleDateString()}`}
+          >
             {category} • Creada el {new Date(createdAt).toLocaleDateString()}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Acciones: no se encogen (evita que 'coman' el espacio del texto) */}
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700/60">
             {status}
           </span>
@@ -56,7 +66,12 @@ export default function GoalCard({
       </div>
 
       {description ? (
-        <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
+        <p
+          className="text-sm text-gray-600 dark:text-gray-300 truncate whitespace-nowrap overflow-hidden"
+          title={description}
+        >
+          {description}
+        </p>
       ) : null}
 
       <div className="space-y-2">
@@ -74,8 +89,7 @@ export default function GoalCard({
             className="h-2 rounded-full"
             style={{
               width: `${progress}%`,
-              background:
-                "linear-gradient(to right, #6366f1, #4f46e5)", // Indigo 500→600 (match .btn-primary)
+              background: "linear-gradient(to right, #6366f1, #4f46e5)",
             }}
           />
         </div>

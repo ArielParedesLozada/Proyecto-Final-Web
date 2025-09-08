@@ -10,11 +10,6 @@ export default function EmptyGoals({ onCreate }) {
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
         Crea tu primera meta para comenzar a registrar tu progreso financiero.
       </p>
-      <div className="mt-4">
-        <button className="btn btn-primary" onClick={onCreate}>
-          Nueva Meta
-        </button>
-      </div>
     </div>
   );
 }
