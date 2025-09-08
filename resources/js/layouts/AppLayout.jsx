@@ -22,7 +22,7 @@ const NavItem = ({ to, icon, label, active, collapsed }) => {
   );
 };
 
-export default function AppLayout({ children }) {
+export default function AppLayout({ children, header }) {
   const { pathname } = useLocation();
 
   // Estado colapsado persistente (tipo Kick)
@@ -150,6 +150,7 @@ export default function AppLayout({ children }) {
       {/* Main */}
       <main className="flex-1 min-h-screen overflow-x-hidden">
         <div className="mx-auto max-w-screen-2xl p-4 md:p-8">
+          {/* Header por página (slot) */}
           <header className="mb-4 md:mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Mobile toggle */}
@@ -163,12 +164,8 @@ export default function AppLayout({ children }) {
                 </svg>
               </button>
 
-              <div>
-                <h1 className="text-lg md:text-xl font-semibold">Dashboard</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Resumen de tus metas de ahorro y progreso financiero
-                </p>
-              </div>
+              {/* Aquí va el header de cada página */}
+              {header ?? null}
             </div>
 
             <button className="relative h-9 w-9 rounded-full bg-primary-600 text-white grid place-items-center">
