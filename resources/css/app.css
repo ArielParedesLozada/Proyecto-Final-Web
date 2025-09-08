@@ -70,3 +70,7 @@ body {
 .card-hover {
   @apply transition-shadow hover:shadow-2xl hover:shadow-black/10;
 }
+
+/* Oculta scrollbars sin romper el scroll (para nav del sidebar) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
