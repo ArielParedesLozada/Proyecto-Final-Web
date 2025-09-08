@@ -15,6 +15,7 @@ Route::view('/dashboard', 'app');
 Route::view('/register', 'app');
 Route::view('/forgot-password', 'app');
 Route::view('/reset-password', 'app');
+Route::view('/goals', 'app'); 
 
 
 

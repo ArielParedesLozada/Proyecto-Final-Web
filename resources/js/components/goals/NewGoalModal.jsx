@@ -1,6 +1,5 @@
 // resources/js/components/goals/NewGoalModal.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { cn } from "../../utils/cn"; // opcional: si tienes helper. Si no, borra el import.
 
 const categories = [
   "Viaje/Educa",
