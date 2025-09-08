@@ -55,16 +55,29 @@ export default function AppLayout({ children }) {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-h-screen overflow-x-hidden">
+            <main className="flex-1 min-h-screen overflow-x-hidden">
         <div className="mx-auto max-w-screen-2xl p-4 md:p-8">
-          <header className="mb-4 md:mb-6">
-            <h1 className="text-lg md:text-xl font-semibold">Dashboard</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Resumen de tus metas de ahorro y progreso financiero
-            </p>
+          {/* Header con acciones */}
+          <header className="mb-4 md:mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-lg md:text-xl font-semibold">Dashboard</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Resumen de tus metas de ahorro y progreso financiero
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Selector periodo simple */}
+              <select className="input-base text-sm py-2">
+                <option>Este mes</option>
+                <option>Últimos 3 meses</option>
+                <option>Últimos 12 meses</option>
+              </select>
+              <button className="btn btn-ghost">Exportar</button>
+              <button className="btn btn-primary">Nueva Meta</button>
+            </div>
           </header>
           {children}
-          {/* Spacing final pequeño para evitar “hoyo” visual pegado al borde */}
           <div className="h-6" />
         </div>
       </main>

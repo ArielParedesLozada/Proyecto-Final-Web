@@ -60,3 +60,13 @@ body {
   @apply rounded border-gray-300 text-primary-600 focus-visible:ring-primary-600/30
          dark:border-gray-600;
 }
+
+/* Gradiente para barras de progreso */
+.progress-gradient {
+  background: linear-gradient(90deg, var(--color-primary-600), #7c3aed);
+}
+
+/* Cards con hover sutil */
+.card-hover {
+  @apply transition-shadow hover:shadow-2xl hover:shadow-black/10;
+}
