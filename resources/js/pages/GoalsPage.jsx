@@ -4,6 +4,7 @@ import GoalGrid from "../components/goals/GoalGrid";
 import NewGoalModal from "../components/goals/NewGoalModal";
 import EmptyGoals from "../components/goals/EmptyGoals";
 import ConfirmModal from "../components/common/ConfirmModal";
+import AddTxModal from "../components/goals/AddTxModal";
 import { GoalsAPI } from "../services/API";
 
 export default function GoalsPage() {
@@ -19,9 +20,13 @@ export default function GoalsPage() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [toDeleteId, setToDeleteId] = useState(null);
 
+    // modal de transacción (ingreso/gasto)
+    const [txOpen, setTxOpen] = useState(false);
+    const [txGoal, setTxGoal] = useState(null);
+
     // paginación
     const [page, setPage] = useState(1);
-    const pageSize = 4; // lo que definiste
+    const pageSize = 4;
     const [total, setTotal] = useState(0);
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -57,7 +62,6 @@ export default function GoalsPage() {
     }
 
     async function handleSubmitEdit(payload) {
-        // payload trae { id, ...campos }
         const { id, ...rest } = payload;
         await GoalsAPI.update(id, rest);
         setModalOpen(false);
@@ -78,6 +82,30 @@ export default function GoalsPage() {
         const next = Math.min(page, Math.ceil((total - 1) / pageSize) || 1);
         setPage(next);
         await load(next);
+    }
+
+    // ===== Ingreso / Gasto =====
+    function handleAddTx(goal) {
+        setTxGoal(goal);
+        setTxOpen(true);
+    }
+
+    // Guardar transacción (mock: ajusta currentAmount; backend real: aquí llamarías a /goals/:id/transactions)
+    async function handleSaveTx({ goalId, type, amount }) {
+        try {
+            const goal = goals.find((g) => g.id === goalId);
+            if (!goal) return;
+
+            const delta = type === "income" ? amount : -amount;
+            const newAmount = Math.max(0, (goal.currentAmount ?? 0) + delta);
+
+            await GoalsAPI.update(goalId, { currentAmount: newAmount });
+            setTxOpen(false);
+            setTxGoal(null);
+            await load(page);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     return (
@@ -106,16 +134,18 @@ export default function GoalsPage() {
                         Cargando…
                     </div>
                 ) : goals.length === 0 ? (
-                    <EmptyGoals onCreate={() => {
-                        setModalMode("create");
-                        setEditingGoal(null);
-                        setModalOpen(true);
-                    }} />
+                    <EmptyGoals
+                        onCreate={() => {
+                            setModalMode("create");
+                            setEditingGoal(null);
+                            setModalOpen(true);
+                        }}
+                    />
                 ) : (
                     <>
                         <GoalGrid
                             goals={goals}
-                            onAddTx={(g) => console.log("Agregar Ingreso/Gasto a", g)}
+                            onAddTx={handleAddTx}
                             onEdit={handleEditGoal}
                             onDelete={askDelete}
                         />
@@ -165,6 +195,14 @@ export default function GoalsPage() {
                     cancelText="Cancelar"
                     onConfirm={confirmDelete}
                     onCancel={() => setConfirmOpen(false)}
+                />
+
+                {/* Modal Ingreso/Gasto */}
+                <AddTxModal
+                    open={txOpen}
+                    onClose={() => setTxOpen(false)}
+                    goal={txGoal}
+                    onSubmit={handleSaveTx}
                 />
             </div>
         </AppLayout>
