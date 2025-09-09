@@ -39,7 +39,7 @@ export default function AppLayout({ children, header }) {
       { to: "/dashboard", label: "Dashboard", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 13h8V3H3v10Zm10 8h8V3h-8v18ZM3 21h8v-6H3v6Z" className="fill-current/80" /></svg> },
       { to: "/goals", label: "Metas de Ahorro", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 3l8 4-8 4-8-4 8-4Zm0 6v12M5 9v10m16-10v10" className="stroke-current/80" strokeWidth="1.6" strokeLinecap="round" /></svg> },
       { to: "/transactions", label: "Ingresos y Gastos", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h7" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
-      { to: "/analytics", label: "Visualización", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V4m0 16h16M7 16V9m5 7V6m5 10v-4" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
+      { to: "/statistics", label: "Estadisticas", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V4m0 16h16M7 16V9m5 7V6m5 10v-4" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
       { to: "/history", label: "Historial", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8v5l3 2M3 12a9 9 0 1 0 3-6" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
       { to: "/profile", label: "Perfil", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5 0-9 3-9 6v1h18v-1c0-3-4-6-9-6Z" className="fill-current/80" /></svg> },
     ],
