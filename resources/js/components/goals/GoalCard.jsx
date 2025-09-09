@@ -20,10 +20,23 @@ export default function GoalCard({
     Math.round(((currentAmount ?? 0) / Math.max(targetAmount, 1)) * 100)
   );
 
+  // Colores por estado
+  const statusStyles = {
+    Activa:
+      "bg-green-500/15 text-green-600 dark:text-green-300 ring-1 ring-green-500/20",
+    "En pausa":
+      "bg-amber-500/15 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/20",
+    Completada:
+      "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/20",
+  };
+  const badgeCls =
+    statusStyles[status] ??
+    "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
+
   return (
     <div className="fin-card p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
-        {/* Columna de texto: min-w-0 permite que truncate funcione */}
+        {/* Texto (truncado a una línea) */}
         <div className="min-w-0">
           <h3
             className="font-semibold truncate whitespace-nowrap overflow-hidden"
@@ -39,9 +52,9 @@ export default function GoalCard({
           </p>
         </div>
 
-        {/* Acciones: no se encogen (evita que 'coman' el espacio del texto) */}
+        {/* Acciones */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700/60">
+          <span className={`text-xs px-2 py-1 rounded-full ${badgeCls}`}>
             {status}
           </span>
           <button
