@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
   return (
@@ -28,7 +29,7 @@ export default function App() {
         {/* <Route path="/transactions" element={<TransactionsPage />} /> */}
         {/* <Route path="/analytics" element={<AnalyticsPage />} /> */}
         {/* <Route path="/history" element={<HistoryPage />} /> */}
-        {/* <Route path="/profile" element={<ProfilePage />} /> */}
+        {<Route path="/profile" element={<ProfilePage />} /> }
 
         {/* Ruta por defecto si no coincide */}
         <Route path="*" element={<Navigate to="/login" replace />} />

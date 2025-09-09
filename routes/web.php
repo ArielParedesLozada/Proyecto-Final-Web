@@ -12,6 +12,7 @@ Route::get('/sample', [SampleController::class, 'index']);
 // Páginas React (Login y placeholder Dashboard)
 Route::view('/login', 'app');
 Route::view('/dashboard', 'app');
+Route::view('/profile','app');
 Route::view('/register', 'app');
 Route::view('/forgot-password', 'app');
 Route::view('/reset-password', 'app');
