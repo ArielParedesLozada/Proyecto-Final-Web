@@ -90,7 +90,7 @@ export default function GoalsPage() {
                 <div className="flex items-start justify-between gap-3">
                     <div />
                     <button
-                        className="btn btn-primary"
+                        className="btn btn-primary cursor-pointer"
                         onClick={() => {
                             setModalMode("create");
                             setEditingGoal(null);
@@ -123,7 +123,7 @@ export default function GoalsPage() {
                         {totalPages > 1 && (
                             <div className="flex items-center justify-center gap-2 pt-2">
                                 <button
-                                    className="btn btn-ghost"
+                                    className="btn btn-ghost cursor-pointer"
                                     disabled={page === 1}
                                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 >
@@ -133,7 +133,7 @@ export default function GoalsPage() {
                                     Página {page} de {totalPages}
                                 </span>
                                 <button
-                                    className="btn btn-ghost"
+                                    className="btn btn-ghost cursor-pointer"
                                     disabled={page === totalPages}
                                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                 >

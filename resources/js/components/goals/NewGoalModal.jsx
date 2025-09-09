@@ -120,7 +120,7 @@ export default function NewGoalModal({
             {isEdit ? "Editar Meta de Ahorro" : "Nueva Meta de Ahorro"}
           </h3>
           <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 cursor-pointer"
             onClick={onClose}
             aria-label="Cerrar"
           >
@@ -220,11 +220,11 @@ export default function NewGoalModal({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button type="button" className="btn btn-ghost" onClick={onClose}>
+            <div className="flex items-center justify-end gap-2 pt-2 ">
+              <button type="button" className="btn btn-ghost cursor-pointer" onClick={onClose}>
                 Cancelar
               </button>
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-primary cursor-pointer">
                 {isEdit ? "Guardar cambios" : "Crear Meta"}
               </button>
             </div>
