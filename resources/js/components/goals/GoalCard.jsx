@@ -12,13 +12,19 @@ export default function GoalCard({
     targetAmount,
     currentAmount,
     status = "Activa",
-    createdAt,
+    createdAt,       // sigue disponible si lo necesitas en otro lado
+    deadline,        // <- usamos esto para mostrar la fecha límite
   } = goal;
 
   const progress = Math.min(
     100,
     Math.round(((currentAmount ?? 0) / Math.max(targetAmount, 1)) * 100)
   );
+
+  // Fecha límite formateada
+  const deadlineText = deadline
+    ? new Date(deadline).toLocaleDateString()
+    : "Sin fecha límite";
 
   // Colores por estado
   const statusStyles = {
@@ -46,9 +52,9 @@ export default function GoalCard({
           </h3>
           <p
             className="text-sm text-gray-500 dark:text-gray-400 truncate whitespace-nowrap overflow-hidden"
-            title={`${category} • Creada el ${new Date(createdAt).toLocaleDateString()}`}
+            title={`${category} • ${deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}`}
           >
-            {category} • Creada el {new Date(createdAt).toLocaleDateString()}
+            {category} • {deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}
           </p>
         </div>
 
@@ -63,7 +69,7 @@ export default function GoalCard({
             title="Editar"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" className="fill-current/70">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/>
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" />
             </svg>
           </button>
           <button
@@ -72,7 +78,7 @@ export default function GoalCard({
             title="Eliminar"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" className="stroke-current/70" fill="none">
-              <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </button>
         </div>

@@ -47,7 +47,7 @@ export default function AddTxModal({
         ev.preventDefault();
         const e = validate();
         setErrors(e);
-        if (Object.keys(e).length) return;  // <- Bloquea el guardado si hay error
+        if (Object.keys(e).length) return;  
 
         await onSubmit?.({
             goalId: goal?.id,
