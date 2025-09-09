@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import UserAvatar from "../components/ui/UserAvatar";
 
 const NavItem = ({ to, icon, label, active, collapsed }) => {
   const base =
@@ -45,6 +46,15 @@ export default function AppLayout({ children, header }) {
     []
   );
 
+  // --- NUEVO: handler de logout (ajusta con tu lógica real si aplica)
+  function handleLogout() {
+    try {
+      localStorage.removeItem("auth_token"); // ajusta si tu token se llama distinto
+    } finally {
+      window.location.href = "/login";
+    }
+  }
+
   // Contenido del sidebar (altura fija, padding fijo)
   const SidebarContent = (
     <div className="fin-card h-full p-4 flex flex-col">
@@ -53,6 +63,36 @@ export default function AppLayout({ children, header }) {
           <NavItem key={it.to} {...it} collapsed={collapsed} active={pathname.startsWith(it.to)} />
         ))}
       </nav>
+
+      {/* --- NUEVO: botón Cerrar sesión (pegado al fondo) --- */}
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className={[
+            "w-full rounded-lg text-sm transition select-none cursor-pointer", // 👈 agregado cursor-pointer
+            "text-red-500/90 hover:text-red-400 hover:bg-red-500/10",
+            collapsed
+              ? "flex items-center justify-center px-0 py-2"
+              : "flex items-center gap-3 px-3 py-2.5",
+          ].join(" ")}
+          title={collapsed ? "Cerrar sesión" : undefined}
+        >
+          <span className="shrink-0 grid place-items-center" style={{ width: 22, height: 22 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2v8" className="stroke-current" strokeWidth="1.8" strokeLinecap="round" />
+              <path
+                d="M7 4.8A8 8 0 1 0 17 4.8"
+                className="stroke-current"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+          {!collapsed && <span className="truncate">Cerrar sesión</span>}
+        </button>
+      </div>
+
 
       <div
         className={[
@@ -121,9 +161,8 @@ export default function AppLayout({ children, header }) {
         <aside
           role="dialog"
           aria-modal="true"
-          className={`absolute left-0 top-0 h-full w-64 p-4 transition-transform ${
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute left-0 top-0 h-full w-64 p-4 transition-transform ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           {/* Header en mobile */}
           <div className="mb-3 flex items-center justify-between">
@@ -168,9 +207,7 @@ export default function AppLayout({ children, header }) {
               {header ?? null}
             </div>
 
-            <button className="relative h-9 w-9 rounded-full bg-primary-600 text-white grid place-items-center">
-              EL
-            </button>
+            <UserAvatar name="ElkinnnLopez_10" initials="EL" />
           </header>
 
           {children}
