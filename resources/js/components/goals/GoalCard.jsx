@@ -12,8 +12,8 @@ export default function GoalCard({
     targetAmount,
     currentAmount,
     status = "Activa",
-    createdAt,       // sigue disponible si lo necesitas en otro lado
-    deadline,        // <- usamos esto para mostrar la fecha límite
+    createdAt,
+    deadline,
   } = goal;
 
   const progress = Math.min(
@@ -21,12 +21,12 @@ export default function GoalCard({
     Math.round(((currentAmount ?? 0) / Math.max(targetAmount, 1)) * 100)
   );
 
-  // Fecha límite formateada
+  // Fecha límite
   const deadlineText = deadline
     ? new Date(deadline).toLocaleDateString()
     : "Sin fecha límite";
 
-  // Colores por estado
+  // Colores por estado (badge)
   const statusStyles = {
     Activa:
       "bg-green-500/15 text-green-600 dark:text-green-300 ring-1 ring-green-500/20",
@@ -38,6 +38,14 @@ export default function GoalCard({
   const badgeCls =
     statusStyles[status] ??
     "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
+
+  // Colores dinámicos de la BARRA según porcentaje
+  let barGradient = "from-indigo-500 to-indigo-600"; 
+  if (progress < 33) {
+    barGradient = "from-rose-500 to-rose-600";       
+  } else if (progress < 75) {
+    barGradient = "from-amber-400 to-amber-500";     
+  }
 
   return (
     <div className="fin-card p-4 space-y-3">
@@ -102,14 +110,11 @@ export default function GoalCard({
           <span>${targetAmount?.toLocaleString()}</span>
         </div>
 
-        {/* Barra */}
-        <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700/70">
+        {/* Barra con color dinámico */}
+        <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700/70 overflow-hidden">
           <div
-            className="h-2 rounded-full"
-            style={{
-              width: `${progress}%`,
-              background: "linear-gradient(to right, #6366f1, #4f46e5)",
-            }}
+            className={`h-2 rounded-full bg-gradient-to-r ${barGradient}`}
+            style={{ width: `${progress}%` }}
           />
         </div>
 
