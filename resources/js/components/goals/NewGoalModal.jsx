@@ -1,4 +1,3 @@
-// resources/js/components/goals/NewGoalModal.jsx
 import React, { useEffect, useRef, useState } from "react";
 
 const categories = [
@@ -10,7 +9,13 @@ const categories = [
   "Otro",
 ];
 
-export default function NewGoalModal({ open, onClose, onSubmit }) {
+export default function NewGoalModal({
+  open,
+  onClose,
+  onSubmit,
+  mode = "create",         // "create" | "edit"
+  initialGoal = null,      // { id, name, category, description, targetAmount, type, deadline }
+}) {
   const dialogRef = useRef(null);
   const [form, setForm] = useState({
     name: "",
@@ -23,7 +28,21 @@ export default function NewGoalModal({ open, onClose, onSubmit }) {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    // Prefill si es edición
+    if (mode === "edit" && initialGoal) {
+      setForm({
+        name: initialGoal.name ?? "",
+        category: initialGoal.category ?? categories[0],
+        description: initialGoal.description ?? "",
+        targetAmount:
+          initialGoal.targetAmount != null ? String(initialGoal.targetAmount) : "",
+        type: initialGoal.type ?? "Fijo/Variable",
+        deadline: initialGoal.deadline ?? "",
+      });
+    } else {
+      // Reset si es creación
       setForm({
         name: "",
         category: categories[0],
@@ -32,11 +51,11 @@ export default function NewGoalModal({ open, onClose, onSubmit }) {
         type: "Fijo/Variable",
         deadline: "",
       });
-      setErrors({});
-      // focus en primer input
-      setTimeout(() => dialogRef.current?.querySelector("input")?.focus(), 30);
     }
-  }, [open]);
+
+    setErrors({});
+    setTimeout(() => dialogRef.current?.querySelector("input")?.focus(), 30);
+  }, [open, mode, initialGoal]);
 
   function validate() {
     const e = {};
@@ -52,17 +71,22 @@ export default function NewGoalModal({ open, onClose, onSubmit }) {
     setErrors(e);
     if (Object.keys(e).length) return;
 
-    onSubmit({
+    const payload = {
       name: form.name.trim(),
       category: form.category,
       description: form.description.trim() || null,
       targetAmount: Number(form.targetAmount),
-      type: form.type, // "Fijo/Variable" por ahora (puedes cambiar a { fijo|variable })
+      type: form.type,
       deadline: form.deadline || null,
-    });
+    };
+
+    // Si edita, pasamos id también
+    onSubmit(mode === "edit" ? { id: initialGoal?.id, ...payload } : payload);
   }
 
   if (!open) return null;
+
+  const isEdit = mode === "edit";
 
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center p-4 md:p-8">
@@ -77,7 +101,9 @@ export default function NewGoalModal({ open, onClose, onSubmit }) {
         aria-modal="true"
       >
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-base md:text-lg font-semibold">Nueva Meta de Ahorro</h3>
+          <h3 className="text-base md:text-lg font-semibold">
+            {isEdit ? "Editar Meta de Ahorro" : "Nueva Meta de Ahorro"}
+          </h3>
           <button
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60"
             onClick={onClose}
@@ -90,7 +116,7 @@ export default function NewGoalModal({ open, onClose, onSubmit }) {
         </div>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Crea una nueva meta de ahorro.
+          {isEdit ? "Actualiza los datos de tu meta." : "Crea una nueva meta de ahorro."}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -183,7 +209,7 @@ export default function NewGoalModal({ open, onClose, onSubmit }) {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              Crear Meta
+              {isEdit ? "Guardar cambios" : "Crear Meta"}
             </button>
           </div>
         </form>

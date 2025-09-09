@@ -1,84 +1,102 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import AppLayout from "../layouts/AppLayout";
 import GoalGrid from "../components/goals/GoalGrid";
 import NewGoalModal from "../components/goals/NewGoalModal";
 import EmptyGoals from "../components/goals/EmptyGoals";
+import ConfirmModal from "../components/common/ConfirmModal";
 import { GoalsAPI } from "../services/API";
-import AppLayout from "../layouts/AppLayout";
-
 
 export default function GoalsPage() {
-    // Estado
     const [goals, setGoals] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // modal crear/editar
     const [modalOpen, setModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
+    const [editingGoal, setEditingGoal] = useState(null);
 
-    // Paginación
+    // confirm delete
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [toDeleteId, setToDeleteId] = useState(null);
+
+    // paginación
     const [page, setPage] = useState(1);
-    const pageSize = 4;
+    const pageSize = 4; // lo que definiste
     const [total, setTotal] = useState(0);
-
-    // ------- Carga inicial / refresco --------
-    useEffect(() => {
-        let mounted = true;
-        async function load() {
-            try {
-                setLoading(true);
-                const res = await GoalsAPI.list({ page, pageSize });
-                if (!mounted) return;
-                setGoals(res.data);
-                setTotal(res.total);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        }
-        load();
-        return () => (mounted = false);
-    }, [page]);
-
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-    // ------- Callbacks -------
+    async function load(p = page) {
+        setLoading(true);
+        try {
+            const res = await GoalsAPI.list({ page: p, pageSize });
+            setGoals(res.data);
+            setTotal(res.total);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        load(page);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]);
+
+    // Crear
     async function handleCreateGoal(payload) {
         await GoalsAPI.create(payload);
-        setPage(1); // volver a la primera página para ver la nueva meta
-        const res = await GoalsAPI.list({ page: 1, pageSize });
-        setGoals(res.data);
-        setTotal(res.total);
         setModalOpen(false);
+        setPage(1);
+        await load(1);
     }
 
-    async function handleDeleteGoal(id) {
-        await GoalsAPI.remove(id);
-        const nextPage = Math.min(page, Math.ceil((total - 1) / pageSize) || 1);
-        setPage(nextPage);
-        const res = await GoalsAPI.list({ page: nextPage, pageSize });
-        setGoals(res.data);
-        setTotal(res.total);
-    }
-
+    // Editar
     function handleEditGoal(goal) {
-        console.log("Editar", goal);
+        setEditingGoal(goal);
+        setModalMode("edit");
+        setModalOpen(true);
     }
 
-    function handleAddTx(goal) {
-        console.log("Agregar Ingreso/Gasto a", goal);
+    async function handleSubmitEdit(payload) {
+        // payload trae { id, ...campos }
+        const { id, ...rest } = payload;
+        await GoalsAPI.update(id, rest);
+        setModalOpen(false);
+        setEditingGoal(null);
+        await load(page);
     }
 
-    // ------- Render -------
+    // Eliminar
+    function askDelete(id) {
+        setToDeleteId(id);
+        setConfirmOpen(true);
+    }
+
+    async function confirmDelete() {
+        if (toDeleteId == null) return;
+        await GoalsAPI.remove(toDeleteId);
+        setConfirmOpen(false);
+        const next = Math.min(page, Math.ceil((total - 1) / pageSize) || 1);
+        setPage(next);
+        await load(next);
+    }
+
     return (
-        <AppLayout>
+        <AppLayout
+            title="Metas de Ahorro"
+            subtitle="Gestiona y da seguimiento a tus objetivos financieros"
+        >
             <div className="space-y-6">
                 {/* Header + CTA */}
                 <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <h2 className="text-lg md:text-xl font-semibold">Metas de Ahorro</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Gestiona y da seguimiento a tus objetivos financieros
-                        </p>
-                    </div>
-                    <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
+                    <div />
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                            setModalMode("create");
+                            setEditingGoal(null);
+                            setModalOpen(true);
+                        }}
+                    >
                         + Nueva Meta
                     </button>
                 </div>
@@ -88,17 +106,20 @@ export default function GoalsPage() {
                         Cargando…
                     </div>
                 ) : goals.length === 0 ? (
-                    <EmptyGoals onCreate={() => setModalOpen(true)} />
+                    <EmptyGoals onCreate={() => {
+                        setModalMode("create");
+                        setEditingGoal(null);
+                        setModalOpen(true);
+                    }} />
                 ) : (
                     <>
                         <GoalGrid
                             goals={goals}
-                            onAddTx={handleAddTx}
+                            onAddTx={(g) => console.log("Agregar Ingreso/Gasto a", g)}
                             onEdit={handleEditGoal}
-                            onDelete={handleDeleteGoal}
+                            onDelete={askDelete}
                         />
 
-                        {/* Paginación */}
                         {totalPages > 1 && (
                             <div className="flex items-center justify-center gap-2 pt-2">
                                 <button
@@ -123,14 +144,29 @@ export default function GoalsPage() {
                     </>
                 )}
 
-                {/* Modal Nueva Meta */}
+                {/* Modal Crear / Editar */}
                 <NewGoalModal
                     open={modalOpen}
-                    onClose={() => setModalOpen(false)}
-                    onSubmit={handleCreateGoal}
+                    onClose={() => {
+                        setModalOpen(false);
+                        setEditingGoal(null);
+                    }}
+                    onSubmit={modalMode === "edit" ? handleSubmitEdit : handleCreateGoal}
+                    mode={modalMode}
+                    initialGoal={editingGoal}
+                />
+
+                {/* Confirmación de eliminación */}
+                <ConfirmModal
+                    open={confirmOpen}
+                    title="Eliminar meta"
+                    message="¿Estás seguro de eliminar esta meta? Esta acción no se puede deshacer."
+                    confirmText="Sí, eliminar"
+                    cancelText="Cancelar"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setConfirmOpen(false)}
                 />
             </div>
         </AppLayout>
     );
-
 }
