@@ -125,9 +125,14 @@ export default function AppLayout({ children, header }) {
           ].join(" ")}
         >
           <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2"}`}>
-            <div className="h-8 w-8 grid place-items-center rounded-lg bg-primary-600 text-white font-semibold">FS</div>
+            <img
+              src="/assets/icons/Logo_FinSave1.png"
+              alt="FinSave Logo"
+              className="h-8 w-8 object-contain"
+            />
             {!collapsed && <p className="text-sm font-semibold">Gestión de Ahorros</p>}
           </div>
+
 
           <button
             className="h-8 w-8 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"

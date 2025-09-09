@@ -5,12 +5,20 @@ export default function UserAvatar({
   avatarUrl = null,
 }) {
   return (
-    <div className="relative group">
+    <div
+      className="
+        relative inline-flex items-center group
+        transition-transform duration-300
+        hover:-translate-x-30
+      "
+    >
       {/* Avatar */}
-      <button
-        type="button"
-        className="h-9 w-9 rounded-full bg-primary-600 text-white grid place-items-center font-semibold"
-        aria-label={name}
+      <div
+        className="
+          h-9 w-9 rounded-full bg-primary-600 text-white 
+          grid place-items-center font-semibold shadow-sm 
+          ring-1 ring-white/10
+        "
       >
         {avatarUrl ? (
           <img
@@ -21,30 +29,28 @@ export default function UserAvatar({
         ) : (
           initials
         )}
-      </button>
+      </div>
 
-      {/* Tooltip */}
+      {/* Nombre al lado derecho del avatar */}
       <div
         className="
-          absolute right-0 top-full mt-2 z-50
-          px-3 py-1.5 rounded-lg bg-gray-900/95 text-white text-sm
-          shadow-xl ring-1 ring-white/10
-          pointer-events-none
-          opacity-0 translate-y-1 transition
-          group-hover:opacity-100 group-hover:translate-y-0
-          whitespace-nowrap
+          absolute top-1/2 -translate-y-1/2 left-[calc(100%+0.5rem)]
+          opacity-0 group-hover:opacity-100
+          transition-all duration-300 ease-out
+          z-50
         "
-        role="tooltip"
       >
-        {/* Flechita */}
-        <span
+        <div
           className="
-            absolute -top-1.5 right-3 h-3 w-3 rotate-45
-            bg-gray-900/95 ring-1 ring-white/10
+            px-3 py-1.5 rounded-lg 
+            bg-gray-900/90 dark:bg-gray-800/90 
+            backdrop-blur-md shadow-lg 
+            ring-1 ring-white/10
+            whitespace-nowrap
           "
-          aria-hidden="true"
-        />
-        {name}
+        >
+          <p className="text-sm font-medium text-white">{name}</p>
+        </div>
       </div>
     </div>
   );
