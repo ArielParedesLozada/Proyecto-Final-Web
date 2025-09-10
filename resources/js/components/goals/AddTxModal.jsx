@@ -85,8 +85,15 @@ export default function AddTxModal({
 
                 <div ref={dialogRef} className="px-5 pt-4 pb-5 max-h-[80vh] overflow-y-auto">
                     {goal?.name && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                            Meta: <span className="font-medium text-gray-700 dark:text-gray-200 ">{goal.name}</span>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 truncate whitespace-nowrap overflow-hidden">
+                            Meta:{" "}
+
+                            <span
+                                className="font-medium text-gray-700 dark:text-gray-200"
+                                title={goal.name}
+                            >
+                                {goal.name}
+                            </span>
                         </p>
                     )}
 
