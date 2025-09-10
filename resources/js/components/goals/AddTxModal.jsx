@@ -7,22 +7,17 @@ export default function AddTxModal({
     onSubmit,             // (payload) => void | Promise<void>
 }) {
     const dialogRef = useRef(null);
-    const [type, setType] = useState("");               // "income" | "expense"
+    const [type, setType] = useState("");   // "income" | "expense"
     const [amount, setAmount] = useState("");
-    const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-    const [note, setNote] = useState("");
     const [errors, setErrors] = useState({});
 
     // Saldos de la meta
-    const target = Number(goal?.targetAmount ?? 0);
     const current = Math.max(0, Number(goal?.currentAmount ?? 0)); // disponible real para gastar
 
     useEffect(() => {
         if (!open) return;
         setType("");
         setAmount("");
-        setDate(new Date().toISOString().slice(0, 10));
-        setNote("");
         setErrors({});
         setTimeout(() => dialogRef.current?.querySelector("button[data-kind=income]")?.focus(), 30);
     }, [open]);
@@ -33,9 +28,8 @@ export default function AddTxModal({
 
         if (!type) e.type = "Selecciona Ingreso o Gasto";
         if (!amount || nAmount <= 0) e.amount = "Monto inválido";
-        if (!date) e.date = "Selecciona la fecha";
 
-        // Regla CLAVE: si es gasto, no puede exceder lo disponible (current)
+        // Si es gasto, no puede exceder el saldo disponible
         if (!e.amount && type === "expense" && nAmount > current) {
             e.amount = `El gasto excede tu saldo disponible ($${current.toLocaleString()}).`;
         }
@@ -47,14 +41,12 @@ export default function AddTxModal({
         ev.preventDefault();
         const e = validate();
         setErrors(e);
-        if (Object.keys(e).length) return;  
+        if (Object.keys(e).length) return;
 
         await onSubmit?.({
             goalId: goal?.id,
-            type,                                // "income" | "expense"
-            amount: Number(amount),              // siempre positivo
-            date,                                // YYYY-MM-DD
-            note: note.trim() || null,
+            type,                         // "income" | "expense"
+            amount: Number(amount),       // siempre positivo
         });
         onClose?.();
     }
@@ -66,22 +58,16 @@ export default function AddTxModal({
     const disabledInputs = !type;
     const disabledCls = disabledInputs ? "opacity-70 cursor-not-allowed" : "";
 
-    // Deshabilitamos el botón Guardar si la validación falla (UI reactiva)
+    // Reactivo para botón Guardar
     const nAmount = Number(amount || 0);
     const expenseTooHigh = isExpense && nAmount > 0 && nAmount > current;
-    const canSubmit =
-        !!type &&
-        !!date &&
-        nAmount > 0 &&
-        !(isExpense && expenseTooHigh);
+    const canSubmit = !!type && nAmount > 0 && !(isExpense && expenseTooHigh);
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 md:p-8">
-            {/* backdrop */}
             <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
             <div className="relative z-10 w-full max-w-md fin-card p-0 overflow-hidden" role="dialog" aria-modal="true">
-                {/* header sticky */}
                 <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur border-b border-gray-200/60 dark:border-gray-700/50">
                     <h3 className="text-base md:text-lg font-semibold">
                         Agregar {isIncome ? "Ingreso" : isExpense ? "Gasto" : "Ingreso/Gasto"}
@@ -97,15 +83,14 @@ export default function AddTxModal({
                     </button>
                 </div>
 
-                {/* body */}
                 <div ref={dialogRef} className="px-5 pt-4 pb-5 max-h-[80vh] overflow-y-auto">
                     {goal?.name && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                            Meta: <span className="font-medium text-gray-700 dark:text-gray-200">{goal.name}</span>
+                            Meta: <span className="font-medium text-gray-700 dark:text-gray-200 ">{goal.name}</span>
                         </p>
                     )}
 
-                    {/* selector tipo: segment control */}
+                    {/* Selector de tipo */}
                     <div className="flex gap-2 mb-4">
                         <button
                             type="button"
@@ -126,15 +111,8 @@ export default function AddTxModal({
                     </div>
                     {errors.type && <p className="text-xs text-red-500 -mt-2 mb-2">{errors.type}</p>}
 
-                    {/* Info útil */}
-                    {type && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            Saldo disponible: <span className="font-medium">${current.toLocaleString()}</span> | Objetivo: ${target.toLocaleString()}
-                        </div>
-                    )}
-
+                    {/* Monto */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* monto */}
                         <div>
                             <label className="text-sm font-medium">
                                 Monto {isIncome ? "(+)" : isExpense ? "(-)" : ""}
@@ -156,33 +134,6 @@ export default function AddTxModal({
                             )}
                         </div>
 
-                        {/* fecha */}
-                        <div>
-                            <label className="text-sm font-medium">Fecha</label>
-                            <input
-                                type="date"
-                                disabled={disabledInputs}
-                                className={`input-base mt-1 ${errors.date ? "input-error" : ""} ${disabledCls}`}
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                max={new Date().toISOString().slice(0, 10)}  // normalmente no permitimos fechas futuras
-                            />
-                            {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date}</p>}
-                        </div>
-
-                        {/* nota */}
-                        <div>
-                            <label className="text-sm font-medium">Nota (opcional)</label>
-                            <input
-                                disabled={disabledInputs}
-                                className={`input-base mt-1 ${disabledCls}`}
-                                placeholder="Descripción breve"
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                            />
-                        </div>
-
-                        {/* actions */}
                         <div className="flex items-center justify-end gap-2 pt-2">
                             <button type="button" className="btn btn-ghost cursor-pointer" onClick={onClose}>
                                 Cancelar
