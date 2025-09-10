@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
-const categories = ["Viaje/Educa", "Emergencia", "Salud", "Tecnología", "Vehículo", "Otro"];
+const categories = ["Emergencia", "Salud", "Tecnología", "Vehículo", "Otro"];
 const types = ["Fijo", "Variable"];
 
 export default function NewGoalModal({
@@ -13,7 +13,7 @@ export default function NewGoalModal({
   const dialogRef = useRef(null);
   const [form, setForm] = useState({
     name: "",
-    category: categories[0],
+    category: "",
     description: "",
     targetAmount: "",
     type: "",
@@ -27,7 +27,7 @@ export default function NewGoalModal({
     if (mode === "edit" && initialGoal) {
       setForm({
         name: initialGoal.name ?? "",
-        category: initialGoal.category ?? categories[0],
+        category: initialGoal.category ?? "",
         description: initialGoal.description ?? "",
         targetAmount:
           initialGoal.targetAmount != null ? String(initialGoal.targetAmount) : "",
@@ -37,7 +37,7 @@ export default function NewGoalModal({
     } else {
       setForm({
         name: "",
-        category: categories[0],
+        category: "",
         description: "",
         targetAmount: "",
         type: "",
@@ -157,6 +157,7 @@ export default function NewGoalModal({
                 value={form.category}
                 onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
               >
+                <option value="" disabled>Selecciona una opción</option>
                 {categories.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
