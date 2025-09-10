@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+const kinds = ["Fijo", "Variable"];
+
 export default function AddTxModal({
     open,
     onClose,
@@ -8,15 +10,18 @@ export default function AddTxModal({
 }) {
     const dialogRef = useRef(null);
     const [type, setType] = useState("");   // "income" | "expense"
+    const [kind, setKind] = useState("");   // "Fijo" | "Variable"
     const [amount, setAmount] = useState("");
     const [errors, setErrors] = useState({});
 
     // Saldos de la meta
+    const target = Number(goal?.targetAmount ?? 0);
     const current = Math.max(0, Number(goal?.currentAmount ?? 0)); // disponible real para gastar
 
     useEffect(() => {
         if (!open) return;
         setType("");
+        setKind("");
         setAmount("");
         setErrors({});
         setTimeout(() => dialogRef.current?.querySelector("button[data-kind=income]")?.focus(), 30);
@@ -27,6 +32,7 @@ export default function AddTxModal({
         const nAmount = Number(amount);
 
         if (!type) e.type = "Selecciona Ingreso o Gasto";
+        if (!kind) e.kind = "Selecciona el tipo (Fijo/Variable)";
         if (!amount || nAmount <= 0) e.amount = "Monto inválido";
 
         // Si es gasto, no puede exceder el saldo disponible
@@ -45,8 +51,9 @@ export default function AddTxModal({
 
         await onSubmit?.({
             goalId: goal?.id,
-            type,                         // "income" | "expense"
-            amount: Number(amount),       // siempre positivo
+            type,                   // "income" | "expense"
+            kind,                   // "Fijo" | "Variable"
+            amount: Number(amount), // siempre positivo
         });
         onClose?.();
     }
@@ -61,7 +68,7 @@ export default function AddTxModal({
     // Reactivo para botón Guardar
     const nAmount = Number(amount || 0);
     const expenseTooHigh = isExpense && nAmount > 0 && nAmount > current;
-    const canSubmit = !!type && nAmount > 0 && !(isExpense && expenseTooHigh);
+    const canSubmit = !!type && !!kind && nAmount > 0 && !(isExpense && expenseTooHigh);
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 md:p-8">
@@ -87,7 +94,6 @@ export default function AddTxModal({
                     {goal?.name && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 truncate whitespace-nowrap overflow-hidden">
                             Meta:{" "}
-
                             <span
                                 className="font-medium text-gray-700 dark:text-gray-200"
                                 title={goal.name}
@@ -97,7 +103,7 @@ export default function AddTxModal({
                         </p>
                     )}
 
-                    {/* Selector de tipo */}
+                    {/* Selector de tipo (ingreso/gasto) */}
                     <div className="flex gap-2 mb-4">
                         <button
                             type="button"
@@ -118,8 +124,33 @@ export default function AddTxModal({
                     </div>
                     {errors.type && <p className="text-xs text-red-500 -mt-2 mb-2">{errors.type}</p>}
 
-                    {/* Monto */}
+                    {/* Info útil */}
+                    {type && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            Saldo disponible: <span className="font-medium">${current.toLocaleString()}</span> | Objetivo: ${target.toLocaleString()}
+                        </div>
+                    )}
+
+                    {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Tipo Fijo/Variable */}
+                        <div>
+                            <label className="text-sm font-medium">Tipo</label>
+                            <select
+                                disabled={disabledInputs}
+                                className={`input-base mt-1 ${errors.kind ? "input-error" : ""} ${disabledCls}`}
+                                value={kind}
+                                onChange={(e) => setKind(e.target.value)}
+                            >
+                                <option value="" disabled>Selecciona una opción</option>
+                                {kinds.map((k) => (
+                                    <option key={k} value={k}>{k}</option>
+                                ))}
+                            </select>   
+                            {errors.kind && <p className="text-xs text-red-500 mt-1">{errors.kind}</p>}
+                        </div>
+
+                        {/* Monto */}
                         <div>
                             <label className="text-sm font-medium">
                                 Monto {isIncome ? "(+)" : isExpense ? "(-)" : ""}
@@ -141,7 +172,8 @@ export default function AddTxModal({
                             )}
                         </div>
 
-                        <div className="flex items-center justify-end gap-2 pt-2">
+                        {/* Actions */}
+                        <div className="flex items-center justify-center gap-2 pt-2">
                             <button type="button" className="btn btn-ghost cursor-pointer" onClick={onClose}>
                                 Cancelar
                             </button>

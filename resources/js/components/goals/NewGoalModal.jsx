@@ -186,7 +186,7 @@ export default function NewGoalModal({
               {errors.deadline && <p className="text-xs text-red-500 mt-1">{errors.deadline}</p>}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 ">
+            <div className="flex items-center justify-center gap-2 pt-2 ">
               <button type="button" className="btn btn-ghost cursor-pointer" onClick={onClose}>
                 Cancelar
               </button>
