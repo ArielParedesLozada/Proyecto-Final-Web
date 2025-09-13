@@ -4,20 +4,27 @@ import GoalItem from "../components/dashboard/GoalItem";
 import CompletedList from "../components/dashboard/CompletedList";
 import Empty from "../components/ui/Empty";
 
-
-
 export default function DashboardPage() {
   const totalAhorrado = 15750, metaMensual = 2000, metasActivas = 3, progresoMensual = 63;
 
   const activas = [
     { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Fondo de Emergencia", current: 7500, target: 10000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    // añade más para probar el scroll...
   ];
 
   const completadas = [
     { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
     { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 3, title: "Meta “Nuevo carro” completada", when: "Hace 3 días" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    // añade más para probar el scroll...
   ];
 
   const header = (
@@ -77,12 +84,21 @@ export default function DashboardPage() {
       </section>
 
       {/* Grid principal 2 columnas (2/1) */}
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4 auto-rows-fr">
-        {/* Columna izquierda: metas activas */}
-        <div className="xl:col-span-2 space-y-4">
-          <div className="fin-card card-hover p-4 md:p-5">
+      {/* NOTA: sin auto-rows-fr para que no fuerce la misma altura */}
+      <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
+        {/* Columna izquierda: metas activas (altura independiente) */}
+        <div className="xl:col-span-2 min-h-0 self-start">
+          <div
+            className="
+              fin-card card-hover p-4 md:p-5 flex flex-col
+              /* límite de crecimiento; ajusta si deseas */
+              max-h-[48vh] md:max-h-[52vh] xl:max-h-[56vh]
+            "
+          >
             <h2 className="text-sm font-semibold mb-3">Metas de Ahorro Activas</h2>
-            <div className="space-y-3">
+
+            {/* Área que scrollea cuando hay muchas metas */}
+            <div className="min-h-0 flex-1 overflow-y-auto scroll-invisible space-y-3">
               {activas.length
                 ? activas.map((g) => <GoalItem key={g.name} {...g} />)
                 : <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
@@ -91,14 +107,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Columna derecha: metas completadas */}
-        <div className="space-y-4">
-          <div className="fin-card card-hover p-4 md:p-5">
+        {/* Columna derecha: metas completadas (llena y scrollea adentro) */}
+        <div className="min-h-0">
+          <div
+            className="
+              fin-card card-hover p-4 md:p-5 h-full flex flex-col
+              max-h-[48vh] md:max-h-[52vh] xl:max-h-[56vh]
+            "
+          >
             <h2 className="text-sm font-semibold mb-3">Metas Completadas</h2>
-            {completadas.length
-              ? <CompletedList items={completadas} />
-              : <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
-            }
+
+            {/* Área que scrollea cuando hay muchas completadas */}
+            <div className="min-h-0 flex-1 overflow-y-auto scroll-invisible">
+              {completadas.length
+                ? <CompletedList items={completadas} />
+                : <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
+              }
+            </div>
           </div>
         </div>
       </section>

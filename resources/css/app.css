@@ -74,3 +74,48 @@ body {
 /* Oculta scrollbars sin romper el scroll (para nav del sidebar) */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+/* Oculta barras de scroll sin desactivar el desplazamiento */
+.scroll-invisible{
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge legacy */
+}
+.scroll-invisible::-webkit-scrollbar{
+  width: 0;
+  height: 0;                   /* Chrome/Safari/Opera */
+}
+
+
+
+
+/* 8) Layout global: evita el scroll de la página y habilita 100% de alto */
+html, body, #root, #__next {
+  height: 100%;
+}
+html, body {
+  overflow: hidden; /* quita la barra de la derecha */
+}
+
+/* 9) Utilidades para el dashboard (opcionales) */
+.app-viewport {               /* úsala como wrapper general del Dashboard */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-content {                /* contenedor del contenido bajo los KPIs */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.list-scroll {                /* aplica a las listas que deben scrollear */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* (opcional) permitir scroll global en móviles si lo prefieres */
+@media (max-width: 768px){
+  html, body { overflow: auto; }
+}
