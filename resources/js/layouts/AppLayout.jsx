@@ -1,70 +1,221 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import UserAvatar from "../components/ui/UserAvatar";
 
-const NavItem = ({ to, icon, label, active }) => (
-  <Link
-    to={to}
-    className={[
-      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
-      active
-        ? "bg-primary-600/10 text-primary-600 dark:text-primary-200"
-        : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50",
-    ].join(" ")}
-  >
-    <span className="shrink-0">{icon}</span>
-    <span className="truncate">{label}</span>
-  </Link>
-);
+const NavItem = ({ to, icon, label, active, collapsed }) => {
+  const base =
+    "w-full rounded-lg text-sm transition select-none " +
+    (active
+      ? "bg-primary-600/10 text-primary-600 dark:text-primary-200"
+      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50");
 
-export default function AppLayout({ children }) {
+  const layout = collapsed
+    ? "flex items-center justify-center px-0 py-2"
+    : "flex items-center gap-3 px-3 py-2.5";
+
+  return (
+    <Link to={to} className={`${base} ${layout}`} title={collapsed ? label : undefined}>
+      <span className="shrink-0 grid place-items-center" style={{ width: 22, height: 22 }}>
+        {icon}
+      </span>
+      {!collapsed && <span className="truncate">{label}</span>}
+    </Link>
+  );
+};
+
+export default function AppLayout({ children, header }) {
   const { pathname } = useLocation();
+
+  // Estado colapsado persistente (tipo Kick)
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("fs_sidebar_collapsed") === "true"
+  );
+  useEffect(() => localStorage.setItem("fs_sidebar_collapsed", String(collapsed)), [collapsed]);
+
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const items = useMemo(
     () => [
-      // ... tus items (igual que ya los tienes)
-      { to: "/dashboard", label: "Dashboard", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 13h8V3H3v10Zm10 8h8V3h-8v18ZM3 21h8v-6H3v6Z" className="fill-current/80"/></svg> },
-      { to: "/goals", label: "Metas de Ahorro", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 3l8 4-8 4-8-4 8-4Zm0 6v12M5 9v10m16-10v10" className="stroke-current/80" strokeWidth="1.6" strokeLinecap="round"/></svg> },
-      { to: "/transactions", label: "Ingresos y Gastos", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h7" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round"/></svg> },
-      { to: "/analytics", label: "Visualización", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V4m0 16h16M7 16V9m5 7V6m5 10v-4" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round"/></svg> },
-      { to: "/history", label: "Historial", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8v5l3 2M3 12a9 9 0 1 0 3-6" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round"/></svg> },
-      { to: "/profile", label: "Perfil", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5 0-9 3-9 6v1h18v-1c0-3-4-6-9-6Z" className="fill-current/80"/></svg> },
+      { to: "/dashboard", label: "Dashboard", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 13h8V3H3v10Zm10 8h8V3h-8v18ZM3 21h8v-6H3v6Z" className="fill-current/80" /></svg> },
+      { to: "/goals", label: "Metas de Ahorro", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 3l8 4-8 4-8-4 8-4Zm0 6v12M5 9v10m16-10v10" className="stroke-current/80" strokeWidth="1.6" strokeLinecap="round" /></svg> },
+      { to: "/transactions", label: "Ingresos y Gastos", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h7" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
+      { to: "/statistics", label: "Estadisticas", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V4m0 16h16M7 16V9m5 7V6m5 10v-4" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
+      { to: "/history", label: "Historial", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8v5l3 2M3 12a9 9 0 1 0 3-6" className="stroke-current/80" strokeWidth="1.8" strokeLinecap="round" /></svg> },
+      { to: "/profile", label: "Perfil", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5 0-9 3-9 6v1h18v-1c0-3-4-6-9-6Z" className="fill-current/80" /></svg> },
     ],
     []
   );
 
+  // --- NUEVO: handler de logout (ajusta con tu lógica real si aplica)
+  function handleLogout() {
+    try {
+      localStorage.removeItem("auth_token"); // ajusta si tu token se llama distinto
+    } finally {
+      window.location.href = "/login";
+    }
+  }
+
+  // Contenido del sidebar (altura fija, padding fijo)
+  const SidebarContent = (
+    <div className="fin-card h-full p-4 flex flex-col">
+      <nav className="flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-1">
+        {items.map((it) => (
+          <NavItem key={it.to} {...it} collapsed={collapsed} active={pathname.startsWith(it.to)} />
+        ))}
+      </nav>
+
+      {/* --- NUEVO: botón Cerrar sesión (pegado al fondo) --- */}
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className={[
+            "w-full rounded-lg text-sm transition select-none cursor-pointer", // 👈 agregado cursor-pointer
+            "text-red-500/90 hover:text-red-400 hover:bg-red-500/10",
+            collapsed
+              ? "flex items-center justify-center px-0 py-2"
+              : "flex items-center gap-3 px-3 py-2.5",
+          ].join(" ")}
+          title={collapsed ? "Cerrar sesión" : undefined}
+        >
+          <span className="shrink-0 grid place-items-center" style={{ width: 22, height: 22 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2v8" className="stroke-current" strokeWidth="1.8" strokeLinecap="round" />
+              <path
+                d="M7 4.8A8 8 0 1 0 17 4.8"
+                className="stroke-current"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+          {!collapsed && <span className="truncate">Cerrar sesión</span>}
+        </button>
+      </div>
+
+
+      <div
+        className={[
+          "mt-3 pt-3 border-t border-gray-200/60 dark:border-gray-700/50 text-xs text-gray-500",
+          collapsed ? "text-center" : "",
+        ].join(" ")}
+      >
+        © {new Date().getFullYear()} FinSave
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar sticky full-height */}
-      <aside className="hidden md:block w-64 sticky top-0 h-screen p-4">
-        <div className="fin-card h-full p-4 flex flex-col">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 grid place-items-center rounded-lg bg-primary-600 text-white font-semibold">FS</div>
-            <p className="text-sm font-semibold">Gestión de Ahorros</p>
+      {/* Desktop sidebar (ancho variable; alto constante) */}
+      <aside
+        className={[
+          "hidden md:flex sticky top-0 h-screen flex-col transition-[width] duration-300",
+          collapsed ? "w-20 px-2" : "w-64 px-4",
+          "py-4",
+        ].join(" ")}
+        aria-label="Sidebar de navegación"
+        aria-expanded={!collapsed}
+      >
+        {/* Header del menú (logo + flecha) */}
+        <div
+          className={[
+            "mb-3 flex items-center",
+            collapsed ? "justify-center gap-2" : "justify-between gap-3",
+          ].join(" ")}
+        >
+          <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2"}`}>
+            <img
+              src="/assets/icons/Logo_FinSave1.png"
+              alt="FinSave Logo"
+              className="h-8 w-8 object-contain"
+            />
+            {!collapsed && <p className="text-sm font-semibold">Gestión de Ahorros</p>}
           </div>
 
-          <nav className="space-y-1 overflow-y-auto flex-1 pr-1">
-            {items.map((it) => (
-              <NavItem key={it.to} {...it} active={pathname.startsWith(it.to)} />
-            ))}
-          </nav>
 
-          {/* Footer del sidebar opcional */}
-          <div className="pt-3 mt-3 border-t border-gray-200/60 dark:border-gray-700/50 text-xs text-gray-500">
-            © {new Date().getFullYear()} FinSave
-          </div>
+          <button
+            className="h-8 w-8 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {collapsed ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M9 6l6 6-6 6" className="stroke-current" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M15 6l-6 6 6 6" className="stroke-current" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
         </div>
+
+        {/* Caja con opciones: ocupa SIEMPRE el resto del alto */}
+        <div className="flex-1 min-h-0">{SidebarContent}</div>
       </aside>
+
+      {/* Mobile drawer */}
+      <div className={`md:hidden fixed inset-0 z-40 ${mobileOpen ? "" : "pointer-events-none"}`}>
+        <div
+          className={`absolute inset-0 bg-black/40 transition-opacity ${mobileOpen ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setMobileOpen(false)}
+        />
+        <aside
+          role="dialog"
+          aria-modal="true"
+          className={`absolute left-0 top-0 h-full w-64 p-4 transition-transform ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+        >
+          {/* Header en mobile */}
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 grid place-items-center rounded-lg bg-primary-600 text-white font-semibold">FS</div>
+              <p className="text-sm font-semibold">Gestión de Ahorros</p>
+            </div>
+            <button
+              className="h-8 w-8 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Cerrar menú"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M6 6l12 12M18 6L6 18" className="stroke-current" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* La card también ocupa todo en mobile */}
+          <div className="h-[calc(100%-3rem)] min-h-0">{SidebarContent}</div>
+        </aside>
+      </div>
 
       {/* Main */}
       <main className="flex-1 min-h-screen overflow-x-hidden">
         <div className="mx-auto max-w-screen-2xl p-4 md:p-8">
-          <header className="mb-4 md:mb-6">
-            <h1 className="text-lg md:text-xl font-semibold">Dashboard</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Resumen de tus metas de ahorro y progreso financiero
-            </p>
+          {/* Header por página (slot) */}
+          <header className="mb-4 md:mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Mobile toggle */}
+              <button
+                className="md:hidden h-9 w-9 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Abrir menú"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h16M4 12h16M4 17h16" className="stroke-current" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+
+              {/* Aquí va el header de cada página */}
+              {header ?? null}
+            </div>
+
+            <UserAvatar name="ElkinnnLopez_10" initials="EL" />
           </header>
+
           {children}
-          {/* Spacing final pequeño para evitar “hoyo” visual pegado al borde */}
           <div className="h-6" />
         </div>
       </main>
