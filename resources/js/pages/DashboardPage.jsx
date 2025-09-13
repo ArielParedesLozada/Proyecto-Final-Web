@@ -3,6 +3,7 @@ import StatPro from "../components/ui/StatPro";
 import GoalItem from "../components/dashboard/GoalItem";
 import CompletedList from "../components/dashboard/CompletedList";
 import Empty from "../components/ui/Empty";
+import ScrollArea from "../components/ui/ScrollArea";
 
 export default function DashboardPage() {
   const totalAhorrado = 15750, metaMensual = 2000, metasActivas = 3, progresoMensual = 63;
@@ -98,12 +99,12 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold mb-3">Metas de Ahorro Activas</h2>
 
             {/* Área que scrollea cuando hay muchas metas */}
-            <div className="min-h-0 flex-1 overflow-y-auto scroll-invisible space-y-3">
+            <ScrollArea className="space-y-3">
               {activas.length
-                ? activas.map((g) => <GoalItem key={g.name} {...g} />)
+                ? activas.map((g, idx) => <GoalItem key={`${g.name}-${idx}`} {...g} />)
                 : <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
               }
-            </div>
+            </ScrollArea>
           </div>
         </div>
 
@@ -118,12 +119,12 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold mb-3">Metas Completadas</h2>
 
             {/* Área que scrollea cuando hay muchas completadas */}
-            <div className="min-h-0 flex-1 overflow-y-auto scroll-invisible">
+            <ScrollArea>
               {completadas.length
                 ? <CompletedList items={completadas} />
                 : <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
               }
-            </div>
+            </ScrollArea>
           </div>
         </div>
       </section>
