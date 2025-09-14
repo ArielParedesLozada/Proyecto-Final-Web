@@ -13,10 +13,22 @@ export default function DashboardPage() {
     { name: "Vacaciones de Verano", current: 3200, target: 5000 },
     { name: "Vacaciones de Verano", current: 3200, target: 5000 },
     { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
     // añade más para probar el scroll...
   ];
 
   const completadas = [
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
     { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
     { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
     { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },

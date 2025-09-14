@@ -13,5 +13,5 @@ Route::view('/goals', 'app');
 Route::view('/dashboard', 'app');
 Route::view('/profile', 'app');
 Route::view('/transactions', 'app');
-Route::view('/statistics', 'app');
+
 

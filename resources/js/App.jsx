@@ -29,7 +29,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
-        <Route path="/statistics" element={<StatisticsPage />} />
+  
 
         {/* Rutas futuras (ejemplo de placeholders) */}
         {/* <Route path="/goals" element={<GoalsPage />} /> */}
