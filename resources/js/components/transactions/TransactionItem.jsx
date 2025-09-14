@@ -5,8 +5,8 @@ export default function TransactionItem({ item }) {
       : "text-rose-600 dark:text-rose-400";
 
   return (
-    <div className="flex items-start gap-3 rounded-xl ring-1 ring-gray-200/70 dark:ring-gray-700/50 p-3 bg-white/90 dark:bg-gray-800/80">
-      <div className="h-9 w-9 grid place-items-center rounded-lg bg-gray-100 dark:bg-gray-700/60">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl ring-1 ring-gray-200/70 dark:ring-gray-700/50 p-3 bg-white/90 dark:bg-gray-800/80">
+      <div className="h-9 w-9 shrink-0 grid place-items-center rounded-lg bg-gray-100 dark:bg-gray-700/60">
         {item.type === "income" ? "↑" : "↓"}
       </div>
 
@@ -22,7 +22,8 @@ export default function TransactionItem({ item }) {
         </p>
       </div>
 
-      <div className={`shrink-0 font-semibold ${color}`}>
+      {/* 👇 en móvil mantiene derecha y no fuerza salto raro */}
+      <div className={`ml-auto shrink-0 font-semibold text-sm sm:text-base ${color}`}>
         {item.type === "income" ? "+" : "-"}${item.amount.toLocaleString()}
       </div>
     </div>

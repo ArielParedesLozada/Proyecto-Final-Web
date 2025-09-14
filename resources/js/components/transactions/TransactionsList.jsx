@@ -71,7 +71,6 @@ export default function TransactionsList({ items = [], pageSize = 6, className =
 
       <ScrollArea
         className="space-y-3"
-        showOnHover
         maxHeight="clamp(320px, 56svh, calc(100svh - 18rem))"
       >
         {pageItems.map((i, idx) => (

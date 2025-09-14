@@ -4,8 +4,6 @@ import TransactionsKpis from "../components/transactions/TransactionsKpis";
 import TransactionsList from "../components/transactions/TransactionsList";
 import ResponsivePane from "../layouts/ResponsivePane";
 
-
-
 export default function TransactionsPage() {
   const items = [
     { id: 1, type: "income",  category: "fijo",     categoryLabel: "Fijo",     title: "Salario mensual",        goal: "Vacaciones de Verano", amount: 3000, date: "2026-12-31" },
@@ -38,15 +36,20 @@ export default function TransactionsPage() {
       <div className="grid gap-4 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
         <TransactionsKpis totals={totals} />
 
-        {/* Wrapper que calcula el alto disponible y lo aplica en XL */}
+        {/* Pane que calcula alto disponible en XL */}
         <ResponsivePane
           className="xl:min-h-0"
-          toolbar={null}          // la lista ya tiene su propio header/pills
-          bottomPadding={24}      // espacio de aire inferior
-          minPx={320}             // mínimo de altura del contenido
+          toolbar={null}
+          bottomPadding={24}
+          minPx={320}
         >
-          {/* NO toco el componente de la lista; solo le doy h-full para que aproveche el pane */}
-          <TransactionsList items={items} pageSize={5} className="xl:h-full" />
+          {/* SIN tocar el componente de la lista.
+              La grilla de 3 filas asegura la paginación pegada abajo. */}
+          <TransactionsList
+            items={items}
+            pageSize={5}
+            className="h-full grid grid-rows-[auto_minmax(0,1fr)_auto]"
+          />
         </ResponsivePane>
       </div>
     </AppLayout>
