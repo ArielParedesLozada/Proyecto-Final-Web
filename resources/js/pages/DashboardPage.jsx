@@ -46,7 +46,7 @@ export default function DashboardPage() {
     { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
     { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
     { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-=======
+
     { id: 1, title: "1”", when: "Hace 2 horas" },
     { id: 2, title: "2op” completada", when: "Ayer" },
     { id: 1, title: "3a “Vacaciones”", when: "Hace 2 horas" },
