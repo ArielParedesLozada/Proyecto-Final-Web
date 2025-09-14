@@ -8,7 +8,12 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import GoalsPage from "./pages/GoalsPage";
 import ProfilePage from "./pages/ProfilePage";
+
 import TransactionsPage from "./pages/TransactionsPage";
+
+
+import AnalyticsPage from "./pages/StatsPage";
+import HistoryPage from "./pages/HistoryPage";
 
 
 
@@ -28,13 +33,17 @@ export default function App() {
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/goals" element={<GoalsPage />} />
+
         <Route path="/transactions" element={<TransactionsPage />} />
   
+
+        <Route path="/history" element={<HistoryPage />} />
+
 
         {/* Rutas futuras (ejemplo de placeholders) */}
         {/* <Route path="/goals" element={<GoalsPage />} /> */}
         {/* <Route path="/transactions" element={<TransactionsPage />} /> */}
-        {/* <Route path="/analytics" element={<AnalyticsPage />} /> */}
+        {<Route path="/statistics" element={<AnalyticsPage />} />}
         {/* <Route path="/history" element={<HistoryPage />} /> */}
         {<Route path="/profile" element={<ProfilePage />} /> }
 

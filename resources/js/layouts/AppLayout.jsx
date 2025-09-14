@@ -26,7 +26,6 @@ const NavItem = ({ to, icon, label, active, collapsed }) => {
 export default function AppLayout({ children, header }) {
   const { pathname } = useLocation();
 
-  // Estado colapsado persistente (tipo Kick)
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("fs_sidebar_collapsed") === "true"
   );
@@ -46,16 +45,14 @@ export default function AppLayout({ children, header }) {
     []
   );
 
-  // --- NUEVO: handler de logout (ajusta con tu lógica real si aplica)
   function handleLogout() {
     try {
-      localStorage.removeItem("auth_token"); // ajusta si tu token se llama distinto
+      localStorage.removeItem("auth_token");
     } finally {
       window.location.href = "/login";
     }
   }
 
-  // Contenido del sidebar (altura fija, padding fijo)
   const SidebarContent = (
     <div className="fin-card h-full p-4 flex flex-col">
       <nav className="flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-1">
@@ -64,13 +61,12 @@ export default function AppLayout({ children, header }) {
         ))}
       </nav>
 
-      {/* --- NUEVO: botón Cerrar sesión (pegado al fondo) --- */}
       <div className="mt-2">
         <button
           type="button"
           onClick={handleLogout}
           className={[
-            "w-full rounded-lg text-sm transition select-none cursor-pointer", // 👈 agregado cursor-pointer
+            "w-full rounded-lg text-sm transition select-none cursor-pointer",
             "text-red-500/90 hover:text-red-400 hover:bg-red-500/10",
             collapsed
               ? "flex items-center justify-center px-0 py-2"
@@ -81,18 +77,12 @@ export default function AppLayout({ children, header }) {
           <span className="shrink-0 grid place-items-center" style={{ width: 22, height: 22 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M12 2v8" className="stroke-current" strokeWidth="1.8" strokeLinecap="round" />
-              <path
-                d="M7 4.8A8 8 0 1 0 17 4.8"
-                className="stroke-current"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
+              <path d="M7 4.8A8 8 0 1 0 17 4.8" className="stroke-current" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           </span>
           {!collapsed && <span className="truncate">Cerrar sesión</span>}
         </button>
       </div>
-
 
       <div
         className={[
@@ -106,8 +96,9 @@ export default function AppLayout({ children, header }) {
   );
 
   return (
-    <div className="min-h-screen flex">
-      {/* Desktop sidebar (ancho variable; alto constante) */}
+    <div className="min-h-screen xl:h-[100dvh] flex">
+
+      {/* Desktop sidebar */}
       <aside
         className={[
           "hidden md:flex sticky top-0 h-screen flex-col transition-[width] duration-300",
@@ -133,7 +124,6 @@ export default function AppLayout({ children, header }) {
             {!collapsed && <p className="text-sm font-semibold">Gestión de Ahorros</p>}
           </div>
 
-
           <button
             className="h-8 w-8 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"
             onClick={() => setCollapsed((v) => !v)}
@@ -153,7 +143,6 @@ export default function AppLayout({ children, header }) {
           </button>
         </div>
 
-        {/* Caja con opciones: ocupa SIEMPRE el resto del alto */}
         <div className="flex-1 min-h-0">{SidebarContent}</div>
       </aside>
 
@@ -166,10 +155,8 @@ export default function AppLayout({ children, header }) {
         <aside
           role="dialog"
           aria-modal="true"
-          className={`absolute left-0 top-0 h-full w-64 p-4 transition-transform ${mobileOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
+          className={`absolute left-0 top-0 h-full w-64 p-4 transition-transform ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
-          {/* Header en mobile */}
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 grid place-items-center rounded-lg bg-primary-600 text-white font-semibold">FS</div>
@@ -186,37 +173,38 @@ export default function AppLayout({ children, header }) {
             </button>
           </div>
 
-          {/* La card también ocupa todo en mobile */}
           <div className="h-[calc(100%-3rem)] min-h-0">{SidebarContent}</div>
         </aside>
       </div>
 
       {/* Main */}
-      <main className="flex-1 min-h-screen overflow-x-hidden">
-        <div className="mx-auto max-w-screen-2xl p-4 md:p-8">
-          {/* Header por página (slot) */}
-          <header className="mb-4 md:mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {/* Mobile toggle */}
-              <button
-                className="md:hidden h-9 w-9 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"
-                onClick={() => setMobileOpen(true)}
-                aria-label="Abrir menú"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 7h16M4 12h16M4 17h16" className="stroke-current" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
+      <main className="flex-1 flex flex-col min-h-0 overflow-visible xl:overflow-hidden">
 
-              {/* Aquí va el header de cada página */}
-              {header ?? null}
+        {/* Contenedor central que reparte la altura entre header y contenido */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="mx-auto max-w-screen-2xl h-full px-4 md:px-8 pt-4 md:pt-8 pb-4 flex flex-col min-h-0 overflow-hidden">
+            {/* Header por página */}
+            <header className="mb-4 md:mb-6 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  className="md:hidden h-9 w-9 grid place-items-center rounded-lg bg-white/5 ring-1 ring-white/10"
+                  onClick={() => setMobileOpen(true)}
+                  aria-label="Abrir menú"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7h16M4 12h16M4 17h16" className="stroke-current" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+                {header ?? null}
+              </div>
+              <UserAvatar name="ElkinnnLopez_10" initials="EL" />
+            </header>
+
+            {/* Contenido de la página: ocupa el resto */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {children}
             </div>
-
-            <UserAvatar name="ElkinnnLopez_10" initials="EL" />
-          </header>
-
-          {children}
-          <div className="h-6" />
+          </div>
         </div>
       </main>
     </div>
