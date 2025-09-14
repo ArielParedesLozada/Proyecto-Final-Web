@@ -2,6 +2,9 @@
 import AppLayout from "../layouts/AppLayout";
 import TransactionsKpis from "../components/transactions/TransactionsKpis";
 import TransactionsList from "../components/transactions/TransactionsList";
+import ResponsivePane from "../layouts/ResponsivePane";
+
+
 
 export default function TransactionsPage() {
   const items = [
@@ -31,9 +34,20 @@ export default function TransactionsPage() {
 
   return (
     <AppLayout header={header}>
-      <TransactionsKpis totals={totals} />
-      <div className="mt-4">
-        <TransactionsList items={items} pageSize={5} />
+      {/* Mantiene la base recta con el menú en cualquier zoom */}
+      <div className="grid gap-4 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
+        <TransactionsKpis totals={totals} />
+
+        {/* Wrapper que calcula el alto disponible y lo aplica en XL */}
+        <ResponsivePane
+          className="xl:min-h-0"
+          toolbar={null}          // la lista ya tiene su propio header/pills
+          bottomPadding={24}      // espacio de aire inferior
+          minPx={320}             // mínimo de altura del contenido
+        >
+          {/* NO toco el componente de la lista; solo le doy h-full para que aproveche el pane */}
+          <TransactionsList items={items} pageSize={5} className="xl:h-full" />
+        </ResponsivePane>
       </div>
     </AppLayout>
   );
