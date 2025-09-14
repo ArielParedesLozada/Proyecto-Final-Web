@@ -11,3 +11,4 @@ Route::view('/forgot-password', 'app');
 Route::view('/reset-password', 'app');
 Route::view('/dashboard', 'app');
 Route::view('/profile', 'app');
+Route::view('/statistics', 'app');

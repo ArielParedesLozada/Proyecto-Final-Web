@@ -13,7 +13,12 @@ export default function ScrollArea({
   return (
     <div
       className={clsx(
-        "min-h-0 flex-1 overflow-y-auto", // base para que scrollee bien en layouts flex/grid
+        // 📱 En móvil: deja fluir el contenido
+        "overflow-visible",
+
+        // 🖥️ En desktop/XL: usa scroll interno
+        "xl:min-h-0 xl:flex-1 xl:overflow-y-auto",
+
         scrollClass,
         className
       )}

@@ -7,6 +7,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+import AnalyticsPage from "./pages/StatsPage";
 
 export default function App() {
   return (
@@ -27,7 +28,7 @@ export default function App() {
         {/* Rutas futuras (ejemplo de placeholders) */}
         {/* <Route path="/goals" element={<GoalsPage />} /> */}
         {/* <Route path="/transactions" element={<TransactionsPage />} /> */}
-        {/* <Route path="/analytics" element={<AnalyticsPage />} /> */}
+        {<Route path="/statistics" element={<AnalyticsPage />} />}
         {/* <Route path="/history" element={<HistoryPage />} /> */}
         {<Route path="/profile" element={<ProfilePage />} /> }
 
