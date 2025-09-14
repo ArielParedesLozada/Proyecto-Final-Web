@@ -21,6 +21,10 @@ export default function GoalCard({
     Math.round(((currentAmount ?? 0) / Math.max(targetAmount, 1)) * 100)
   );
 
+  // Si llegó a 100% lo mostramos como "Completada" (solo a nivel UI)
+  const isCompleted = progress >= 100;
+  const visualStatus = isCompleted ? "Completada" : status;
+
   // Fecha límite
   const deadlineText = deadline
     ? new Date(deadline).toLocaleDateString()
@@ -36,16 +40,17 @@ export default function GoalCard({
       "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/20",
   };
   const badgeCls =
-    statusStyles[status] ??
+    statusStyles[visualStatus] ??
     "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
 
   // Colores dinámicos de la BARRA según porcentaje
-  let barGradient = "from-indigo-500 to-indigo-600"; 
+  let barGradient = "from-indigo-500 to-indigo-600";
   if (progress < 33) {
-    barGradient = "from-rose-500 to-rose-600";       
+    barGradient = "from-rose-500 to-rose-600";
   } else if (progress < 75) {
-    barGradient = "from-amber-400 to-amber-500";     
+    barGradient = "from-amber-400 to-amber-500";
   }
+  // (si es 100%, queda en índigo/azul como definiste)
 
   return (
     <div className="fin-card p-4 space-y-3">
@@ -69,7 +74,7 @@ export default function GoalCard({
         {/* Acciones */}
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-xs px-2 py-1 rounded-full ${badgeCls}`}>
-            {status}
+            {visualStatus}
           </span>
           <button
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 cursor-pointer"
@@ -122,7 +127,10 @@ export default function GoalCard({
       </div>
 
       <div className="pt-2">
-        <button className="btn btn-ghost cursor-pointer" onClick={() => onAddTx?.(goal)}>
+        <button
+          className="btn btn-ghost cursor-pointer"
+          onClick={() => onAddTx?.(goal)}
+        >
           Agregar Ingreso/Gasto
         </button>
       </div>
