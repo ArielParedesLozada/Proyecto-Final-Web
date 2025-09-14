@@ -7,6 +7,7 @@ import ConfirmModal from "../components/common/ConfirmModal";
 import AddTxModal from "../components/goals/AddTxModal";
 import { GoalsAPI } from "../services/API";
 import ScrollArea from "../components/ui/ScrollArea";
+import Pagination from "../components/ui/Pagination";
 
 export default function GoalsPage() {
     const [goals, setGoals] = useState([]);
@@ -177,27 +178,13 @@ export default function GoalsPage() {
                             onDelete={askDelete}
                         />
 
-                        {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 pt-2 pb-1">
-                                <button
-                                    className="btn btn-ghost cursor-pointer"
-                                    disabled={page === 1}
-                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                >
-                                    Anterior
-                                </button>
-                                <span className="text-sm px-2 py-1 rounded-lg bg-white/70 dark:bg-gray-800/70">
-                                    Página {page} de {totalPages}
-                                </span>
-                                <button
-                                    className="btn btn-ghost cursor-pointer"
-                                    disabled={page === totalPages}
-                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                >
-                                    Siguiente
-                                </button>
-                            </div>
-                        )}
+                        {/* Paginación simple */}
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+                            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        />
                     </>
                 )}
             </ScrollArea>
