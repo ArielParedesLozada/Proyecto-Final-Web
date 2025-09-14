@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import GoalGrid from "../components/goals/GoalGrid";
 import NewGoalModal from "../components/goals/NewGoalModal";
@@ -6,6 +6,7 @@ import EmptyGoals from "../components/goals/EmptyGoals";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AddTxModal from "../components/goals/AddTxModal";
 import { GoalsAPI } from "../services/API";
+import ScrollArea from "../components/ui/ScrollArea";
 
 export default function GoalsPage() {
     const [goals, setGoals] = useState([]);
@@ -13,14 +14,14 @@ export default function GoalsPage() {
 
     // modal crear/editar
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
+    const [modalMode, setModalMode] = useState("create");
     const [editingGoal, setEditingGoal] = useState(null);
 
     // confirm delete
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [toDeleteId, setToDeleteId] = useState(null);
 
-    // modal de transacción (ingreso/gasto)
+    // modal de transacción
     const [txOpen, setTxOpen] = useState(false);
     const [txGoal, setTxGoal] = useState(null);
 
@@ -90,7 +91,6 @@ export default function GoalsPage() {
         setTxOpen(true);
     }
 
-    // Guardar transacción (mock: ajusta currentAmount; backend real: aquí llamarías a /goals/:id/transactions)
     async function handleSaveTx({ goalId, type, amount }) {
         try {
             const goal = goals.find((g) => g.id === goalId);
@@ -108,27 +108,54 @@ export default function GoalsPage() {
         }
     }
 
-    return (
-        <AppLayout
-            title="Metas de Ahorro"
-            subtitle="Gestiona y da seguimiento a tus objetivos financieros"
-        >
-            <div className="space-y-6">
-                {/* Header + CTA */}
-                <div className="flex items-start justify-between gap-3">
-                    <div />
-                    <button
-                        className="btn btn-primary cursor-pointer"
-                        onClick={() => {
-                            setModalMode("create");
-                            setEditingGoal(null);
-                            setModalOpen(true);
-                        }}
-                    >
-                        + Nueva Meta
-                    </button>
-                </div>
+    // ----- Header (texto) -----
+    const header = (
+        <div>
+            <h1 className="text-lg md:text-xl font-semibold">Metas de Ahorro</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+                Gestiona y da seguimiento a tus objetivos financieros
+            </p>
+        </div>
+    );
 
+    // ----- Barra de acciones + cálculo de alto disponible -----
+    const toolbarRef = useRef(null);
+    const [listMaxH, setListMaxH] = useState("60vh");
+
+    useEffect(() => {
+        function compute() {
+            if (!toolbarRef.current) return;
+            const rect = toolbarRef.current.getBoundingClientRect();
+            const bottomPadding = 24; // espacio de aire inferior
+            const available = window.innerHeight - rect.bottom - bottomPadding;
+            setListMaxH(`${Math.max(240, available)}px`); // mínimo 240px
+        }
+        compute();
+        window.addEventListener("resize", compute);
+        return () => window.removeEventListener("resize", compute);
+    }, []);
+
+    return (
+        <AppLayout header={header}>
+            {/* Barra de acciones: separada visualmente y alineada a la derecha */}
+            <div
+                ref={toolbarRef}
+                className="flex items-center justify-end mb-4 md:mb-5"
+            >
+                <button
+                    className="btn btn-primary cursor-pointer shadow-sm"
+                    onClick={() => {
+                        setModalMode("create");
+                        setEditingGoal(null);
+                        setModalOpen(true);
+                    }}
+                >
+                    + Nueva Meta
+                </button>
+            </div>
+
+            {/* Cards + paginación con scroll y altura dinámica real */}
+            <ScrollArea className="space-y-3" maxHeight={listMaxH}>
                 {loading ? (
                     <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
                         Cargando…
@@ -151,7 +178,7 @@ export default function GoalsPage() {
                         />
 
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 pt-2">
+                            <div className="flex items-center justify-center gap-2 pt-2 pb-1">
                                 <button
                                     className="btn btn-ghost cursor-pointer"
                                     disabled={page === 1}
@@ -173,38 +200,38 @@ export default function GoalsPage() {
                         )}
                     </>
                 )}
+            </ScrollArea>
 
-                {/* Modal Crear / Editar */}
-                <NewGoalModal
-                    open={modalOpen}
-                    onClose={() => {
-                        setModalOpen(false);
-                        setEditingGoal(null);
-                    }}
-                    onSubmit={modalMode === "edit" ? handleSubmitEdit : handleCreateGoal}
-                    mode={modalMode}
-                    initialGoal={editingGoal}
-                />
+            {/* Modal Crear / Editar */}
+            <NewGoalModal
+                open={modalOpen}
+                onClose={() => {
+                    setModalOpen(false);
+                    setEditingGoal(null);
+                }}
+                onSubmit={modalMode === "edit" ? handleSubmitEdit : handleCreateGoal}
+                mode={modalMode}
+                initialGoal={editingGoal}
+            />
 
-                {/* Confirmación de eliminación */}
-                <ConfirmModal
-                    open={confirmOpen}
-                    title="Eliminar meta"
-                    message="¿Estás seguro de eliminar esta meta? Esta acción no se puede deshacer."
-                    confirmText="Sí, eliminar"
-                    cancelText="Cancelar"
-                    onConfirm={confirmDelete}
-                    onCancel={() => setConfirmOpen(false)}
-                />
+            {/* Confirmación de eliminación */}
+            <ConfirmModal
+                open={confirmOpen}
+                title="Eliminar meta"
+                message="¿Estás seguro de eliminar esta meta? Esta acción no se puede deshacer."
+                confirmText="Sí, eliminar"
+                cancelText="Cancelar"
+                onConfirm={confirmDelete}
+                onCancel={() => setConfirmOpen(false)}
+            />
 
-                {/* Modal Ingreso/Gasto */}
-                <AddTxModal
-                    open={txOpen}
-                    onClose={() => setTxOpen(false)}
-                    goal={txGoal}
-                    onSubmit={handleSaveTx}
-                />
-            </div>
+            {/* Modal Ingreso/Gasto */}
+            <AddTxModal
+                open={txOpen}
+                onClose={() => setTxOpen(false)}
+                goal={txGoal}
+                onSubmit={handleSaveTx}
+            />
         </AppLayout>
     );
 }
