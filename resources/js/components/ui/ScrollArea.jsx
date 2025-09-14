@@ -1,28 +1,35 @@
 import clsx from "clsx";
+import useIsXL from "../../hooks/useIsXL";
 
 export default function ScrollArea({
   children,
   className = "",
-  maxHeight,           // p.ej. "56vh" o "420px"
-  showOnHover = false, // false = invisible siempre; true = aparece al hover
+  maxHeight,          // mantiene compatibilidad
+  maxHeightXL,        // 👈 NUEVO: solo aplica en XL
+  showOnHover = false,
   style = {},
   ...props
 }) {
+  const isXL = useIsXL();
   const scrollClass = showOnHover ? "scroll-hover" : "scroll-invisible";
+
+  const computedStyle = {
+    ...style,
+    // Si nos pasan maxHeightXL, lo aplicamos SOLO en XL; en móvil ignoramos
+    maxHeight: isXL ? (maxHeightXL ?? maxHeight ?? style.maxHeight) : undefined,
+  };
 
   return (
     <div
       className={clsx(
-        // 📱 En móvil: deja fluir el contenido
+        // móvil: deja fluir
         "overflow-visible",
-
-        // 🖥️ En desktop/XL: usa scroll interno
+        // desktop: scroll interno
         "xl:min-h-0 xl:flex-1 xl:overflow-y-auto",
-
         scrollClass,
         className
       )}
-      style={{ maxHeight: maxHeight, ...style }}
+      style={computedStyle}
       {...props}
     >
       {children}
