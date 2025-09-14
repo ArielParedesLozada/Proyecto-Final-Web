@@ -21,10 +21,32 @@ export default function DashboardPage() {
     { name: "10", current: 3200, target: 5000 },
     { name: "11", current: 3200, target: 5000 },
     { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
+    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
     // añade más para probar el scroll...
   ];
 
   const completadas = [
+
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
+    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+=======
     { id: 1, title: "1”", when: "Hace 2 horas" },
     { id: 2, title: "2op” completada", when: "Ayer" },
     { id: 1, title: "3a “Vacaciones”", when: "Hace 2 horas" },
@@ -49,6 +71,7 @@ export default function DashboardPage() {
     { id: 2, title: "22 “Nuevo Laptop” completada", when: "Ayer" },
     { id: 1, title: "23 “Vacaciones”", when: "Hace 2 horas" },
     { id: 2, title: "24 “Nuevo Laptop” completada", when: "Ayer" },
+
     // añade más para probar el scroll...
   ];
 
