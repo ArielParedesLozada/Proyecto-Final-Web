@@ -9,7 +9,7 @@ import DashboardPage from "./pages/DashboardPage";
 import GoalsPage from "./pages/GoalsPage";
 import ProfilePage from "./pages/ProfilePage";
 import TransactionsPage from "./pages/TransactionsPage";
-import StatisticsPage from "./pages/StatisticsPage";
+
 
 
 export default function App() {
