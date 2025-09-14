@@ -6,8 +6,11 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
+import GoalsPage from "./pages/GoalsPage";
 import ProfilePage from "./pages/ProfilePage";
 import AnalyticsPage from "./pages/StatsPage";
+import HistoryPage from "./pages/HistoryPage";
+
 
 export default function App() {
   return (
@@ -24,6 +27,8 @@ export default function App() {
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/history" element={<HistoryPage />} />
 
         {/* Rutas futuras (ejemplo de placeholders) */}
         {/* <Route path="/goals" element={<GoalsPage />} /> */}
