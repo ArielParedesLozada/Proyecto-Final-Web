@@ -8,6 +8,8 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import GoalsPage from "./pages/GoalsPage";
 import ProfilePage from "./pages/ProfilePage";
+import TransactionsPage from "./pages/TransactionsPage";
+import StatisticsPage from "./pages/StatisticsPage";
 
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/statistics" element={<StatisticsPage />} />
 
         {/* Rutas futuras (ejemplo de placeholders) */}
         {/* <Route path="/goals" element={<GoalsPage />} /> */}
