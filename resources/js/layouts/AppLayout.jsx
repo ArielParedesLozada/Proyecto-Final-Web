@@ -117,7 +117,7 @@ export default function AppLayout({ children, header }) {
         >
           <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2"}`}>
             <img
-              src="/assets/icons/Logo_FinSave1.png"
+              src="/assets/icons/Logo_FinSave.png"
               alt="FinSave Logo"
               className="h-8 w-8 object-contain"
             />
