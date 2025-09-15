@@ -16,7 +16,9 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
     } = goal;
 
     const progress = useMemo(() => {
-        const p = Math.round((Number(currentAmount) / Math.max(Number(targetAmount), 1)) * 100);
+        const p = Math.round(
+            (Number(currentAmount) / Math.max(Number(targetAmount), 1)) * 100
+        );
         return Math.min(100, Math.max(0, p));
     }, [currentAmount, targetAmount]);
 
@@ -34,18 +36,27 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
         statusStyles[status] ??
         "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
 
-    const deadlineText = deadline ? new Date(deadline).toLocaleDateString() : "Sin fecha límite";
-    const createdText = createdAt ? new Date(createdAt).toLocaleDateString() : "—";
+    const deadlineText = deadline
+        ? new Date(deadline).toLocaleDateString()
+        : "Sin fecha límite";
+    const createdText = createdAt
+        ? new Date(createdAt).toLocaleDateString()
+        : "—";
 
     let barGradient = "from-indigo-500 to-indigo-600";
     if (progress < 33) barGradient = "from-rose-500 to-rose-600";
     else if (progress < 75) barGradient = "from-amber-400 to-amber-500";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 md:p-8">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 md:p-8 overflow-y-auto">
             <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-            <div className="relative z-10 w-full max-w-2xl fin-card p-0 overflow-hidden" role="dialog" aria-modal="true">
+            <div
+                className="relative z-10 w-full max-w-2xl fin-card p-0 overflow-hidden my-6"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Detalles de la meta"
+            >
                 {/* Header sticky */}
                 <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur border-b border-gray-200/60 dark:border-gray-700/50">
                     <div className="min-w-0">
@@ -67,7 +78,7 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
                     </button>
                 </div>
 
-                {/* Contenido con scroll propio */}
+                {/* Contenido con scroll propio (se mantiene tu ScrollArea) */}
                 <ScrollArea className="px-5 pt-4 pb-5 space-y-5" maxHeight="75vh">
                     {/* Resumen en 2 columnas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
