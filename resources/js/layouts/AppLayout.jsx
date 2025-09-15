@@ -96,7 +96,7 @@ export default function AppLayout({ children, header }) {
   );
 
   return (
-    <div className="min-h-screen xl:h-[100dvh] flex">
+    <div className="flex h-auto xl:h-[100dvh]">
 
       {/* Desktop sidebar */}
       <aside
