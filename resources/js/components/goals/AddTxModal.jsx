@@ -174,9 +174,6 @@ export default function AddTxModal({
 
                         {/* Actions */}
                         <div className="flex items-center justify-center gap-2 pt-2">
-                            <button type="button" className="btn btn-ghost cursor-pointer" onClick={onClose}>
-                                Cancelar
-                            </button>
                             <button
                                 type="submit"
                                 className="btn btn-primary cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
