@@ -1,18 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Input from "../common/Input";
 import PasswordInput from "../login/PasswordInput";
-
-// Simulación local (luego se cambia por services/auth.js)
-async function fakeRegister(payload) {
-  await new Promise(r => setTimeout(r, 700));
-  if (payload.email === "existe@demo.com") {
-    const err = new Error("email_taken");
-    throw err;
-  }
-  return { ok: true };
-}
+import { register } from "../../services/auth";
 
 export default function RegisterForm({ onSuccess }) {
+  const navigate = useNavigate();
   const [values, setValues] = useState({
     first_name: "",
     last_name: "",
@@ -24,6 +17,7 @@ export default function RegisterForm({ onSuccess }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -60,13 +54,38 @@ export default function RegisterForm({ onSuccess }) {
     setFormError("");
 
     try {
-      await fakeRegister(values); // ← luego: await register(values)
-      onSuccess?.();
+      console.log("Sending register data:", values); // Debug log
+      const response = await register(values);
+      if (response && response.success) {
+        // Mostrar mensaje de éxito
+        setSuccessMessage("¡Cuenta creada exitosamente! Te hemos enviado un correo de bienvenida. Redirigiendo al login...");
+        setFormError("");
+        
+        // Redirigir al login después de 3 segundos
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+        
+        // También llamar onSuccess si existe (para compatibilidad)
+        onSuccess?.(response);
+      } else {
+        setFormError(response?.message || "No se pudo crear la cuenta. Intenta nuevamente.");
+      }
     } catch (err) {
-      setFormError(err.message === "email_taken"
-        ? "Ese correo ya está registrado."
-        : "No se pudo crear la cuenta. Intenta nuevamente."
-      );
+      console.log("Register form error:", err); // Debug log
+      
+      // Manejar errores específicos del backend
+      if (err.message.includes("email") && err.message.includes("unique")) {
+        setFormError("Ese correo ya está registrado.");
+      } else if (err.message.includes("Validation errors:")) {
+        // Mostrar los errores específicos de validación
+        const specificErrors = err.message.replace("Validation errors: ", "");
+        setFormError(`Errores de validación: ${specificErrors}`);
+      } else if (err.message.includes("validation")) {
+        setFormError("Por favor revisa los datos ingresados.");
+      } else {
+        setFormError(err.message || "No se pudo crear la cuenta. Intenta nuevamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -77,6 +96,12 @@ export default function RegisterForm({ onSuccess }) {
       {formError && (
         <div className="mb-4 rounded-lg bg-red-50 text-red-700 px-3 py-2 text-sm">
           {formError}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="mb-4 rounded-lg bg-green-50 text-green-700 px-3 py-2 text-sm">
+          {successMessage}
         </div>
       )}
 
@@ -119,9 +144,9 @@ export default function RegisterForm({ onSuccess }) {
         </span>
       </label>
 
-      <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg">
-        {loading ? "Creando cuenta..." : "Crear cuenta"}
+      <button type="submit" disabled={loading || successMessage}
+              className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+        {loading ? "Creando cuenta..." : successMessage ? "Redirigiendo..." : "Crear cuenta"}
       </button>
 
       <p className="mt-6 text-center text-sm text-gray-600">

@@ -3,12 +3,7 @@ import Input from "../common/Input";
 import Button from "../common/Button";
 import FormError from "../common/FormError";
 import PasswordInput from "./PasswordInput";
-
-async function fakeLogin({ email, password }) {
-  await new Promise((r) => setTimeout(r, 700));
-  if (email === "fail@demo.com") throw new Error("invalid");
-  return { token: "demo-token", email };
-}
+import { login } from "../../services/auth";
 
 export default function LoginForm({ onSuccess }) {
   const [values, setValues] = useState({ email: "", password: "", remember: false });
@@ -39,10 +34,14 @@ export default function LoginForm({ onSuccess }) {
     setLoading(true);
     setFormError("");
     try {
-      await fakeLogin(values);
-      onSuccess?.();
-    } catch {
-      setFormError("Credenciales inválidas. Inténtalo nuevamente.");
+      const response = await login(values.email, values.password);
+      if (response && response.success) {
+        onSuccess?.(response);
+      } else {
+        setFormError(response?.message || "Error al iniciar sesión");
+      }
+    } catch (error) {
+      setFormError(error.message || "Credenciales inválidas. Inténtalo nuevamente.");
     } finally {
       setLoading(false);
     }
