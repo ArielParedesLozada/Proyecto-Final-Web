@@ -5,17 +5,19 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
+
 import DashboardPage from "./pages/DashboardPage";
 import GoalsPage from "./pages/GoalsPage";
-import ProfilePage from "./pages/ProfilePage";
-import AnalyticsPage from "./pages/StatsPage";
 import HistoryPage from "./pages/HistoryPage";
+import ProfilePage from "./pages/ProfilePage";
+import TransactionsPage from "./pages/TransactionsPage";
+import AnalyticsPage from "./pages/StatsPage";
 
 // ----- Rutas protegidas -----
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -32,7 +34,6 @@ function ProtectedRoute({ children }) {
 // ----- Rutas solo para no autenticados -----
 function AuthRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -49,7 +50,7 @@ function AuthRoute({ children }) {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Redirige / hacia /dashboard (ProtectedRoute luego decide si manda a /login) */}
+      {/* Redirige / hacia /dashboard (ProtectedRoute decide si manda a /login) */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
       {/* Auth (solo no autenticados) */}
@@ -78,9 +79,16 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/auth/google/callback"
-        element={<GoogleCallbackPage />}
+        path="/reset-password"
+        element={
+          <AuthRoute>
+            <ResetPasswordPage />
+          </AuthRoute>
+        }
       />
+
+      {/* OAuth callback (pública, procesa token y redirige) */}
+      <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
       {/* Protegidas */}
       <Route
@@ -104,6 +112,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <HistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions"
+        element={
+          <ProtectedRoute>
+            <TransactionsPage />
           </ProtectedRoute>
         }
       />

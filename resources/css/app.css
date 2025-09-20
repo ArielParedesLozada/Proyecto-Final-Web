@@ -116,6 +116,6 @@ html, body {
 }
 
 /* (opcional) permitir scroll global en móviles si lo prefieres */
-@media (max-width: 768px){
+@media (max-width: 1279px){
   html, body { overflow: auto; }
 }

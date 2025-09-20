@@ -12,6 +12,10 @@ Route::view('/reset-password', 'app');
 Route::view('/goals', 'app'); 
 Route::view('/dashboard', 'app');
 Route::view('/profile', 'app');
+
+Route::view('/transactions', 'app');
 Route::view('/statistics', 'app');
 Route::view('/history', 'app'); // Nueva ruta para el historial
+
 Route::view('/auth/google/callback', 'app'); // Callback de Google OAuth
+
