@@ -37,10 +37,10 @@ export default function GoogleCallbackPage() {
         // Actualizar contexto de autenticación
         login(userData);
         
-        // Redirigir al dashboard después de un pequeño delay
+        // Redirigir al dashboard después de un delay más largo para mostrar la pantalla
         setTimeout(() => {
           navigate("/dashboard");
-        }, 100);
+        }, 1500); // 2.5 segundos
       } catch (err) {
         console.error("Error al procesar callback de Google:", err);
         navigate("/login?error=" + encodeURIComponent("Error al procesar la autenticación"));
