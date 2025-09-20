@@ -346,7 +346,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
             'code' => 'required|string|size:6',
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()]
         ], [
             'email.required' => 'El correo electrónico es obligatorio',
             'email.email' => 'El formato del correo no es válido',
@@ -355,7 +355,9 @@ class AuthController extends Controller
             'code.size' => 'El código debe tener 6 dígitos',
             'password.required' => 'La contraseña es obligatoria',
             'password.confirmed' => 'Las contraseñas no coinciden',
-            'password.min' => 'La contraseña debe tener al menos 8 caracteres'
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres',
+            'password.mixed' => 'La contraseña debe contener mayúsculas y minúsculas',
+            'password.numbers' => 'La contraseña debe contener al menos un número'
         ]);
 
         if ($validator->fails()) {

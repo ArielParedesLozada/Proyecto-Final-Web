@@ -13,17 +13,19 @@ export default function ResetPasswordForm({ email, onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [codeVerified, setCodeVerified] = useState(false);
 
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
       const response = await verifyResetCode(email, code);
       if (response.success) {
+        setCodeVerified(true);
         setStep("reset");
-        setSuccess("Código verificado correctamente");
       } else {
         setError(response.message || "Código inválido");
       }
@@ -38,9 +40,16 @@ export default function ResetPasswordForm({ email, onBack }) {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
 
     if (password !== passwordConfirmation) {
       setError("Las contraseñas no coinciden");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres");
       setLoading(false);
       return;
     }
@@ -49,15 +58,16 @@ export default function ResetPasswordForm({ email, onBack }) {
       const response = await resetPassword(email, code, password, passwordConfirmation);
       if (response.success) {
         setSuccess("Contraseña restablecida exitosamente. Redirigiendo al login...");
+        setLoading(false); // Importante: detener el loading aquí
         setTimeout(() => {
           navigate("/login");
         }, 2000);
       } else {
         setError(response.message || "Error al restablecer la contraseña");
+        setLoading(false);
       }
     } catch (err) {
       setError(err.message || "Error al restablecer la contraseña");
-    } finally {
       setLoading(false);
     }
   };
@@ -118,6 +128,12 @@ export default function ResetPasswordForm({ email, onBack }) {
         </div>
       )}
 
+      {codeVerified && !success && (
+        <div className="mb-4 rounded-lg bg-green-50 text-green-700 px-3 py-2 text-sm">
+          Código verificado correctamente
+        </div>
+      )}
+
       {success && (
         <div className="mb-4 rounded-lg bg-green-50 text-green-700 px-3 py-2 text-sm">
           {success}
@@ -141,9 +157,10 @@ export default function ResetPasswordForm({ email, onBack }) {
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={success}
         />
         <p className="mt-1 text-xs text-gray-500">
-          Mínimo 8 caracteres, incluye letras, números y símbolos.
+          Mínimo 8 caracteres, incluye mayúsculas, minúsculas y números.
         </p>
       </label>
 
@@ -155,12 +172,13 @@ export default function ResetPasswordForm({ email, onBack }) {
           placeholder="••••••••"
           value={passwordConfirmation}
           onChange={(e) => setPasswordConfirmation(e.target.value)}
+          disabled={success}
         />
       </label>
 
       <button
         type="submit"
-        disabled={loading || success || !password || !passwordConfirmation}
+        disabled={loading || success || !password || !passwordConfirmation || password !== passwordConfirmation}
         className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Restableciendo..." : success ? "Redirigiendo..." : "Restablecer contraseña"}

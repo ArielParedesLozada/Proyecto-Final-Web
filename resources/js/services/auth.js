@@ -189,16 +189,32 @@ export async function verifyResetCode(email, code) {
 }
 
 // Restablecer contraseña con código de verificación
-export async function resetPassword(email, code, password, password_confirmation) {
+export async function resetPassword(email, code, password, passwordConfirmation) {
   try {
     const res = await fetch(`${BASE}/password/reset`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code, password, password_confirmation }),
+      body: JSON.stringify({ 
+        email, 
+        code, 
+        password, 
+        password_confirmation: passwordConfirmation 
+      }),
     });
     
     if (!res.ok) {
       const error = await res.json();
+      console.error("Reset password error response:", error);
+      
+      // Si hay errores de validación específicos, mostrarlos
+      if (error.errors) {
+        const errorMessages = [];
+        for (const field in error.errors) {
+          errorMessages.push(`${field}: ${error.errors[field].join(', ')}`);
+        }
+        throw new Error(`Errores de validación: ${errorMessages.join('; ')}`);
+      }
+      
       throw new Error(error.message || "Error al restablecer contraseña");
     }
     
