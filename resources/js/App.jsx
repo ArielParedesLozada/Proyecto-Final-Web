@@ -6,8 +6,11 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
+import GoalsPage from "./pages/GoalsPage";
 import ProfilePage from "./pages/ProfilePage";
 import AnalyticsPage from "./pages/StatsPage";
+import HistoryPage from "./pages/HistoryPage";
+
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }) {
@@ -94,9 +97,36 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
+
+      <Routes>
+        {/* Redirige / hacia /login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* Auth */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/history" element={<HistoryPage />} />
+
+        {/* Rutas futuras (ejemplo de placeholders) */}
+        {/* <Route path="/goals" element={<GoalsPage />} /> */}
+        {/* <Route path="/transactions" element={<TransactionsPage />} /> */}
+        {<Route path="/statistics" element={<AnalyticsPage />} />}
+        {/* <Route path="/history" element={<HistoryPage />} /> */}
+        {<Route path="/profile" element={<ProfilePage />} /> }
+
+        {/* Ruta por defecto si no coincide */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }
