@@ -188,6 +188,25 @@ export async function verifyResetCode(email, code) {
   }
 }
 
+// Obtener URL de Google OAuth
+export async function getGoogleAuthUrl() {
+  try {
+    const res = await fetch(`${BASE}/auth/google/url`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    
+    if (!res.ok) {
+      throw new Error("Error al obtener URL de Google");
+    }
+    
+    return await res.json();
+  } catch (error) {
+    console.error("Get Google URL error:", error);
+    throw error;
+  }
+}
+
 // Restablecer contraseña con código de verificación
 export async function resetPassword(email, code, password, passwordConfirmation) {
   try {

@@ -1,0 +1,24 @@
+# Configuración de Google OAuth - Agregar a tu archivo .env
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=tu_google_client_id_aqui
+GOOGLE_CLIENT_SECRET=tu_google_client_secret_aqui
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
+
+# Frontend URL (ya debería estar configurado)
+FRONTEND_URL=http://localhost:5173
+
+# Instrucciones detalladas:
+# 1. Ve a https://console.cloud.google.com/
+# 2. Crea un nuevo proyecto o selecciona uno existente
+# 3. Habilita la API de Google+ y Google OAuth2
+# 4. Ve a "Credenciales" y crea un "ID de cliente OAuth 2.0"
+# 5. Configura las URIs de redirección autorizadas:
+#    - http://localhost:8000/api/auth/google/callback (para desarrollo)
+#    - https://tudominio.com/api/auth/google/callback (para producción)
+# 6. Copia el Client ID y Client Secret a las variables de arriba
+# 7. Ejecuta: php artisan config:clear
+# 8. Reinicia tu servidor Laravel
+
+# IMPORTANTE: Después de configurar las credenciales, el botón "Ingresar con SSO (próximamente)" 
+# se convertirá en "Continuar con Google" y funcionará correctamente.

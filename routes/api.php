@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,11 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/reset-request', [AuthController::class, 'requestPasswordReset']);
 Route::post('/password/verify-code', [AuthController::class, 'verifyResetCode']);
 Route::post('/password/reset', [AuthController::class, 'resetPassword']);
+
+// Google OAuth routes
+Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
+Route::get('/auth/google/url', [GoogleAuthController::class, 'getGoogleUrl']);
 
 // Protected routes
 Route::middleware('jwt.auth')->group(function () {

@@ -3,6 +3,7 @@ import Input from "../common/Input";
 import Button from "../common/Button";
 import FormError from "../common/FormError";
 import PasswordInput from "./PasswordInput";
+import GoogleAuthButton from "../auth/GoogleAuthButton";
 import { login } from "../../services/auth";
 
 export default function LoginForm({ onSuccess }) {
@@ -113,6 +114,15 @@ export default function LoginForm({ onSuccess }) {
         <div className="relative flex justify-center">
           <span className="px-3 text-xs text-gray-500 dark:text-gray-400 bg-inherit">o</span>
         </div>
+      </div>
+
+      {/* Botón de Google OAuth */}
+      <div className="mb-4">
+        <GoogleAuthButton
+          onSuccess={onSuccess}
+          onError={(error) => setFormError(error)}
+          disabled={loading}
+        />
       </div>
 
 

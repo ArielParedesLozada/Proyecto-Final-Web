@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 import DashboardPage from "./pages/DashboardPage";
 import GoalsPage from "./pages/GoalsPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -75,6 +76,10 @@ function AppRoutes() {
             <ForgotPasswordPage />
           </AuthRoute>
         }
+      />
+      <Route
+        path="/auth/google/callback"
+        element={<GoogleCallbackPage />}
       />
 
       {/* Protegidas */}
