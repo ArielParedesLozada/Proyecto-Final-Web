@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
-import ResponsivePane from "../layouts/ResponsivePane"; // 👈 NUEVO
+import ResponsivePane from "../layouts/ResponsivePane";
+import { ToastProvider, useToast } from "../components/ui/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
+import { getProfile, updateProfile, changePassword } from "../services/profile";
 
 /* --- Subcomponentes pequeños para mantener orden --- */
 function SectionHeader({ title, subtitle, right }) {
@@ -25,11 +28,11 @@ function Field({ id, label, children, hint, className = "" }) {
   );
 }
 
-function AvatarReadOnly({ nameFull = "Elkinnn Lopez_10", initials = "EL" }) {
+function AvatarReadOnly({ nameFull = "Usuario", initials = "U" }) {
   return (
     <div className="flex items-center gap-4">
       <div className="h-16 w-16 rounded-full bg-primary-600 text-white grid place-items-center text-xl font-semibold ring-1 ring-black/5 shadow">
-        {initials}
+        {initials || "U"}
       </div>
       <div>
         <p className="font-semibold leading-tight">{nameFull}</p>
@@ -39,17 +42,54 @@ function AvatarReadOnly({ nameFull = "Elkinnn Lopez_10", initials = "EL" }) {
   );
 }
 
-/* --- Página --- */
-export default function ProfilePage() {
-  // Datos de la cuenta (ejemplo local; conecta con tu API cuando quieras)
-  const [firstName, setFirstName] = useState("Elkinnn");
-  const [lastName, setLastName] = useState("Lopez_10");
-  const [email, setEmail] = useState("usuario@correo.com");
+/* --- Página (inner) --- */
+function ProfilePageInner() {
+  const { user, setUser } = useAuth();
+  const toast = useToast();
+
+  // Estado datos de la cuenta
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
 
   // Cambio de contraseña
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
+
+  // Flags
+  const [saving, setSaving] = useState(false);
+  const [changing, setChanging] = useState(false);
+  const [loaded, setLoaded] = useState(false); // para evitar parpadeos
+
+  // Cargar perfil (silencioso, sin spinner global)
+  useEffect(() => {
+    (async () => {
+      try {
+        const p = await getProfile();
+        setFirstName(p.first_name || "");
+        setLastName(p.last_name || "");
+        setEmail(p.email || "");
+        // refrescamos el contexto para que el header muestre los cambios
+        setUser?.((prev) => ({
+          ...(prev || {}),
+          ...p,
+          full_name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
+        }));
+      } catch (e) {
+        toast.push({ tone: "error", title: "No se pudo cargar tu perfil" });
+      } finally {
+        setLoaded(true);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const initials = useMemo(() => {
+    const a = (firstName || "").trim()[0] || "";
+    const b = (lastName || "").trim()[0] || "";
+    return (a + b).toUpperCase() || "U";
+  }, [firstName, lastName]);
 
   const header = (
     <div>
@@ -60,24 +100,70 @@ export default function ProfilePage() {
     </div>
   );
 
-  const handleSaveAccount = (e) => {
+  // Guardar datos de la cuenta
+  async function handleSaveAccount(e) {
     e.preventDefault();
-    // TODO: integrar con API
-    alert("Datos de cuenta guardados (demo)");
-  };
+    setSaving(true);
+    try {
+      const updated = await updateProfile({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
+      });
+      // Reflejar en el contexto (Header)
+      setUser?.((prev) => ({
+        ...(prev || {}),
+        ...updated,
+        full_name: `${updated.first_name ?? ""} ${updated.last_name ?? ""}`.trim(),
+      }));
+      toast.push({ tone: "success", title: "Cambios guardados" });
+    } catch (err) {
+      const msg = err?.response?.data?.message || "No se pudo guardar.";
+      toast.push({ tone: "error", title: "Error al guardar", message: msg });
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  const handleChangePassword = (e) => {
+  // Cambiar contraseña
+  async function handleChangePassword(e) {
     e.preventDefault();
     if (!newPwd || newPwd !== confirmPwd) {
-      alert("Las contraseñas no coinciden.");
+      toast.push({ tone: "warning", title: "Las contraseñas no coinciden" });
       return;
     }
-    // TODO: integrar con API
-    alert("Contraseña actualizada (demo)");
-    setCurrentPwd("");
-    setNewPwd("");
-    setConfirmPwd("");
-  };
+    setChanging(true);
+    try {
+      await changePassword({
+        current_password: currentPwd,
+        password: newPwd,
+        password_confirmation: confirmPwd,
+      });
+      toast.push({ tone: "success", title: "Contraseña actualizada" });
+      setCurrentPwd("");
+      setNewPwd("");
+      setConfirmPwd("");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "No se pudo actualizar la contraseña.";
+      toast.push({ tone: "error", title: "Error", message: msg });
+    } finally {
+      setChanging(false);
+    }
+  }
+
+  // Si prefieres no mostrar nada hasta cargar, puedes quitar este bloque y
+  // renderizar directamente; yo dejo un card discreto:
+  if (!loaded) {
+    return (
+      <AppLayout header={header}>
+        <ResponsivePane>
+          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
+            Cargando perfil…
+          </div>
+        </ResponsivePane>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout header={header}>
@@ -90,7 +176,7 @@ export default function ProfilePage() {
             <section className="fin-card p-5 md:p-6">
               <SectionHeader title="Identidad" />
               <div className="mt-4">
-                <AvatarReadOnly nameFull={`${firstName} ${lastName}`} initials="EL" />
+                <AvatarReadOnly nameFull={`${firstName} ${lastName}`.trim() || "Usuario"} initials={initials} />
               </div>
             </section>
           </aside>
@@ -103,8 +189,8 @@ export default function ProfilePage() {
                 title="Datos de la cuenta"
                 subtitle="Información básica para identificar tu perfil."
                 right={
-                  <button type="submit" className="btn btn-primary">
-                    Guardar cambios
+                  <button type="submit" className="btn btn-primary disabled:opacity-60" disabled={saving}>
+                    {saving ? "Guardando…" : "Guardar cambios"}
                   </button>
                 }
               />
@@ -138,7 +224,6 @@ export default function ProfilePage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="usuario@correo.com"
-                    readOnly
                   />
                 </Field>
               </div>
@@ -198,8 +283,8 @@ export default function ProfilePage() {
                 >
                   Limpiar
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Actualizar contraseña
+                <button type="submit" className="btn btn-primary disabled:opacity-60" disabled={changing}>
+                  {changing ? "Actualizando…" : "Actualizar contraseña"}
                 </button>
               </div>
             </form>
@@ -207,5 +292,13 @@ export default function ProfilePage() {
         </div>
       </ResponsivePane>
     </AppLayout>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <ToastProvider placement="top-right">
+      <ProfilePageInner />
+    </ToastProvider>
   );
 }
