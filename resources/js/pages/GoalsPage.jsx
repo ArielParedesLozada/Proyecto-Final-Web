@@ -8,6 +8,9 @@ import Pagination from "../components/ui/Pagination";
 import ResponsivePane from "../layouts/ResponsivePane";
 import Empty from "../components/ui/Empty";
 
+// Toasts
+import { ToastProvider, useToast } from "../components/ui/ToastProvider";
+
 // Servicios reales
 import {
   listGoals,
@@ -19,7 +22,7 @@ import {
 import { addTransaction } from "../services/transactions";
 import { goalApiToUi, goalUiToApi } from "../services/adapters";
 
-export default function GoalsPage() {
+function GoalsPageInner() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,23 +43,20 @@ export default function GoalsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 4;
   const [total, setTotal] = useState(0);
-  const [lastPage, setLastPage] = useState(1); // preferimos lo que diga el back
+  const [lastPage, setLastPage] = useState(1);
+
+  const toast = useToast();
 
   async function load(p = page) {
     setLoading(true);
     try {
       const res = await listGoals({ page: p, pageSize });
       const rows = (res.data ?? []).map(goalApiToUi);
-
       setGoals(rows);
       setTotal(res.total ?? rows.length);
-      // si el back manda last_page, úsalo; si no, calculamos
       const lp =
         res.last_page ??
-        Math.max(
-          1,
-          Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize))
-        );
+        Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
       setLastPage(lp);
     } finally {
       setLoading(false);
@@ -70,26 +70,35 @@ export default function GoalsPage() {
 
   // Crear
   async function handleCreateGoal(payload) {
-    await createGoal(goalUiToApi(payload));
-    setModalOpen(false);
-    setPage(1);
-    await load(1);
+    try {
+      await createGoal(goalUiToApi(payload));
+      toast.push({ tone: "success", title: "Meta creada", message: "Tu meta se guardó correctamente." });
+      setModalOpen(false);
+      setPage(1);
+      await load(1);
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error al crear", message: e?.message || "No se pudo crear la meta." });
+    }
   }
 
-  // Editar (abrir modal con data)
+  // Editar
   function handleEditGoal(goal) {
     setEditingGoal(goal);
     setModalMode("edit");
     setModalOpen(true);
   }
 
-  // Guardar edición
   async function handleSubmitEdit(payload) {
     const { id, ...rest } = payload;
-    await updateGoal(id, goalUiToApi(rest));
-    setModalOpen(false);
-    setEditingGoal(null);
-    await load(page);
+    try {
+      await updateGoal(id, goalUiToApi(rest));
+      toast.push({ tone: "success", title: "Cambios guardados" });
+      setModalOpen(false);
+      setEditingGoal(null);
+      await load(page);
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error al actualizar", message: e?.message || "No se pudo actualizar la meta." });
+    }
   }
 
   // Eliminar
@@ -100,16 +109,19 @@ export default function GoalsPage() {
 
   async function confirmDelete() {
     if (toDeleteId == null) return;
-    await deleteGoal(toDeleteId);
-    setConfirmOpen(false);
-
-    // Si eliminamos el último ítem de la página, retrocedemos de ser necesario
-    const nextPage = Math.min(page, lastPage); // nos aseguramos de no pasar el límite actual
-    // recargamos; si el back reduce last_page, load actualizará lastPage
-    await load(nextPage);
-    setPage((p) => Math.min(p, lastPage));
+    try {
+      await deleteGoal(toDeleteId);
+      toast.push({ tone: "success", title: "Meta eliminada" });
+      setConfirmOpen(false);
+      const nextPage = Math.min(page, lastPage);
+      await load(nextPage);
+      setPage((p) => Math.min(p, lastPage));
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error al eliminar", message: e?.message || "No se pudo eliminar la meta." });
+    }
   }
 
+  // Ingreso / Gasto
   function handleAddTx(goal) {
     setTxGoal(goal);
     setTxOpen(true);
@@ -122,26 +134,18 @@ export default function GoalsPage() {
     setGoals((prev) =>
       prev.map((g) =>
         g.id === goalId
-          ? {
-            ...g,
-            currentAmount: Math.max(
-              0,
-              Math.min(g.targetAmount, (g.currentAmount || 0) + delta)
-            ),
-          }
+          ? { ...g, currentAmount: Math.max(0, Math.min(g.targetAmount, (g.currentAmount || 0) + delta)) }
           : g
       )
     );
 
     try {
-      // Guardar en el backend
       await addTransaction(goalId, {
-        type, // 'income' | 'expense'
+        type,
         is_fixed: kind === "Fijo",
         amount: Number(amount),
       });
 
-      // Refrescar solo la meta 
       try {
         const detail = await getGoal(goalId);
         const updated = goalApiToUi(detail.data);
@@ -149,22 +153,22 @@ export default function GoalsPage() {
       } catch {
         await load(page);
       }
+
+      toast.push({
+        tone: "success",
+        title: type === "income" ? "Ingreso registrado" : "Gasto registrado",
+        message: `${type === "income" ? "+" : "-"}$${Number(amount).toLocaleString()}`,
+      });
     } catch (e) {
       // revertir optimistic UI
       setGoals((prev) =>
         prev.map((g) =>
           g.id === goalId
-            ? {
-              ...g,
-              currentAmount: Math.max(
-                0,
-                Math.min(g.targetAmount, (g.currentAmount || 0) - delta)
-              ),
-            }
+            ? { ...g, currentAmount: Math.max(0, Math.min(g.targetAmount, (g.currentAmount || 0) - delta)) }
             : g
         )
       );
-      console.error(e);
+      toast.push({ tone: "error", title: "Error al guardar", message: e?.message || "No se pudo registrar el movimiento." });
     } finally {
       setTxOpen(false);
       setTxGoal(null);
@@ -183,7 +187,6 @@ export default function GoalsPage() {
 
   return (
     <AppLayout header={header}>
-      {/* Pane reutilizable: toolbar fija + contenido scrolleable (solo en XL) */}
       <ResponsivePane
         toolbar={
           <div className="flex items-center justify-end">
@@ -201,9 +204,7 @@ export default function GoalsPage() {
         }
       >
         {loading ? (
-          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
-            Cargando…
-          </div>
+          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
         ) : goals.length === 0 ? (
           <Empty
             title="Aún no tienes metas de ahorro"
@@ -211,14 +212,8 @@ export default function GoalsPage() {
           />
         ) : (
           <>
-            <GoalGrid
-              goals={goals}
-              onAddTx={handleAddTx}
-              onEdit={handleEditGoal}
-              onDelete={askDelete}
-            />
+            <GoalGrid goals={goals} onAddTx={handleAddTx} onEdit={handleEditGoal} onDelete={askDelete} />
 
-            {/* Paginación usando lastPage del backend */}
             <Pagination
               page={page}
               totalPages={lastPage}
@@ -229,7 +224,6 @@ export default function GoalsPage() {
         )}
       </ResponsivePane>
 
-      {/* Modal Crear / Editar */}
       <NewGoalModal
         open={modalOpen}
         onClose={() => {
@@ -241,7 +235,6 @@ export default function GoalsPage() {
         initialGoal={editingGoal}
       />
 
-      {/* Confirmación de eliminación */}
       <ConfirmModal
         open={confirmOpen}
         title="Eliminar meta"
@@ -252,13 +245,16 @@ export default function GoalsPage() {
         onCancel={() => setConfirmOpen(false)}
       />
 
-      {/* Modal Ingreso/Gasto */}
-      <AddTxModal
-        open={txOpen}
-        onClose={() => setTxOpen(false)}
-        goal={txGoal}
-        onSubmit={handleSaveTx}
-      />
+      <AddTxModal open={txOpen} onClose={() => setTxOpen(false)} goal={txGoal} onSubmit={handleSaveTx} />
     </AppLayout>
+  );
+}
+
+export default function GoalsPage() {
+  // Montamos el provider aquí para que solo esta página lo use.
+  return (
+    <ToastProvider placement="top-right">
+      <GoalsPageInner />
+    </ToastProvider>
   );
 }
