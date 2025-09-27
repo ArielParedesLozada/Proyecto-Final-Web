@@ -3,12 +3,8 @@ import Input from "../common/Input";
 import Button from "../common/Button";
 import FormError from "../common/FormError";
 import PasswordInput from "./PasswordInput";
-
-async function fakeLogin({ email, password }) {
-  await new Promise((r) => setTimeout(r, 700));
-  if (email === "fail@demo.com") throw new Error("invalid");
-  return { token: "demo-token", email };
-}
+import GoogleAuthButton from "../auth/GoogleAuthButton";
+import { login } from "../../services/auth";
 
 export default function LoginForm({ onSuccess }) {
   const [values, setValues] = useState({ email: "", password: "", remember: false });
@@ -39,10 +35,14 @@ export default function LoginForm({ onSuccess }) {
     setLoading(true);
     setFormError("");
     try {
-      await fakeLogin(values);
-      onSuccess?.();
-    } catch {
-      setFormError("Credenciales inválidas. Inténtalo nuevamente.");
+      const response = await login(values.email, values.password);
+      if (response && response.success) {
+        onSuccess?.(response);
+      } else {
+        setFormError(response?.message || "Error al iniciar sesión");
+      }
+    } catch (error) {
+      setFormError(error.message || "Credenciales inválidas. Inténtalo nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -116,15 +116,14 @@ export default function LoginForm({ onSuccess }) {
         </div>
       </div>
 
-
-      {/* ACCIÓN SECUNDARIA */}
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => alert("Demo: SSO pronto")}
-      >
-        Ingresar con SSO (próximamente)
-      </Button>
+      {/* Botón de Google OAuth */}
+      <div className="mb-4">
+        <GoogleAuthButton
+          onSuccess={onSuccess}
+          onError={(error) => setFormError(error)}
+          disabled={loading}
+        />
+      </div>
 
       {/* Registro */}
       <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">

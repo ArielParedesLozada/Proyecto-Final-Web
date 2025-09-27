@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import UserAvatar from "../components/ui/UserAvatar";
+import { useAuth } from "../contexts/AuthContext";
 
 const NavItem = ({ to, icon, label, active, collapsed }) => {
   const base =
@@ -25,6 +26,7 @@ const NavItem = ({ to, icon, label, active, collapsed }) => {
 
 export default function AppLayout({ children, header }) {
   const { pathname } = useLocation();
+  const { user, logout } = useAuth();
 
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("fs_sidebar_collapsed") === "true"
@@ -45,13 +47,13 @@ export default function AppLayout({ children, header }) {
     []
   );
 
-  function handleLogout() {
+  const handleLogout = async () => {
     try {
-      localStorage.removeItem("auth_token");
-    } finally {
-      window.location.href = "/login";
+      await logout();
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
     }
-  }
+  };
 
   const SidebarContent = (
     <div className="fin-card h-full p-4 flex flex-col">
@@ -197,7 +199,10 @@ export default function AppLayout({ children, header }) {
                 </button>
                 {header ?? null}
               </div>
-              <UserAvatar name="ElkinnnLopez_10" initials="EL" />
+              <UserAvatar 
+                name={user?.full_name || user?.first_name || "Usuario"} 
+                initials={user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}` : "U"} 
+              />
             </header>
 
             {/* Contenido de la página: ocupa el resto */}
