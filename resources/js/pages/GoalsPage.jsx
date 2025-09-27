@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import GoalGrid from "../components/goals/GoalGrid";
 import NewGoalModal from "../components/goals/NewGoalModal";
-import EmptyGoals from "../components/goals/EmptyGoals";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AddTxModal from "../components/goals/AddTxModal";
 import Pagination from "../components/ui/Pagination";
 import ResponsivePane from "../layouts/ResponsivePane";
+import Empty from "../components/ui/Empty";
 
 // Servicios reales
 import {
@@ -191,13 +191,7 @@ export default function GoalsPage() {
             Cargando…
           </div>
         ) : goals.length === 0 ? (
-          <EmptyGoals
-            onCreate={() => {
-              setModalMode("create");
-              setEditingGoal(null);
-              setModalOpen(true);
-            }}
-          />
+          <Empty title="Aún no tienes metas de ahorro" subtitle="Crea tu primera meta para comenzar a registrar tu progreso financiero." />
         ) : (
           <>
             <GoalGrid
