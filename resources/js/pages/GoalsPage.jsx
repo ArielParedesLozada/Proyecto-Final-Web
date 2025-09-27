@@ -46,11 +46,8 @@ export default function GoalsPage() {
     setLoading(true);
     try {
       const res = await listGoals({ page: p, pageSize });
-      // Esperado: { message, data: [...] } (ajusta si tu back devuelve otra forma)
       const rows = (res.data ?? []).map(goalApiToUi);
       setGoals(rows);
-
-      // Si el back devuelve total, úsalo; si no, usa la cantidad recibida
       setTotal(res.total ?? rows.length);
     } finally {
       setLoading(false);
@@ -101,36 +98,62 @@ export default function GoalsPage() {
     await load(next);
   }
 
-  // ===== Ingreso / Gasto =====
   function handleAddTx(goal) {
     setTxGoal(goal);
     setTxOpen(true);
   }
 
   async function handleSaveTx({ goalId, type, kind, amount }) {
+    const delta = type === "income" ? Number(amount) : -Number(amount);
+
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId
+          ? {
+            ...g,
+            currentAmount: Math.max(
+              0,
+              Math.min(g.targetAmount, (g.currentAmount || 0) + delta)
+            ),
+          }
+          : g
+      )
+    );
+
     try {
-      // Crear transacción real (el back setea occurred_on hoy)
+      // 2) Guardar en el backend
       await addTransaction(goalId, {
-        type,                     // 'income' | 'expense'
+        type,                 // 'income' | 'expense'
         is_fixed: kind === "Fijo",
         amount: Number(amount),
-        // note: opcional
       });
 
-      // Refrescar solo la meta afectada (si tienes GET /goals/{id})
       try {
         const detail = await getGoal(goalId);
         const updated = goalApiToUi(detail.data);
         setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
       } catch {
-        // Si no tienes endpoint de detalle/summary, recarga todo
+        // Si no hay endpoint de detalle usable, recarga toda la lista
         await load(page);
       }
-
+    } catch (e) {
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === goalId
+            ? {
+              ...g,
+              currentAmount: Math.max(
+                0,
+                Math.min(g.targetAmount, (g.currentAmount || 0) - delta)
+              ),
+            }
+            : g
+        )
+      );
+      console.error(e);
+    } finally {
       setTxOpen(false);
       setTxGoal(null);
-    } catch (e) {
-      console.error(e);
     }
   }
 

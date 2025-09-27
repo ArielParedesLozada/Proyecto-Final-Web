@@ -11,16 +11,49 @@ use Illuminate\Http\Request;
 
 class GoalController extends Controller
 {
+    private function loadGoalWithSums(int $goalId)
+    {
+        $goal = Goal::where('id', $goalId)
+            ->where('user_id', Auth::id())
+            ->withSum(['transactions as income_sum' => function ($q) {
+                $q->where('type', 'income');
+            }], 'amount')
+            ->withSum(['transactions as expense_sum' => function ($q) {
+                $q->where('type', 'expense');
+            }], 'amount')
+            ->firstOrFail();
+
+        // ingresos - gastos (como float)
+        $goal->accumulated = (float) (($goal->income_sum ?? 0) - ($goal->expense_sum ?? 0));
+
+        return $goal;
+    }
+
     /**
      * Listar metas del usuario autenticado
      */
-    public function index()
+    public function index(Request $request)
     {
-        $goals = Goal::where('user_id', Auth::id())->get();
+        $userId = Auth::id();
+
+        $goals = Goal::where('user_id', $userId)
+            ->withSum(['transactions as income_sum' => function ($q) {
+                $q->where('type', 'income');
+            }], 'amount')
+            ->withSum(['transactions as expense_sum' => function ($q) {
+                $q->where('type', 'expense');
+            }], 'amount')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($g) {
+                $g->accumulated = (float) (($g->income_sum ?? 0) - ($g->expense_sum ?? 0));
+                return $g;
+            });
 
         return response()->json([
-            'message' => 'Metas obtenidas correctamente',
-            'data'    => $goals
+            'message' => 'OK',
+            'data'    => $goals,
+            'total'   => $goals->count(),
         ]);
     }
 
@@ -29,11 +62,11 @@ class GoalController extends Controller
      */
     public function show($id)
     {
-        $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
+        $goal = $this->loadGoalWithSums((int) $id);
 
         return response()->json([
-            'message' => 'Meta obtenida correctamente',
-            'data'    => $goal
+            'message' => 'OK',
+            'data'    => $goal,
         ]);
     }
 
@@ -51,6 +84,9 @@ class GoalController extends Controller
             'description'   => $request->description,
             'status'        => 'active',
         ]);
+
+        // Devolver enriquecida (con accumulated)
+        $goal = $this->loadGoalWithSums($goal->id);
 
         return response()->json([
             'message' => 'Meta creada correctamente',
@@ -74,6 +110,9 @@ class GoalController extends Controller
             'status'
         ]));
 
+        // Devolver enriquecida (con accumulated)
+        $goal = $this->loadGoalWithSums($goal->id);
+
         return response()->json([
             'message' => 'Meta actualizada correctamente',
             'data'    => $goal
@@ -93,7 +132,9 @@ class GoalController extends Controller
         ]);
     }
 
-    // Agregar Ingreso/Gasto
+    /**
+     * Agregar Ingreso/Gasto
+     */
     public function addTransaction(StoreTransactionRequest $request, $goalId)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($goalId);
@@ -101,37 +142,46 @@ class GoalController extends Controller
         $tx = Transaction::create([
             'user_id'     => Auth::id(),
             'goal_id'     => $goal->id,
-            'type'        => $request->type,
-            'is_fixed'    => $request->boolean('is_fixed'),
+            'type'        => $request->type,                 
+            'is_fixed'    => $request->boolean('is_fixed'),  
             'amount'      => $request->amount,
             'occurred_on' => now()->toDateString(),
         ]);
 
         // Recalcular progreso (ingresos - gastos)
         $totals = Transaction::selectRaw("
-        SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) as inc,
-        SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as exp
-    ")->where('goal_id', $goal->id)->first();
+            SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) as inc,
+            SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as exp
+        ")->where('goal_id', $goal->id)->first();
 
-        $accumulated = ($totals->inc ?? 0) - ($totals->exp ?? 0);
+        $accumulated = (float) (($totals->inc ?? 0) - ($totals->exp ?? 0));
         $progressPct = min(100, (int) round(($accumulated / max($goal->target_amount, 1)) * 100));
 
-        // Si llegó a 100% antes o en la fecha, completa
-        if ($progressPct >= 100 && now()->toDateString() <= $goal->target_date && $goal->status !== 'completed') {
+        // Si llegó a 100% antes o en la fecha, completa (considera target_date null)
+        if (
+            $progressPct >= 100
+            && (is_null($goal->target_date) || now()->toDateString() <= $goal->target_date)
+            && $goal->status !== 'completed'
+        ) {
             $goal->status = 'completed';
             $goal->save();
         }
 
+        // Devolver meta enriquecida para que el front no rebote
+        $goal = $this->loadGoalWithSums($goal->id);
+
         return response()->json([
             'message'      => 'Movimiento registrado',
             'transaction'  => $tx,
-            'goal'         => $goal->fresh(),
+            'goal'         => $goal,
             'accumulated'  => round($accumulated, 2),
             'progress_pct' => $progressPct
         ], 201);
     }
 
-    // Listar movimientos de una meta
+    /**
+     * Listar movimientos de una meta
+     */
     public function listTransactions($goalId)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($goalId);
@@ -147,7 +197,9 @@ class GoalController extends Controller
         ]);
     }
 
-    // Eliminar movimiento y recalcular
+    /**
+     * Eliminar movimiento y recalcular
+     */
     public function deleteTransaction($id)
     {
         $tx = Transaction::where('user_id', Auth::id())->findOrFail($id);
@@ -155,21 +207,25 @@ class GoalController extends Controller
         $tx->delete();
 
         $totals = Transaction::selectRaw("
-        SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) as inc,
-        SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as exp
-    ")->where('goal_id', $goal->id)->first();
+            SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) as inc,
+            SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as exp
+        ")->where('goal_id', $goal->id)->first();
 
-        $accumulated = ($totals->inc ?? 0) - ($totals->exp ?? 0);
+        $accumulated = (float) (($totals->inc ?? 0) - ($totals->exp ?? 0));
         $progressPct = min(100, (int) round(($accumulated / max($goal->target_amount, 1)) * 100));
 
-        // Si estaba complete y bajó de 100, vuelve a active
+        // Si estaba completed y bajó de 100, vuelve a active
         if ($goal->status === 'completed' && $progressPct < 100) {
             $goal->status = 'active';
             $goal->save();
         }
 
+        // Devolver meta enriquecida para actualizar UI
+        $goal = $this->loadGoalWithSums($goal->id);
+
         return response()->json([
             'message'      => 'Movimiento eliminado',
+            'goal'         => $goal,
             'accumulated'  => round($accumulated, 2),
             'progress_pct' => $progressPct
         ]);

@@ -47,7 +47,12 @@ export function goalApiToUi(api) {
         category: CAT_API_TO_UI[api.category] ?? "Otros",
         description: api.description ?? "",
         targetAmount: Number(api.target_amount),
-        currentAmount: Number(api.accumulated ?? 0),
+        currentAmount: Number(
+            api.accumulated ??
+            api.current_amount ??
+            api.currentAmount ??
+            0
+        ),
         status: STATUS_API_TO_UI[api.status] ?? "Activa",
         createdAt: api.created_at,
         deadline: api.target_date, // YYYY-MM-DD
