@@ -125,16 +125,6 @@ export default function LoginForm({ onSuccess }) {
         />
       </div>
 
-
-      {/* ACCIÓN SECUNDARIA */}
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => alert("Demo: SSO pronto")}
-      >
-        Ingresar con SSO (próximamente)
-      </Button>
-
       {/* Registro */}
       <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
         ¿No tienes cuenta?{" "}

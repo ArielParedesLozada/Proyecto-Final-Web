@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -101,7 +102,7 @@ class GoogleAuthController extends Controller
                 'url' => $url
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al obtener URL de Google OAuth: ' . $e->getMessage());
+            Log::error('Error al obtener URL de Google OAuth: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
