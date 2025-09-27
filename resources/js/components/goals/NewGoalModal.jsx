@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ScrollArea from "../ui/ScrollArea";
-
-const categories = ["Emergencia", "Salud", "Tecnología", "Vehículo", "Otro"];
+import { CATEGORIES_UI as categories } from "../../services/adapters";
 
 export default function NewGoalModal({
   open,
@@ -78,7 +77,7 @@ export default function NewGoalModal({
 
     const base = {
       name: form.name.trim(),
-      category: form.category,
+      category: form.category, // etiqueta ES; el adaptador la convertirá a enum API
       description: form.description.trim() || null,
       targetAmount: Number(form.targetAmount),
       deadline: form.deadline, // YYYY-MM-DD
@@ -122,7 +121,7 @@ export default function NewGoalModal({
           </button>
         </div>
 
-        {/* Body con ScrollArea (antes era un div con overflow-y-auto) */}
+        {/* Body con ScrollArea */}
         <ScrollArea maxHeight="85vh" className="px-5 pt-3 pb-5">
           <div ref={dialogRef}>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">

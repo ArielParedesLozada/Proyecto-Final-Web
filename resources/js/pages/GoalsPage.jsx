@@ -5,9 +5,19 @@ import NewGoalModal from "../components/goals/NewGoalModal";
 import EmptyGoals from "../components/goals/EmptyGoals";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AddTxModal from "../components/goals/AddTxModal";
-import { GoalsAPI } from "../services/API";
 import Pagination from "../components/ui/Pagination";
 import ResponsivePane from "../layouts/ResponsivePane";
+
+// Servicios reales
+import {
+  listGoals,
+  createGoal,
+  updateGoal,
+  deleteGoal,
+  getGoal,
+} from "../services/goals";
+import { addTransaction } from "../services/transactions";
+import { goalApiToUi, goalUiToApi } from "../services/adapters";
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState([]);
@@ -26,7 +36,7 @@ export default function GoalsPage() {
   const [txOpen, setTxOpen] = useState(false);
   const [txGoal, setTxGoal] = useState(null);
 
-  // paginación
+  // paginación (UI)
   const [page, setPage] = useState(1);
   const pageSize = 4;
   const [total, setTotal] = useState(0);
@@ -35,9 +45,13 @@ export default function GoalsPage() {
   async function load(p = page) {
     setLoading(true);
     try {
-      const res = await GoalsAPI.list({ page: p, pageSize });
-      setGoals(res.data);
-      setTotal(res.total);
+      const res = await listGoals({ page: p, pageSize });
+      // Esperado: { message, data: [...] } (ajusta si tu back devuelve otra forma)
+      const rows = (res.data ?? []).map(goalApiToUi);
+      setGoals(rows);
+
+      // Si el back devuelve total, úsalo; si no, usa la cantidad recibida
+      setTotal(res.total ?? rows.length);
     } finally {
       setLoading(false);
     }
@@ -50,22 +64,23 @@ export default function GoalsPage() {
 
   // Crear
   async function handleCreateGoal(payload) {
-    await GoalsAPI.create(payload);
+    await createGoal(goalUiToApi(payload));
     setModalOpen(false);
     setPage(1);
     await load(1);
   }
 
-  // Editar
+  // Editar (abrir modal con data)
   function handleEditGoal(goal) {
     setEditingGoal(goal);
     setModalMode("edit");
     setModalOpen(true);
   }
 
+  // Guardar edición
   async function handleSubmitEdit(payload) {
     const { id, ...rest } = payload;
-    await GoalsAPI.update(id, rest);
+    await updateGoal(id, goalUiToApi(rest));
     setModalOpen(false);
     setEditingGoal(null);
     await load(page);
@@ -79,7 +94,7 @@ export default function GoalsPage() {
 
   async function confirmDelete() {
     if (toDeleteId == null) return;
-    await GoalsAPI.remove(toDeleteId);
+    await deleteGoal(toDeleteId);
     setConfirmOpen(false);
     const next = Math.min(page, Math.ceil((total - 1) / pageSize) || 1);
     setPage(next);
@@ -92,18 +107,28 @@ export default function GoalsPage() {
     setTxOpen(true);
   }
 
-  async function handleSaveTx({ goalId, type, amount }) {
+  async function handleSaveTx({ goalId, type, kind, amount }) {
     try {
-      const goal = goals.find((g) => g.id === goalId);
-      if (!goal) return;
+      // Crear transacción real (el back setea occurred_on hoy)
+      await addTransaction(goalId, {
+        type,                     // 'income' | 'expense'
+        is_fixed: kind === "Fijo",
+        amount: Number(amount),
+        // note: opcional
+      });
 
-      const delta = type === "income" ? amount : -amount;
-      const newAmount = Math.max(0, (goal.currentAmount ?? 0) + delta);
+      // Refrescar solo la meta afectada (si tienes GET /goals/{id})
+      try {
+        const detail = await getGoal(goalId);
+        const updated = goalApiToUi(detail.data);
+        setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
+      } catch {
+        // Si no tienes endpoint de detalle/summary, recarga todo
+        await load(page);
+      }
 
-      await GoalsAPI.update(goalId, { currentAmount: newAmount });
       setTxOpen(false);
       setTxGoal(null);
-      await load(page);
     } catch (e) {
       console.error(e);
     }
