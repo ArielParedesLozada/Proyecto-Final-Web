@@ -1,4 +1,3 @@
-// resources/js/components/ui/UserAvatar.jsx
 export default function UserAvatar({
   name = "ElkinnnLopez_10",
   initials = "EL",

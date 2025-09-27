@@ -1,4 +1,3 @@
-// Usa el cliente HTTP compartido (axios) y la misma llave de token
 import api, { BASE, TOKEN_KEY } from "./http";
 
 const getToken = () => localStorage.getItem(TOKEN_KEY);

@@ -47,6 +47,7 @@ function AvatarReadOnly({ nameFull = "Usuario", initials = "U" }) {
 function ProfilePageInner() {
   const { user, setUser } = useAuth();
   const toast = useToast();
+  const { updateUser } = useAuth();
 
   // Estado datos de la cuenta
   const [firstName, setFirstName] = useState("");
@@ -104,17 +105,26 @@ function ProfilePageInner() {
   async function handleSaveAccount(e) {
     e.preventDefault();
     setSaving(true);
+
+    const nextFirst = firstName.trim();
+    const nextLast = lastName.trim();
+    const nextEmail = email.trim();
+
     try {
       const updated = await updateProfile({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim(),
+        first_name: nextFirst,
+        last_name: nextLast,
+        email: nextEmail,
       });
-      setUser?.((prev) => ({
-        ...(prev || {}),
-        ...updated,
-        full_name: `${updated.first_name ?? ""} ${updated.last_name ?? ""}`.trim(),
-      }));
+
+      updateUser({
+        ...(updated || {}),
+        first_name: nextFirst,
+        last_name: nextLast,
+        email: nextEmail,
+        full_name: `${nextFirst} ${nextLast}`.trim(),
+      });
+
       toast.push({ tone: "success", title: "Cambios guardados" });
     } catch (err) {
       const msg = err?.response?.data?.message || "No se pudo guardar.";

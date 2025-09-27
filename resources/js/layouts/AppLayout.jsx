@@ -97,6 +97,21 @@ export default function AppLayout({ children, header }) {
     </div>
   );
 
+  const displayName = useMemo(() => {
+    const fn = (user?.first_name || '').trim();
+    const ln = (user?.last_name || '').trim();
+    const full = (user?.full_name || '').trim();
+    return full || [fn, ln].filter(Boolean).join(' ').trim() || fn || "Usuario";
+  }, [user?.first_name, user?.last_name, user?.full_name]);
+
+  const initials = useMemo(() => {
+    const fn = (user?.first_name || '').trim();
+    const ln = (user?.last_name || '').trim();
+    if (fn || ln) return `${fn[0] || ''}${ln[0] || ''}`.toUpperCase() || "U";
+    const parts = (user?.full_name || '').trim().split(/\s+/);
+    return `${parts[0]?.[0] || ''}${parts[1]?.[0] || ''}`.toUpperCase() || "U";
+  }, [user?.first_name, user?.last_name, user?.full_name]);
+
   return (
     <div className="flex h-auto xl:h-[100dvh]">
 
@@ -199,10 +214,9 @@ export default function AppLayout({ children, header }) {
                 </button>
                 {header ?? null}
               </div>
-              <UserAvatar 
-                name={user?.full_name || user?.first_name || "Usuario"} 
-                initials={user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}` : "U"} 
-              />
+
+              {/* Avatar que reacciona al instante */}
+              <UserAvatar name={displayName} initials={initials} />
             </header>
 
             {/* Contenido de la página: ocupa el resto */}
