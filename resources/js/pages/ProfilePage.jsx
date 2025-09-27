@@ -4,6 +4,7 @@ import ResponsivePane from "../layouts/ResponsivePane";
 import { ToastProvider, useToast } from "../components/ui/ToastProvider";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfile, updateProfile, changePassword } from "../services/profile";
+import PasswordInput from "../components/login/PasswordInput";
 
 /* --- Subcomponentes pequeños para mantener orden --- */
 function SectionHeader({ title, subtitle, right }) {
@@ -60,9 +61,9 @@ function ProfilePageInner() {
   // Flags
   const [saving, setSaving] = useState(false);
   const [changing, setChanging] = useState(false);
-  const [loaded, setLoaded] = useState(false); // para evitar parpadeos
+  const [loaded, setLoaded] = useState(false);
 
-  // Cargar perfil (silencioso, sin spinner global)
+  // Cargar perfil
   useEffect(() => {
     (async () => {
       try {
@@ -70,7 +71,6 @@ function ProfilePageInner() {
         setFirstName(p.first_name || "");
         setLastName(p.last_name || "");
         setEmail(p.email || "");
-        // refrescamos el contexto para que el header muestre los cambios
         setUser?.((prev) => ({
           ...(prev || {}),
           ...p,
@@ -110,7 +110,6 @@ function ProfilePageInner() {
         last_name: lastName.trim(),
         email: email.trim(),
       });
-      // Reflejar en el contexto (Header)
       setUser?.((prev) => ({
         ...(prev || {}),
         ...updated,
@@ -144,15 +143,14 @@ function ProfilePageInner() {
       setNewPwd("");
       setConfirmPwd("");
     } catch (err) {
-      const msg = err?.response?.data?.message || "No se pudo actualizar la contraseña.";
+      const msg =
+        err?.response?.data?.message || "No se pudo actualizar la contraseña.";
       toast.push({ tone: "error", title: "Error", message: msg });
     } finally {
       setChanging(false);
     }
   }
 
-  // Si prefieres no mostrar nada hasta cargar, puedes quitar este bloque y
-  // renderizar directamente; yo dejo un card discreto:
   if (!loaded) {
     return (
       <AppLayout header={header}>
@@ -167,21 +165,22 @@ function ProfilePageInner() {
 
   return (
     <AppLayout header={header}>
-      {/* Igual que en Goals: en móvil fluye; en XL, scroll interno invisible */}
       <ResponsivePane toolbar={null}>
-        {/* Layout principal */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-          {/* Columna izquierda: Identidad */}
+          {/* Columna izquierda */}
           <aside className="xl:col-span-1">
             <section className="fin-card p-5 md:p-6">
               <SectionHeader title="Identidad" />
               <div className="mt-4">
-                <AvatarReadOnly nameFull={`${firstName} ${lastName}`.trim() || "Usuario"} initials={initials} />
+                <AvatarReadOnly
+                  nameFull={`${firstName} ${lastName}`.trim() || "Usuario"}
+                  initials={initials}
+                />
               </div>
             </section>
           </aside>
 
-          {/* Columna derecha: Contenido principal */}
+          {/* Columna derecha */}
           <main className="xl:col-span-2 space-y-5">
             {/* Datos de la cuenta */}
             <form onSubmit={handleSaveAccount} className="fin-card p-5 md:p-6">
@@ -189,7 +188,11 @@ function ProfilePageInner() {
                 title="Datos de la cuenta"
                 subtitle="Información básica para identificar tu perfil."
                 right={
-                  <button type="submit" className="btn btn-primary disabled:opacity-60" disabled={saving}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary disabled:opacity-60"
+                    disabled={saving}
+                  >
                     {saving ? "Guardando…" : "Guardar cambios"}
                   </button>
                 }
@@ -229,7 +232,7 @@ function ProfilePageInner() {
               </div>
             </form>
 
-            {/* Seguridad / Cambiar contraseña */}
+            {/* Seguridad */}
             <form onSubmit={handleChangePassword} className="fin-card p-5 md:p-6">
               <SectionHeader
                 title="Seguridad"
@@ -238,35 +241,35 @@ function ProfilePageInner() {
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Field id="pwd-current" label="Actual">
-                  <input
+                  <PasswordInput
                     id="pwd-current"
-                    className="input-base"
-                    type="password"
+                    name="current_password"
                     value={currentPwd}
                     onChange={(e) => setCurrentPwd(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                   />
                 </Field>
 
                 <Field id="pwd-new" label="Nueva" hint="Mínimo 8 caracteres.">
-                  <input
+                  <PasswordInput
                     id="pwd-new"
-                    className="input-base"
-                    type="password"
+                    name="new_password"
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="new-password"
                   />
                 </Field>
 
                 <Field id="pwd-confirm" label="Confirmar">
-                  <input
+                  <PasswordInput
                     id="pwd-confirm"
-                    className="input-base"
-                    type="password"
+                    name="confirm_password"
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="new-password"
                   />
                 </Field>
               </div>
@@ -283,7 +286,11 @@ function ProfilePageInner() {
                 >
                   Limpiar
                 </button>
-                <button type="submit" className="btn btn-primary disabled:opacity-60" disabled={changing}>
+                <button
+                  type="submit"
+                  className="btn btn-primary disabled:opacity-60"
+                  disabled={changing}
+                >
                   {changing ? "Actualizando…" : "Actualizar contraseña"}
                 </button>
               </div>
