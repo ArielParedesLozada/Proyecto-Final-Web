@@ -6,8 +6,12 @@ import Pagination from "../components/ui/Pagination";
 import Empty from "../components/ui/Empty";
 import GoalHistoryRow from "../components/history/GoalHistoryRow";
 import GoalDetailsModal from "../components/history/GoalDetailsModal";
+import GoalsFilters, { DEFAULT_FILTERS } from "../components/history/GoalsFilters";
+import useDebouncedValue from "../hooks/useDebouncedValue";
 import { listGoals, getGoal } from "../services/goals";
-import { goalApiToUi } from "../services/adapters";
+import { goalApiToUi, CATEGORIES_UI } from "../services/adapters";
+
+const LS_KEY = "fs_history_filters";
 
 export default function HistoryPage() {
     const [items, setItems] = useState([]);
@@ -16,10 +20,19 @@ export default function HistoryPage() {
     // paginación
     const [page, setPage] = useState(1);
     const pageSize = 6;
-    const [total, setTotal] = useState(0);
-    const [lastPage, setLastPage] = useState(1); // preferimos lo que diga el backend
+    const [lastPage, setLastPage] = useState(1);
 
-    // modal detalle
+    // filtros
+    const [filters, setFilters] = useState(() => {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            return raw ? { ...DEFAULT_FILTERS, ...JSON.parse(raw) } : DEFAULT_FILTERS;
+        } catch {
+            return DEFAULT_FILTERS;
+        }
+    });
+
+    const debouncedSearch = useDebouncedValue(filters.search, 300);
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailGoal, setDetailGoal] = useState(null);
 
@@ -28,30 +41,48 @@ export default function HistoryPage() {
     async function load(p = page, { silent = false } = {}) {
         if (!silent) setLoading(true);
         try {
-            const res = await listGoals({ page: p, pageSize });
-            const rows = (res.data ?? []).map(goalApiToUi);
+            const res = await listGoals({
+                page: p,
+                pageSize,
+                filters: { ...filters, search: debouncedSearch },
+            });
 
+            const rows = (res.data ?? []).map(goalApiToUi);
             setItems(rows);
-            setTotal(res.total ?? rows.length);
 
             const lp =
                 res.last_page ??
-                Math.max(
-                    1,
-                    Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize))
-                );
+                Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
             setLastPage(lp);
         } finally {
             if (!silent) setLoading(false);
         }
     }
 
+    // persistir filtros
     useEffect(() => {
-        const silent = !firstLoadRef.current; // solo la primera carga muestra loader
+        localStorage.setItem(LS_KEY, JSON.stringify(filters));
+    }, [filters]);
+
+    // recargar por página o búsqueda (debounced)
+    useEffect(() => {
+        const silent = !firstLoadRef.current;
         load(page, { silent }).finally(() => {
             firstLoadRef.current = false;
         });
-    }, [page]);
+    }, [page, debouncedSearch]);
+
+    // recargar cuando cambian otros filtros → reset a página 1
+    useEffect(() => {
+        setPage(1);
+        load(1, { silent: false });
+    }, [
+        filters.categoria,
+        filters.estados,
+        filters.creadaDesde,
+        filters.venceHasta,
+        filters.vence7dias,
+    ]);
 
     async function openDetails(goal) {
         try {
@@ -76,6 +107,13 @@ export default function HistoryPage() {
     return (
         <AppLayout header={header}>
             <ResponsivePane>
+                {/* Filtros */}
+                <GoalsFilters
+                    value={filters}
+                    onChange={(v) => setFilters(v)}
+                    onClear={() => setFilters(DEFAULT_FILTERS)}
+                />
+
                 <ScrollArea className="space-y-3">
                     {loading ? (
                         <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
@@ -83,8 +121,13 @@ export default function HistoryPage() {
                         </div>
                     ) : items.length === 0 ? (
                         <Empty
-                            title="Sin historial aún"
-                            subtitle="Cuando registres metas e ingresos/gastos, verás su progreso aquí."
+                            title="Sin resultados"
+                            subtitle="No encontramos metas con los filtros aplicados."
+                            actions={
+                                <button className="btn btn-ghost" onClick={() => setFilters(DEFAULT_FILTERS)}>
+                                    Limpiar filtros
+                                </button>
+                            }
                         />
                     ) : (
                         <>

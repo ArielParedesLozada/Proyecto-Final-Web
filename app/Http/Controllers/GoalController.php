@@ -8,6 +8,7 @@ use App\Models\Goal;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class GoalController extends Controller
 {
@@ -30,15 +31,46 @@ class GoalController extends Controller
     }
 
     /**
-     * Listar metas del usuario autenticado
+     * Listar metas del usuario autenticado (con filtros)
      */
     public function index(Request $request)
     {
-        $userId  = Auth::id();
-        $perPage = (int) $request->get('pageSize', 6);
+        $userId = Auth::id();
+
+        $perPage = (int) ($request->get('per_page', $request->get('pageSize', 6)));
         $perPage = min(max($perPage, 1), 50);
 
+        // filtros
+        $search       = trim((string) $request->get('search', ''));
+        $categoria    = $request->get('categoria');         
+        $estadoCsv    = (string) $request->get('estado', ''); 
+        $estados      = array_filter(array_map('trim', explode(',', $estadoCsv)));
+        $creadaDesde  = $request->get('creada_desde');    
+        $venceHasta   = $request->get('vence_hasta');     
+        $vence7dias   = filter_var($request->get('vence_7_dias', null), FILTER_VALIDATE_BOOLEAN);
+
         $query = Goal::where('user_id', $userId)
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            })
+            ->when($categoria, function ($q) use ($categoria) {
+                $q->where('category', $categoria);
+            })
+            ->when(!empty($estados), function ($q) use ($estados) {
+                $q->whereIn('status', $estados);
+            })
+            ->when($creadaDesde, function ($q) use ($creadaDesde) {
+                $q->whereDate('created_at', '>=', $creadaDesde);
+            })
+            ->when($venceHasta, function ($q) use ($venceHasta) {
+                $q->whereDate('target_date', '<=', $venceHasta);
+            })
+            ->when($vence7dias, function ($q) {
+                $hoy = Carbon::today()->toDateString();
+                $limite = Carbon::today()->addDays(7)->toDateString();
+                $q->where('status', 'active')
+                    ->whereBetween('target_date', [$hoy, $limite]);
+            })
             ->withSum(['transactions as income_sum' => function ($q) {
                 $q->where('type', 'income');
             }], 'amount')
@@ -58,10 +90,13 @@ class GoalController extends Controller
         $paginator->setCollection($items);
 
         return response()->json([
-            'message' => 'OK',
-            'data'    => $paginator->items(),
-            'total'   => $paginator->total(),  
-            'pagination' => [
+            'message'     => 'OK',
+            'data'        => $paginator->items(),
+            'total'       => $paginator->total(),
+            'per_page'    => $paginator->perPage(),
+            'last_page'   => $paginator->lastPage(),
+            'current_page' => $paginator->currentPage(),
+            'pagination'  => [
                 'total'        => $paginator->total(),
                 'per_page'     => $paginator->perPage(),
                 'current_page' => $paginator->currentPage(),

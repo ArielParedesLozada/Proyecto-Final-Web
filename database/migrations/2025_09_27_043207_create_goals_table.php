@@ -30,7 +30,7 @@ return new class extends Migration
                 'others'
             ])->default('others');
             $table->text('description')->nullable();
-            $table->enum('status', ['active', 'completed', 'cancelled'])->default('active');
+            $table->enum('status', ['active', 'completed', 'expired'])->default('active');
             $table->timestamps();
             $table->softDeletes();
             $table->index(['user_id', 'status']);

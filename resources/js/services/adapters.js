@@ -31,13 +31,13 @@ export const CATEGORIES_UI = [
 export const STATUS_API_TO_UI = {
     active: "Activa",
     completed: "Completada",
-    cancelled: "Cancelada",
+    expired: "Vencida",
 };
 
 export const STATUS_UI_TO_API = {
     Activa: "active",
     Completada: "completed",
-    Cancelada: "cancelled",
+    Vencida: "expired",
 };
 
 export function goalApiToUi(api) {
