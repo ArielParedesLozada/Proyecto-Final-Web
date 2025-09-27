@@ -33,7 +33,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Errores de validación',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -58,7 +58,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'User registered successfully',
+            'message' => 'Usuario registrado correctamente',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -89,7 +89,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Errores de validación',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -100,7 +100,7 @@ class AuthController extends Controller
             if (!$token = JWTAuth::attempt($credentials)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials'
+                    'message' => 'Credenciales invalidas'
                 ], 401);
             }
         } catch (JWTException $e) {
@@ -114,7 +114,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Login successful',
+            'message' => 'Inicio de sesión exitoso',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -163,7 +163,7 @@ class AuthController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'Usuario no encontrado'
                 ], 404);
             }
 
