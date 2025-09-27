@@ -40,15 +40,24 @@ export default function GoalsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 4;
   const [total, setTotal] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [lastPage, setLastPage] = useState(1); // preferimos lo que diga el back
 
   async function load(p = page) {
     setLoading(true);
     try {
       const res = await listGoals({ page: p, pageSize });
       const rows = (res.data ?? []).map(goalApiToUi);
+
       setGoals(rows);
       setTotal(res.total ?? rows.length);
+      // si el back manda last_page, úsalo; si no, calculamos
+      const lp =
+        res.last_page ??
+        Math.max(
+          1,
+          Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize))
+        );
+      setLastPage(lp);
     } finally {
       setLoading(false);
     }
@@ -93,9 +102,12 @@ export default function GoalsPage() {
     if (toDeleteId == null) return;
     await deleteGoal(toDeleteId);
     setConfirmOpen(false);
-    const next = Math.min(page, Math.ceil((total - 1) / pageSize) || 1);
-    setPage(next);
-    await load(next);
+
+    // Si eliminamos el último ítem de la página, retrocedemos de ser necesario
+    const nextPage = Math.min(page, lastPage); // nos aseguramos de no pasar el límite actual
+    // recargamos; si el back reduce last_page, load actualizará lastPage
+    await load(nextPage);
+    setPage((p) => Math.min(p, lastPage));
   }
 
   function handleAddTx(goal) {
@@ -106,6 +118,7 @@ export default function GoalsPage() {
   async function handleSaveTx({ goalId, type, kind, amount }) {
     const delta = type === "income" ? Number(amount) : -Number(amount);
 
+    // Optimistic UI
     setGoals((prev) =>
       prev.map((g) =>
         g.id === goalId
@@ -121,22 +134,23 @@ export default function GoalsPage() {
     );
 
     try {
-      // 2) Guardar en el backend
+      // Guardar en el backend
       await addTransaction(goalId, {
-        type,                 // 'income' | 'expense'
+        type, // 'income' | 'expense'
         is_fixed: kind === "Fijo",
         amount: Number(amount),
       });
 
+      // Refrescar solo la meta 
       try {
         const detail = await getGoal(goalId);
         const updated = goalApiToUi(detail.data);
         setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
       } catch {
-        // Si no hay endpoint de detalle usable, recarga toda la lista
         await load(page);
       }
     } catch (e) {
+      // revertir optimistic UI
       setGoals((prev) =>
         prev.map((g) =>
           g.id === goalId
@@ -191,7 +205,10 @@ export default function GoalsPage() {
             Cargando…
           </div>
         ) : goals.length === 0 ? (
-          <Empty title="Aún no tienes metas de ahorro" subtitle="Crea tu primera meta para comenzar a registrar tu progreso financiero." />
+          <Empty
+            title="Aún no tienes metas de ahorro"
+            subtitle="Crea tu primera meta para comenzar a registrar tu progreso financiero."
+          />
         ) : (
           <>
             <GoalGrid
@@ -201,12 +218,12 @@ export default function GoalsPage() {
               onDelete={askDelete}
             />
 
-            {/* Paginación simple */}
+            {/* Paginación usando lastPage del backend */}
             <Pagination
               page={page}
-              totalPages={totalPages}
+              totalPages={lastPage}
               onPrev={() => setPage((p) => Math.max(1, p - 1))}
-              onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
             />
           </>
         )}

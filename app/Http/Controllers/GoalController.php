@@ -34,26 +34,39 @@ class GoalController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = Auth::id();
+        $userId  = Auth::id();
+        $perPage = (int) $request->get('pageSize', 6);
+        $perPage = min(max($perPage, 1), 50);
 
-        $goals = Goal::where('user_id', $userId)
+        $query = Goal::where('user_id', $userId)
             ->withSum(['transactions as income_sum' => function ($q) {
                 $q->where('type', 'income');
             }], 'amount')
             ->withSum(['transactions as expense_sum' => function ($q) {
                 $q->where('type', 'expense');
             }], 'amount')
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($g) {
-                $g->accumulated = (float) (($g->income_sum ?? 0) - ($g->expense_sum ?? 0));
-                return $g;
-            });
+            ->orderByDesc('created_at');
+
+        $paginator = $query->paginate($perPage)->appends($request->query());
+
+        $items = $paginator->getCollection()->map(function ($g) {
+            $g->accumulated = (float) (($g->income_sum ?? 0) - ($g->expense_sum ?? 0));
+            unset($g->income_sum, $g->expense_sum);
+            return $g;
+        });
+
+        $paginator->setCollection($items);
 
         return response()->json([
             'message' => 'OK',
-            'data'    => $goals,
-            'total'   => $goals->count(),
+            'data'    => $paginator->items(),
+            'total'   => $paginator->total(),  
+            'pagination' => [
+                'total'        => $paginator->total(),
+                'per_page'     => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+            ],
         ]);
     }
 
@@ -142,8 +155,8 @@ class GoalController extends Controller
         $tx = Transaction::create([
             'user_id'     => Auth::id(),
             'goal_id'     => $goal->id,
-            'type'        => $request->type,                 
-            'is_fixed'    => $request->boolean('is_fixed'),  
+            'type'        => $request->type,
+            'is_fixed'    => $request->boolean('is_fixed'),
             'amount'      => $request->amount,
             'occurred_on' => now()->toDateString(),
         ]);

@@ -1,7 +1,9 @@
 import api from "./http";
 
 export const listGoals = (params = {}) =>
-    api.get("/goals", { params }).then((r) => r.data);
+    api.get("/goals", { params }).then((r) => {
+        return r.data;
+    });
 
 export const getGoal = (id) =>
     api.get(`/goals/${id}`).then((r) => r.data);
