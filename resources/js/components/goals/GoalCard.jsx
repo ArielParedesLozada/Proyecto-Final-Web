@@ -1,3 +1,5 @@
+import { formatYMDToDisplay } from "../../services/dates";
+
 export default function GoalCard({
   goal,
   onAddTx,
@@ -25,9 +27,8 @@ export default function GoalCard({
   const isCompleted = progress >= 100;
   const visualStatus = isCompleted ? "Completada" : status;
 
-  // Fecha límite
   const deadlineText = deadline
-    ? new Date(deadline).toLocaleDateString()
+    ? formatYMDToDisplay(deadline) 
     : "Sin fecha límite";
 
   // Colores por estado (badge)

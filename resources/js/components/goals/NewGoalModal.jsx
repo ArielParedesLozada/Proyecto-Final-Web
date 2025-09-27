@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ScrollArea from "../ui/ScrollArea";
 import { CATEGORIES_UI as categories } from "../../services/adapters";
+import { todayLocalYMD, isTodayOrFuture } from "../../services/dates";
 
 export default function NewGoalModal({
   open,
@@ -46,15 +47,6 @@ export default function NewGoalModal({
     setTimeout(() => dialogRef.current?.querySelector("input")?.focus(), 30);
   }, [open, mode, initialGoal]);
 
-  function isValidFutureOrToday(dateStr) {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    d.setHours(0, 0, 0, 0);
-    return d.getTime() >= today.getTime();
-  }
-
   function validate() {
     const e = {};
     if (!form.name.trim()) e.name = "Ingresa un nombre";
@@ -63,7 +55,7 @@ export default function NewGoalModal({
       e.targetAmount = "Monto objetivo inválido";
     if (!form.deadline) {
       e.deadline = "Selecciona la fecha límite";
-    } else if (!isValidFutureOrToday(form.deadline)) {
+    } else if (!isTodayOrFuture(form.deadline)) {
       e.deadline = "La fecha debe ser hoy o una fecha futura";
     }
     return e;
@@ -197,7 +189,7 @@ export default function NewGoalModal({
                   className={`input-base mt-1 ${errors.deadline ? "input-error" : ""}`}
                   value={form.deadline}
                   onChange={(e) => setForm((s) => ({ ...s, deadline: e.target.value }))}
-                  min={new Date().toISOString().slice(0, 10)}
+                  min={todayLocalYMD()}
                 />
                 {errors.deadline && <p className="text-xs text-red-500 mt-1">{errors.deadline}</p>}
               </div>
