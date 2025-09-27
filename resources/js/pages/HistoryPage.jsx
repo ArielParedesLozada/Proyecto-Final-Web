@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AppLayout from "../layouts/AppLayout";
 import ResponsivePane from "../layouts/ResponsivePane";
 import ScrollArea from "../components/ui/ScrollArea";
@@ -17,32 +17,44 @@ export default function HistoryPage() {
     const [page, setPage] = useState(1);
     const pageSize = 6;
     const [total, setTotal] = useState(0);
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const [lastPage, setLastPage] = useState(1); // preferimos lo que diga el backend
 
     // modal detalle
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailGoal, setDetailGoal] = useState(null);
 
-    async function load(p = page) {
-        setLoading(true);
+    const firstLoadRef = useRef(true);
+
+    async function load(p = page, { silent = false } = {}) {
+        if (!silent) setLoading(true);
         try {
             const res = await listGoals({ page: p, pageSize });
             const rows = (res.data ?? []).map(goalApiToUi);
+
             setItems(rows);
             setTotal(res.total ?? rows.length);
+
+            const lp =
+                res.last_page ??
+                Math.max(
+                    1,
+                    Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize))
+                );
+            setLastPage(lp);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }
 
     useEffect(() => {
-        load(page);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        const silent = !firstLoadRef.current; // solo la primera carga muestra loader
+        load(page, { silent }).finally(() => {
+            firstLoadRef.current = false;
+        });
     }, [page]);
 
     async function openDetails(goal) {
         try {
-            // refrescamos con /goals/{id} para asegurar acumulado exacto
             const detail = await getGoal(goal.id);
             setDetailGoal(goalApiToUi(detail.data));
         } catch {
@@ -84,9 +96,9 @@ export default function HistoryPage() {
 
                             <Pagination
                                 page={page}
-                                totalPages={totalPages}
+                                totalPages={lastPage}
                                 onPrev={() => setPage((p) => Math.max(1, p - 1))}
-                                onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
                                 className="justify-center py-2"
                             />
                         </>
