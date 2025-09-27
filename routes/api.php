@@ -46,4 +46,7 @@ Route::middleware('jwt.auth')->group(function () {
     Route::post('/goals', [GoalController::class, 'store']);
     Route::put('/goals/{id}', [GoalController::class, 'update']);
     Route::delete('/goals/{id}', [GoalController::class, 'destroy']);
+    Route::post('/goals/{goalId}/transactions', [GoalController::class, 'addTransaction']);
+    Route::get('/goals/{goalId}/transactions', [GoalController::class, 'listTransactions']);
+    Route::delete('/transactions/{id}', [GoalController::class, 'deleteTransaction']);
 });
