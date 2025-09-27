@@ -47,8 +47,9 @@ function GoalsPageInner() {
 
   const toast = useToast();
 
-  async function load(p = page) {
-    setLoading(true);
+  // Carga con opción “silenciosa” (no muestra loader)
+  async function load(p = page, { silent = false } = {}) {
+    if (!silent) setLoading(true);
     try {
       const res = await listGoals({ page: p, pageSize });
       const rows = (res.data ?? []).map(goalApiToUi);
@@ -59,29 +60,32 @@ function GoalsPageInner() {
         Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
       setLastPage(lp);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
   useEffect(() => {
-    load(page);
+    // Al cambiar de página sí queremos mostrar loader
+    load(page, { silent: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Crear
+  // Crear (optimista + refresh silencioso)
   async function handleCreateGoal(payload) {
     try {
-      await createGoal(goalUiToApi(payload));
-      toast.push({ tone: "success", title: "Meta creada", message: "Tu meta se guardó correctamente." });
+      const resp = await createGoal(goalUiToApi(payload));
+      toast.push({ tone: "success", title: "Meta creada" });
       setModalOpen(false);
+
+      // Ir a página 1 y refrescar silenciosamente
       setPage(1);
-      await load(1);
+      await load(1, { silent: true });
     } catch (e) {
       toast.push({ tone: "error", title: "Error al crear", message: e?.message || "No se pudo crear la meta." });
     }
   }
 
-  // Editar
+  // Editar (optimista + refresh silencioso)
   function handleEditGoal(goal) {
     setEditingGoal(goal);
     setModalMode("edit");
@@ -90,18 +94,46 @@ function GoalsPageInner() {
 
   async function handleSubmitEdit(payload) {
     const { id, ...rest } = payload;
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === id
+          ? {
+            ...g,
+            name: rest.name ?? g.name,
+            category: rest.category ?? g.category,
+            description: rest.description ?? g.description,
+            targetAmount: typeof rest.targetAmount === "number" ? rest.targetAmount : g.targetAmount,
+            deadline: rest.deadline ?? g.deadline,
+            status: rest.status ?? g.status,
+          }
+          : g
+      )
+    );
+
     try {
       await updateGoal(id, goalUiToApi(rest));
       toast.push({ tone: "success", title: "Cambios guardados" });
-      setModalOpen(false);
-      setEditingGoal(null);
-      await load(page);
+
+      // Traer versión canónica del back 
+      try {
+        const detail = await getGoal(id);
+        const updated = goalApiToUi(detail.data);
+        setGoals((arr) => arr.map((g) => (g.id === id ? updated : g)));
+      } catch {
+        // si falla el detalle, recargamos la página de forma silenciosa
+        await load(page, { silent: true });
+      }
     } catch (e) {
       toast.push({ tone: "error", title: "Error al actualizar", message: e?.message || "No se pudo actualizar la meta." });
+      // Podríamos revertir, pero la previa recarga silenciosa al fallar ya “corrige” el estado:
+      await load(page, { silent: true });
+    } finally {
+      setModalOpen(false);
+      setEditingGoal(null);
     }
   }
 
-  // Eliminar
+  // Eliminar (optimista + refresh silencioso)
   function askDelete(id) {
     setToDeleteId(id);
     setConfirmOpen(true);
@@ -109,19 +141,32 @@ function GoalsPageInner() {
 
   async function confirmDelete() {
     if (toDeleteId == null) return;
+
+    // Optimista: eliminamos de la lista al instante
+    setGoals((prev) => prev.filter((g) => g.id !== toDeleteId));
+    setConfirmOpen(false);
+
     try {
       await deleteGoal(toDeleteId);
       toast.push({ tone: "success", title: "Meta eliminada" });
-      setConfirmOpen(false);
-      const nextPage = Math.min(page, lastPage);
-      await load(nextPage);
-      setPage((p) => Math.min(p, lastPage));
+
+      // Si quedó la página vacía, traer contenido de la previa; siempre en silencio
+      const afterDeleteCount = goals.length - 1;
+      const pageNowEmpty = afterDeleteCount === 0 && page > 1;
+      const nextPage = pageNowEmpty ? page - 1 : page;
+
+      setPage(nextPage); // actualiza el pager
+      await load(nextPage, { silent: true });
     } catch (e) {
       toast.push({ tone: "error", title: "Error al eliminar", message: e?.message || "No se pudo eliminar la meta." });
+      // Recuperar estado real desde el back sin loader
+      await load(page, { silent: true });
+    } finally {
+      setToDeleteId(null);
     }
   }
 
-  // Ingreso / Gasto
+  // Ingreso / Gasto (optimista + refresh silencioso)
   function handleAddTx(goal) {
     setTxGoal(goal);
     setTxOpen(true);
@@ -130,7 +175,7 @@ function GoalsPageInner() {
   async function handleSaveTx({ goalId, type, kind, amount }) {
     const delta = type === "income" ? Number(amount) : -Number(amount);
 
-    // Optimistic UI
+    // Optimista
     setGoals((prev) =>
       prev.map((g) =>
         g.id === goalId
@@ -146,12 +191,13 @@ function GoalsPageInner() {
         amount: Number(amount),
       });
 
+      // Sin loader: refrescamos solo la meta desde el back o la página si no hay detalle
       try {
         const detail = await getGoal(goalId);
         const updated = goalApiToUi(detail.data);
         setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
       } catch {
-        await load(page);
+        await load(page, { silent: true });
       }
 
       toast.push({
@@ -160,7 +206,7 @@ function GoalsPageInner() {
         message: `${type === "income" ? "+" : "-"}$${Number(amount).toLocaleString()}`,
       });
     } catch (e) {
-      // revertir optimistic UI
+      // Revertir optimista
       setGoals((prev) =>
         prev.map((g) =>
           g.id === goalId
@@ -251,7 +297,6 @@ function GoalsPageInner() {
 }
 
 export default function GoalsPage() {
-  // Montamos el provider aquí para que solo esta página lo use.
   return (
     <ToastProvider placement="top-right">
       <GoalsPageInner />
