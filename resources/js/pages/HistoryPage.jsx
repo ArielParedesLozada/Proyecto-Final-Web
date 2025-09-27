@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import AppLayout from "../layouts/AppLayout";
-import { GoalsAPI } from "../services/API";
-import ScrollArea from "../components/ui/ScrollArea";
-import GoalHistoryRow from "../components/history/GoalHistoryRow";
-import Paginator from "../components/ui/Pagination";
 import ResponsivePane from "../layouts/ResponsivePane";
+import ScrollArea from "../components/ui/ScrollArea";
+import Pagination from "../components/ui/Pagination";
+import Empty from "../components/ui/Empty";
+import GoalHistoryRow from "../components/history/GoalHistoryRow";
 import GoalDetailsModal from "../components/history/GoalDetailsModal";
+import { listGoals, getGoal } from "../services/goals";
+import { goalApiToUi } from "../services/adapters";
 
 export default function HistoryPage() {
     const [items, setItems] = useState([]);
@@ -24,9 +26,10 @@ export default function HistoryPage() {
     async function load(p = page) {
         setLoading(true);
         try {
-            const res = await GoalsAPI.list({ page: p, pageSize });
-            setItems(res.data);
-            setTotal(res.total);
+            const res = await listGoals({ page: p, pageSize });
+            const rows = (res.data ?? []).map(goalApiToUi);
+            setItems(rows);
+            setTotal(res.total ?? rows.length);
         } finally {
             setLoading(false);
         }
@@ -37,9 +40,16 @@ export default function HistoryPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]);
 
-    function openDetails(goal) {
-        setDetailGoal(goal);
-        setDetailOpen(true);
+    async function openDetails(goal) {
+        try {
+            // refrescamos con /goals/{id} para asegurar acumulado exacto
+            const detail = await getGoal(goal.id);
+            setDetailGoal(goalApiToUi(detail.data));
+        } catch {
+            setDetailGoal(goal);
+        } finally {
+            setDetailOpen(true);
+        }
     }
 
     const header = (
@@ -53,21 +63,17 @@ export default function HistoryPage() {
 
     return (
         <AppLayout header={header}>
-            <ResponsivePane toolbar={null}>
+            <ResponsivePane>
                 <ScrollArea className="space-y-3">
                     {loading ? (
                         <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
                             Cargando…
                         </div>
                     ) : items.length === 0 ? (
-                        <div className="fin-card p-8 md:p-10 text-center">
-                            <h3 className="text-base md:text-lg font-semibold mb-1">
-                                Sin historial aún
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Cuando registres metas e ingresos/gastos, verás su progreso aquí.
-                            </p>
-                        </div>
+                        <Empty
+                            title="Sin historial aún"
+                            subtitle="Cuando registres metas e ingresos/gastos, verás su progreso aquí."
+                        />
                     ) : (
                         <>
                             <div className="space-y-3">
@@ -76,7 +82,7 @@ export default function HistoryPage() {
                                 ))}
                             </div>
 
-                            <Paginator
+                            <Pagination
                                 page={page}
                                 totalPages={totalPages}
                                 onPrev={() => setPage((p) => Math.max(1, p - 1))}
