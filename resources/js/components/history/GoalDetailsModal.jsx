@@ -12,8 +12,8 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
         targetAmount = 0,
         currentAmount = 0,
         status = "Activa",
-        deadline,  
-        createdAt, 
+        deadline,
+        createdAt,
     } = goal;
 
     const progress = useMemo(() => {
@@ -42,7 +42,7 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
         : "Sin fecha límite";
 
     const createdText = createdAt
-        ? formatYMDToDisplay(String(createdAt).slice(0, 10), "es-EC")
+        ? formatYMDToDisplay(createdAt, "es-EC")   
         : "—";
 
     let barGradient = "from-indigo-500 to-indigo-600";

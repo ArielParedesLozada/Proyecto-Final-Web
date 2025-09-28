@@ -1,3 +1,12 @@
+function isoToLocalYMD(iso) {
+    if (!iso) return "";
+    const d = new Date(iso); 
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
 export const CAT_API_TO_UI = {
     emergency_fund: "Emergencia",
     education: "Educación",
@@ -54,8 +63,8 @@ export function goalApiToUi(api) {
             0
         ),
         status: STATUS_API_TO_UI[api.status] ?? "Activa",
-        createdAt: api.created_at,
-        deadline: api.target_date, // YYYY-MM-DD
+        createdAt: isoToLocalYMD(api.created_at),
+        deadline: api.target_date,
     };
 }
 
@@ -65,7 +74,7 @@ export function goalUiToApi(ui) {
         category: CAT_UI_TO_API[ui.category] ?? "others",
         description: ui.description?.trim() || null,
         target_amount: Number(ui.targetAmount),
-        target_date: ui.deadline, // YYYY-MM-DD
+        target_date: ui.deadline, 
     };
 
     if (ui.status) {
