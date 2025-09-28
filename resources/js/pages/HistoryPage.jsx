@@ -9,11 +9,14 @@ import GoalDetailsModal from "../components/history/GoalDetailsModal";
 import GoalsFilters, { DEFAULT_FILTERS } from "../components/history/GoalsFilters";
 import useDebouncedValue from "../hooks/useDebouncedValue";
 import { listGoals, getGoal } from "../services/goals";
-import { goalApiToUi, CATEGORIES_UI } from "../services/adapters";
+import { goalApiToUi } from "../services/adapters";
+import { useToast, ToastProvider } from "../components/ui/ToastProvider";
 
 const LS_KEY = "fs_history_filters";
 
-export default function HistoryPage() {
+function HistoryPageInner() {
+    const toast = useToast();
+
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -33,18 +36,41 @@ export default function HistoryPage() {
     });
 
     const debouncedSearch = useDebouncedValue(filters.search, 300);
+
+    // modal detalle
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailGoal, setDetailGoal] = useState(null);
 
     const firstLoadRef = useRef(true);
 
+
+    function buildEffectiveFilters() {
+        const f = { ...filters, search: debouncedSearch };
+
+        const hasStart = !!f.creadaDesde;
+        const hasEnd = !!f.venceHasta;
+
+        if (hasStart && hasEnd) {
+            if (f.venceHasta >= f.creadaDesde) {
+
+                return f;
+            }
+            const { creadaDesde, venceHasta, ...rest } = f;
+            return rest;
+        }
+
+        const { creadaDesde, venceHasta, ...rest } = f;
+        return rest;
+    }
+
     async function load(p = page, { silent = false } = {}) {
         if (!silent) setLoading(true);
         try {
+            const effective = buildEffectiveFilters();
             const res = await listGoals({
                 page: p,
                 pageSize,
-                filters: { ...filters, search: debouncedSearch },
+                filters: effective,
             });
 
             const rows = (res.data ?? []).map(goalApiToUi);
@@ -72,7 +98,6 @@ export default function HistoryPage() {
         });
     }, [page, debouncedSearch]);
 
-    // recargar cuando cambian otros filtros → reset a página 1
     useEffect(() => {
         setPage(1);
         load(1, { silent: false });
@@ -83,6 +108,41 @@ export default function HistoryPage() {
         filters.venceHasta,
         filters.vence7dias,
     ]);
+
+    const lastDateStateRef = useRef("init");
+    useEffect(() => {
+        const start = filters.creadaDesde;
+        const end = filters.venceHasta;
+
+        let state = "none";
+        if (start && !end) state = "start-only";
+        else if (!start && end) state = "end-only";
+        else if (start && end && end < start) state = "invalid";
+        else if (start && end) state = "ok";
+
+        if (state === lastDateStateRef.current) return;
+        lastDateStateRef.current = state;
+
+        if (state === "start-only") {
+            toast.push({
+                tone: "info",
+                title: "Rango incompleto",
+                message: 'Selecciona "Vence hasta" para aplicar el rango.',
+            });
+        } else if (state === "end-only") {
+            toast.push({
+                tone: "info",
+                title: "Rango incompleto",
+                message: 'Selecciona "Creada desde" para aplicar el rango.',
+            });
+        } else if (state === "invalid") {
+            toast.push({
+                tone: "error",
+                title: "Rango inválido",
+                message: "La fecha de vencimiento no puede ser anterior a la fecha de inicio.",
+            });
+        }
+    }, [filters.creadaDesde, filters.venceHasta, toast]);
 
     async function openDetails(goal) {
         try {
@@ -111,7 +171,14 @@ export default function HistoryPage() {
                 <GoalsFilters
                     value={filters}
                     onChange={(v) => setFilters(v)}
-                    onClear={() => setFilters(DEFAULT_FILTERS)}
+                    onClear={() => {
+                        setFilters(DEFAULT_FILTERS);
+                        toast.push({
+                            tone: "success",
+                            title: "Filtros limpiados",
+                            message: "Se restablecieron todos los filtros.",
+                        });
+                    }}
                 />
 
                 <ScrollArea className="space-y-3">
@@ -124,7 +191,17 @@ export default function HistoryPage() {
                             title="Sin resultados"
                             subtitle="No encontramos metas con los filtros aplicados."
                             actions={
-                                <button className="btn btn-ghost" onClick={() => setFilters(DEFAULT_FILTERS)}>
+                                <button
+                                    className="btn btn-ghost"
+                                    onClick={() => {
+                                        setFilters(DEFAULT_FILTERS);
+                                        toast.push({
+                                            tone: "success",
+                                            title: "Filtros limpiados",
+                                            message: "Se restablecieron todos los filtros.",
+                                        });
+                                    }}
+                                >
                                     Limpiar filtros
                                 </button>
                             }
@@ -159,5 +236,13 @@ export default function HistoryPage() {
                 }}
             />
         </AppLayout>
+    );
+}
+
+export default function GoalsPage() {
+    return (
+        <ToastProvider placement="top-right">
+            <HistoryPageInner />
+        </ToastProvider>
     );
 }

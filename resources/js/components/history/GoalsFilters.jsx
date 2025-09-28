@@ -4,11 +4,11 @@ const ESTADOS_UI = ["Activa", "Completada", "Vencida"];
 
 export const DEFAULT_FILTERS = {
     search: "",
-    categoria: "",           
-    estados: [],             
+    categoria: "",
+    estados: [],
     creadaDesde: "",
     venceHasta: "",
-    vence7dias: false,       
+    vence7dias: false,
 };
 
 export default function GoalsFilters({ value, onChange, onClear }) {
@@ -79,7 +79,7 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                 {/* Limpiar */}
                 <button
                     type="button"
-                    className="btn btn-ghost"
+                    className="btn btn-primary cursor-pointer shadow-sm"
                     onClick={onClear}
                     title="Limpiar filtros"
                 >
