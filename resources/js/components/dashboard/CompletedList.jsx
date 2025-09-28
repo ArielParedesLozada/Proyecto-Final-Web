@@ -2,7 +2,7 @@ export default function CompletedList({ items }) {
   return (
     <ol className="relative ms-3">
       <span className="absolute left-0 -ms-3 h-full w-px bg-gray-300/40 dark:bg-gray-700/40" />
-      {items.map((it, i) => (
+      {items.map((it) => (
         <li key={it.id} className="relative pl-4 py-3">
           <span className="absolute -left-2 top-3 h-2.5 w-2.5 rounded-full bg-primary-600 shadow" />
           <p className="text-sm font-medium">{it.title}</p>

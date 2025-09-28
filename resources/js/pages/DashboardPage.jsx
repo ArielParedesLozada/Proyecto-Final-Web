@@ -1,3 +1,4 @@
+import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import StatPro from "../components/ui/StatPro";
 import GoalItem from "../components/dashboard/GoalItem";
@@ -5,79 +6,110 @@ import CompletedList from "../components/dashboard/CompletedList";
 import Empty from "../components/ui/Empty";
 import ScrollArea from "../components/ui/ScrollArea";
 
+// servicios
+import { listGoals } from "../services/goals";
+import {
+  getMonthlyIncomeExpense,
+  getMonthlyRealVsSuggested,
+  getGoalsStatusDistribution,
+} from "../services/stats";
+import { goalApiToUi } from "../services/adapters";
+
+// Helpers de fechas
+function ymd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
 export default function DashboardPage() {
-  const totalAhorrado = 15750, metaMensual = 2000, metasActivas = 3, progresoMensual = 63;
+  const [loading, setLoading] = useState(true);
 
-  const activas = [
-    { name: "1", current: 3200, target: 5000 },
-    { name: "2", current: 3200, target: 5000 },
-    { name: "V3", current: 3200, target: 5000 },
-    { name: "4", current: 3200, target: 5000 },
-    { name: "5", current: 3200, target: 5000 },
-    { name: "6", current: 3200, target: 5000 },
-    { name: "7", current: 3200, target: 5000 },
-    { name: "8", current: 3200, target: 5000 },
-    { name: "9", current: 3200, target: 5000 },
-    { name: "10", current: 3200, target: 5000 },
-    { name: "11", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    // añade más para probar el scroll...
-  ];
+  // KPIs
+  const [totalAhorrado, setTotalAhorrado] = useState(0);
+  const [metaMensualSugerida, setMetaMensualSugerida] = useState(0);
+  const [metasActivas, setMetasActivas] = useState(0);
+  const [progresoMensual, setProgresoMensual] = useState(0);
 
-  const completadas = [
+  // Listas
+  const [goalsActive, setGoalsActive] = useState([]);
+  const [goalsCompleted, setGoalsCompleted] = useState([]);
 
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+  async function load() {
+    setLoading(true);
+    try {
+      // === Rango para "total ahorrado": últimos 12 meses ===
+      const end = new Date();
+      const start = new Date();
+      start.setMonth(start.getMonth() - 11); // 12 meses contando el actual
+      const params12m = { start: ymd(new Date(start.getFullYear(), start.getMonth(), 1)), end: ymd(end) };
 
-    { id: 1, title: "1”", when: "Hace 2 horas" },
-    { id: 2, title: "2op” completada", when: "Ayer" },
-    { id: 1, title: "3a “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "4 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "5 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "6 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "7 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "8 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "9 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "10 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "11 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "12 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "13 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "14 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "15 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "16 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "17 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "18 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "19 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "20 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "21 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "22 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "23 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "24 “Nuevo Laptop” completada", when: "Ayer" },
+      // 1) Ingresos vs Gastos (para total ahorrado)
+      const inex = await getMonthlyIncomeExpense(params12m);
+      const total = (inex.data ?? []).reduce(
+        (acc, m) => acc + (Number(m.incomes || 0) - Number(m.expenses || 0)),
+        0
+      );
+      setTotalAhorrado(Math.max(0, Math.round(total)));
 
-    // añade más para probar el scroll...
-  ];
+      // 2) Real vs Sugerido (para metaMensual y progreso mensual)
+      const rvs = await getMonthlyRealVsSuggested({});
+      const serie = rvs.data ?? [];
+      const ultimo = serie[serie.length - 1] || { real: 0, suggested: 0 };
+      const sug = Number(ultimo.suggested || 0);
+      const real = Number(usuarioSeguro(ultimo.real)); // helper abajo por si viene undefined
+      setMetaMensualSugerida(Math.round(sug));
+      setProgresoMensual(sug > 0 ? Math.round((real / sug) * 100) : 0);
 
-  // 👇 helper para limitar altura SOLO en móvil cuando hay más de 6 ítems
-  const capMobileClass = (shouldCap) =>
-    shouldCap ? " max-h-[60vh] overflow-y-auto scroll-invisible xl:max-h-none" : "";
+      // 3) Distribución de estados (para metas activas)
+      const dist = await getGoalsStatusDistribution({});
+      const actRow = (dist.data || []).find((x) => x.status === "Activa");
+      setMetasActivas(Number(actRow?.value || 0));
+
+      // 4) Metas para listas (activas + completadas)
+      //    Tu adapter ya convierte category/status y trae currentAmount (si backend lo manda).
+      const resGoals = await listGoals({ page: 1, pageSize: 100, filters: {} });
+      const rows = (resGoals.data ?? []).map(goalApiToUi);
+
+      const actives = rows
+        .filter((g) => g.status === "Activa")
+        .map((g) => ({
+          id: g.id,
+          name: g.name,
+          current: Number(g.currentAmount || 0),
+          target: Number(g.targetAmount || 0),
+          updatedAt: g.updatedAt || g.createdAt,
+        }))
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+      const completed = rows
+        .filter((g) => g.status === "Completada")
+        .map((g) => ({
+          id: g.id,
+          title: g.name,
+          when: niceWhen(g.updatedAt || g.createdAt),
+          updatedAt: g.updatedAt || g.createdAt,
+        }))
+        .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+        .slice(0, 20);
+
+      setGoalsActive(actives);
+      setGoalsCompleted(completed);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  // valores de sparkle de ejemplo (puedes alimentar con algo real si quieres)
+  const spark1 = useMemo(() => [45, 48, 52, 60, 62, 67, 72, 74, 78], []);
+  const spark2 = useMemo(() => [20, 24, 26, 28, 30, 35, 38, 40, 42], []);
+  const spark3 = useMemo(() => [30, 35, 40, 38, 42, 45, 48, 50, 55], []);
+  const spark4 = useMemo(() => [40, 45, 47, 50, 55, 58, 60, 62, 63], []);
 
   const header = (
     <div>
@@ -90,90 +122,88 @@ export default function DashboardPage() {
 
   return (
     <AppLayout header={header}>
-      {/* === WRAPPER ===
-          En móvil: grid simple (sin forzar alto).
-          En XL: reparte el alto entre KPIs y contenido. */}
       <div className="grid gap-4 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
         {/* KPIs */}
         <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 auto-rows-fr">
           <div className="h-full">
             <StatPro
               title="Total Ahorrado"
-              value={`$${totalAhorrado.toLocaleString()}`}
-              delta="+12%"
-              deltaLabel="vs. mes pasado"
+              value={`$${Number(totalAhorrado).toLocaleString()}`}
+              delta=""
+              deltaLabel=""
               positive
-              spark={[45, 48, 52, 60, 62, 67, 72, 74, 78]}
+              spark={spark1}
               icon={<span className="opacity-70">$</span>}
+              loading={loading}
             />
           </div>
           <div className="h-full">
             <StatPro
-              title="Meta Mensual"
-              value={`$${metaMensual.toLocaleString()}`}
-              delta="+$250"
-              deltaLabel="vs. promedio"
+              title="Meta Mensual (sugerida)"
+              value={`$${Number(metaMensualSugerida).toLocaleString()}`}
+              delta=""
+              deltaLabel=""
               positive
-              spark={[20, 24, 26, 28, 30, 35, 38, 40, 42]}
+              spark={spark2}
+              loading={loading}
             />
           </div>
           <div className="h-full">
             <StatPro
               title="Metas Activas"
               value={metasActivas}
-              delta="2"
-              deltaLabel="completadas"
+              delta=""
+              deltaLabel=""
               positive
-              spark={[30, 35, 40, 38, 42, 45, 48, 50, 55]}
+              spark={spark3}
+              loading={loading}
             />
           </div>
           <div className="h-full">
             <StatPro
               title="Progreso Mensual"
-              value={`${progresoMensual}%`}
-              delta="+5%"
-              deltaLabel="vs. mes anterior"
+              value={`${Number(progresoMensual)}%`}
+              delta=""
+              deltaLabel=""
               positive
-              spark={[40, 45, 47, 50, 55, 58, 60, 62, 63]}
+              spark={spark4}
+              loading={loading}
             />
           </div>
         </section>
 
-        {/* Grid principal
-            En móvil: flujo natural.
-            En XL: estira y reparte el alto entre columnas. */}
+        {/* Grid principal */}
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:min-h-0 xl:items-stretch">
-          {/* Columna izquierda */}
+          {/* IZQ: metas activas */}
           <div className="min-h-0 xl:col-span-2 xl:h-full">
             <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
               <h2 className="text-sm font-semibold mb-3">Metas de Ahorro Activas</h2>
-              <ScrollArea
-                className={
-                  "space-y-3" +
-                  capMobileClass(activas.length > 6) // 👈 límite y scroll interno solo en móvil si > 6
-                }
-              >
-                {activas.length
-                  ? activas.map((g, idx) => <GoalItem key={`${g.name}-${idx}`} {...g} />)
-                  : <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
-                }
+              <ScrollArea className={"space-y-3"}>
+                {loading ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
+                ) : goalsActive.length ? (
+                  goalsActive.map((g) => (
+                    <GoalItem key={g.id} name={g.name} current={g.current} target={g.target} />
+                  ))
+                ) : (
+                  <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
+                )}
               </ScrollArea>
             </div>
           </div>
 
-          {/* Columna derecha */}
+          {/* DER: completadas */}
           <div className="min-h-0 xl:h-full">
             <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
               <h2 className="text-sm font-semibold mb-3">Metas Completadas</h2>
-              <ScrollArea
-                className={
-                  capMobileClass(completadas.length > 6) // 👈 igual comportamiento en móvil
-                }
-              >
-                {completadas.length
-                  ? <CompletedList items={completadas} />
-                  : <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
-                }
+              <ScrollArea>
+                {loading ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
+                ) : goalsCompleted.length ? (
+                  <CompletedList items={goalsCompleted} />
+                ) : (
+                  <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
+                )}
               </ScrollArea>
             </div>
           </div>
@@ -181,4 +211,14 @@ export default function DashboardPage() {
       </div>
     </AppLayout>
   );
+}
+
+// Helpers menores
+function niceWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-EC", { day: "2-digit", month: "short" });
+}
+function usuarioSeguro(n) {
+  return Number.isFinite(n) ? n : 0;
 }
