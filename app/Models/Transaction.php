@@ -27,4 +27,22 @@ class Transaction extends Model
     {
         return $this->belongsTo(Goal::class);
     }
+
+    protected static function booted()
+    {
+        // Verificar si una meta se completa después de agregar una transacción
+        static::created(function (Transaction $transaction) {
+            if ($transaction->type === 'income') {
+                // Solo verificar para transacciones de ingreso (ahorro)
+                $transaction->goal->checkAndUpdateCompletion();
+            }
+        });
+
+        // Verificar si una meta se completa después de actualizar una transacción
+        static::updated(function (Transaction $transaction) {
+            if ($transaction->type === 'income') {
+                $transaction->goal->checkAndUpdateCompletion();
+            }
+        });
+    }
 }
