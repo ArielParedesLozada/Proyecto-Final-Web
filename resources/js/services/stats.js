@@ -17,3 +17,10 @@ export const getMonthlyIncomeExpense = (params = {}) =>
 
 export const getTopGoalsProgress = (params = {}) =>
     api.get("/stats/goals/top-progress", { params }).then((r) => r.data);
+
+export const downloadStatsPDF = (params = {}) =>
+    api.get("/reports/stats", {
+        params,
+        responseType: "blob",
+        baseURL: "", 
+    });

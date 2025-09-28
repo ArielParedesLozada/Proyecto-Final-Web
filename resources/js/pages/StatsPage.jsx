@@ -7,12 +7,13 @@ import ChartPlaceholder from "../components/stats/ChartPlaceholder";
 import { ToastProvider, useToast } from "../components/ui/ToastProvider";
 
 import {
-  getGoalsStatusDistribution,     
+  getGoalsStatusDistribution,
   getMonthlyRealVsSuggested,
   getMonthlyCompletion,
   getCategoryDistribution,
   getMonthlyIncomeExpense,
   getTopGoalsProgress,
+  downloadStatsPDF,
 } from "../services/stats";
 
 // Recharts
@@ -23,9 +24,6 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-
 const COLORS = ["#6366F1", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4", "#A855F7"];
 
 function StatsPageInner() {
@@ -33,9 +31,11 @@ function StatsPageInner() {
 
   const [range, setRange] = useState({ start: "", end: "" });
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // datasets
-  const [statusPie, setStatusPie] = useState([]);          
+  // ⚠️ El backend devuelve array: [{status: 'Activa', value: 3}, ...]
+  const [statusData, setStatusData] = useState([]);
   const [realVsSuggested, setRealVsSuggested] = useState([]);
   const [monthlyCompletion, setMonthlyCompletion] = useState([]);
   const [categoryDist, setCategoryDist] = useState([]);
@@ -56,16 +56,15 @@ function StatsPageInner() {
   // rango válido para enviar al backend
   const validRange = useMemo(() => {
     const { start, end } = range;
-    if (!start && !end) return {};            
+    if (!start && !end) return {};            // sin rango → backend usa últimos 6 meses
     if (start && end && end >= start) return { start, end };
-    return {};                                
+    return {};                                // incompleto o inválido → no enviamos nada
   }, [range]);
 
   async function loadAll() {
     setLoading(true);
     try {
       const params = { ...validRange };
-
       const [st, rvs, comp, cat, incExp, top] = await Promise.all([
         getGoalsStatusDistribution(params),
         getMonthlyRealVsSuggested(params),
@@ -75,12 +74,14 @@ function StatsPageInner() {
         getTopGoalsProgress(params),
       ]);
 
-      setStatusPie(st.data || []);           
+      setStatusData(Array.isArray(st.data) ? st.data : []);
       setRealVsSuggested(rvs.data || []);
       setMonthlyCompletion(comp.data || []);
       setCategoryDist(cat.data || []);
       setIncomeExpense(incExp.data || []);
       setTopGoals(top.data || []);
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error", message: "No se pudieron cargar las estadísticas." });
     } finally {
       setLoading(false);
     }
@@ -130,11 +131,9 @@ function StatsPageInner() {
       });
       return;
     }
-    if (state === "ok" || (state === "none" && (validRange.start === undefined))) {
-      // ok → aplica; none → vuelve a modo 'por defecto' (últimos 6 meses)
-      loadAll();
-    }
-  }, [range, toast, validRange.start]);
+
+    if (state === "ok" || state === "none") loadAll();
+  }, [range, toast]);
 
   const onClear = () => {
     setRange({ start: "", end: "" });
@@ -142,20 +141,37 @@ function StatsPageInner() {
   };
 
   const onDownloadPDF = async () => {
-    if (!chartsRef.current) return;
-
-    const canvas = await html2canvas(chartsRef.current, {
-      backgroundColor: "#0b1220",
-      scale: 2,
-    });
-    const img = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [canvas.width, canvas.height] });
-    pdf.addImage(img, "PNG", 0, 0, canvas.width, canvas.height);
-    pdf.save("estadisticas_metas.pdf");
+    try {
+      setDownloading(true);
+      const params = { ...validRange }; 
+      const res = await downloadStatsPDF(params);
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "estadisticas_metas.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.push({ tone: "error", title: "Descarga fallida", message: "No se pudo generar el PDF." });
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  // total para decidir si mostramos el donut o el Empty
-  const statusTotal = statusPie.reduce((acc, it) => acc + (it?.value || 0), 0);
+  const pieData = useMemo(() => {
+    return (Array.isArray(statusData) ? statusData : []).map((x) => ({
+      name: x.status,
+      value: Number(x.value) || 0,
+    }));
+  }, [statusData]);
+
+  const statusTotal = useMemo(
+    () => pieData.reduce((acc, it) => acc + (it.value || 0), 0),
+    [pieData]
+  );
 
   return (
     <AppLayout header={header}>
@@ -182,7 +198,7 @@ function StatsPageInner() {
               {loading ? (
                 <ChartPlaceholder variant="pie" height={240} />
               ) : statusTotal === 0 ? (
-                <div className="h-[260px] flex items-center justify-center">
+                <div className="h-[260px] flex items-center">
                   <Empty title="Sin datos" subtitle="No hay metas en el rango." />
                 </div>
               ) : (
@@ -192,14 +208,14 @@ function StatsPageInner() {
                       <Tooltip />
                       <Legend />
                       <Pie
-                        data={statusPie}
+                        data={pieData}
                         dataKey="value"
-                        nameKey="status"
+                        nameKey="name"
                         innerRadius={60}
                         outerRadius={90}
                         paddingAngle={3}
                       >
-                        {statusPie.map((_, i) => (
+                        {pieData.map((_, i) => (
                           <Cell key={i} fill={[COLORS[0], COLORS[1], COLORS[2]][i % 3]} />
                         ))}
                       </Pie>
@@ -278,7 +294,7 @@ function StatsPageInner() {
               {loading ? (
                 <ChartPlaceholder variant="pie" height={240} />
               ) : categoryDist.length === 0 ? (
-                <div className="h-[260px] flex items-center justify-center">
+                <div className="h-[260px] flex items-center">
                   <Empty title="Sin datos" subtitle="No hay metas en el rango." />
                 </div>
               ) : (

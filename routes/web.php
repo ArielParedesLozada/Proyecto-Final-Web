@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\StatsPdfController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login'); // ← default a login
@@ -18,4 +19,6 @@ Route::view('/statistics', 'app');
 Route::view('/history', 'app'); // Nueva ruta para el historial
 
 Route::view('/auth/google/callback', 'app'); // Callback de Google OAuth
+Route::middleware('jwt.auth')->get('/reports/stats', [StatsPdfController::class, 'download']);
+
 
