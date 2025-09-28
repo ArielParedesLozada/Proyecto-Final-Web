@@ -8,7 +8,7 @@ import GoalHistoryRow from "../components/history/GoalHistoryRow";
 import GoalDetailsModal from "../components/history/GoalDetailsModal";
 import GoalsFilters, { DEFAULT_FILTERS } from "../components/history/GoalsFilters";
 import useDebouncedValue from "../hooks/useDebouncedValue";
-import { listGoals, getGoal } from "../services/goals";
+import { listGoalsHistory, getGoal } from "../services/goals";
 import { goalApiToUi } from "../services/adapters";
 import { useToast, ToastProvider } from "../components/ui/ToastProvider";
 
@@ -64,7 +64,7 @@ function HistoryPageInner() {
         if (!silent) setLoading(true);
         try {
             const effective = buildEffectiveFilters();
-            const res = await listGoals({
+            const res = await listGoalsHistory({
                 page: p,
                 pageSize,
                 filters: effective,

@@ -59,6 +59,9 @@ function buildQueryParams(args = {}) {
 export const listGoals = (args = {}) =>
     api.get("/goals", { params: buildQueryParams(args) }).then((r) => r.data);
 
+export const listGoalsHistory = (args = {}) =>
+    api.get("/goals/history", { params: buildQueryParams(args) }).then((r) => r.data);
+
 export const getGoal = (id) =>
     api.get(`/goals/${id}`).then((r) => r.data);
 
