@@ -15,15 +15,18 @@ export default function GoalHistoryRow({ goal, onOpen }) {
         Math.round((Number(currentAmount) / Math.max(Number(targetAmount), 1)) * 100)
     );
 
-    const visualStatus = progress >= 100 ? "Completada" : status;
+    const normalizedStatus =
+        status === "expired" ? "Vencida" : status;
+
+    const visualStatus = progress >= 100 ? "Completada" : normalizedStatus;
 
     const statusStyles = {
         Activa:
             "bg-green-500/15 text-green-600 dark:text-green-300 ring-1 ring-green-500/20",
-        "En pausa":
-            "bg-amber-500/15 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/20",
         Completada:
             "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/20",
+        Vencida:
+            "bg-rose-500/15 text-rose-600 dark:text-rose-300 ring-1 ring-rose-500/20",
     };
     const badgeCls =
         statusStyles[visualStatus] ??

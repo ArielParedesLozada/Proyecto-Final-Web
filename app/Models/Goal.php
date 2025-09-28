@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -44,6 +45,18 @@ class Goal extends Model
         static::restoring(function (Goal $goal) {
             // restaurar transacciones si restauras la meta
             $goal->transactions()->withTrashed()->restore();
+        });
+        
+        static::saving(function (Goal $goal) {
+            if ($goal->status === 'completed') {
+                return;
+            }
+            if (!empty($goal->target_date)) {
+                $today = Carbon::today()->toDateString();
+                if ($goal->target_date < $today) {
+                    $goal->status = 'expired';
+                }
+            }
         });
     }
 }
