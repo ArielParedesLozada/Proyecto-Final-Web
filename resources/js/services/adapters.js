@@ -1,10 +1,7 @@
-function isoToLocalYMD(iso) {
-    if (!iso) return "";
-    const d = new Date(iso); 
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+function pickYMD(val) {
+    if (!val) return "";
+    const m = String(val).match(/^\d{4}-\d{2}-\d{2}/);
+    return m ? m[0] : "";
 }
 
 export const CAT_API_TO_UI = {
@@ -50,6 +47,12 @@ export const STATUS_UI_TO_API = {
 };
 
 export function goalApiToUi(api) {
+    const statusUI = STATUS_API_TO_UI[api.status] ?? "Activa";
+
+    const finishedAt =
+        pickYMD(api.completed_at) ||
+        (api.status === "completed" ? pickYMD(api.updated_at) : "");
+
     return {
         id: api.id,
         name: api.name,
@@ -57,14 +60,14 @@ export function goalApiToUi(api) {
         description: api.description ?? "",
         targetAmount: Number(api.target_amount),
         currentAmount: Number(
-            api.accumulated ??
-            api.current_amount ??
-            api.currentAmount ??
-            0
+            api.accumulated ?? api.current_amount ?? api.currentAmount ?? 0
         ),
-        status: STATUS_API_TO_UI[api.status] ?? "Activa",
-        createdAt: isoToLocalYMD(api.created_at),
-        deadline: api.target_date,
+        status: statusUI,
+
+        createdAt: pickYMD(api.created_at),
+        updatedAt: pickYMD(api.updated_at),   
+        deadline: pickYMD(api.target_date),
+        finishedAt,                           
     };
 }
 

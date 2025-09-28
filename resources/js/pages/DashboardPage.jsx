@@ -42,10 +42,12 @@ export default function DashboardPage() {
       // === Rango para "total ahorrado": últimos 12 meses ===
       const end = new Date();
       const start = new Date();
-      start.setMonth(start.getMonth() - 11); // 12 meses contando el actual
-      const params12m = { start: ymd(new Date(start.getFullYear(), start.getMonth(), 1)), end: ymd(end) };
+      start.setMonth(start.getMonth() - 11); 
+      const params12m = {
+        start: ymd(new Date(start.getFullYear(), start.getMonth(), 1)),
+        end: ymd(end),
+      };
 
-      // 1) Ingresos vs Gastos (para total ahorrado)
       const inex = await getMonthlyIncomeExpense(params12m);
       const total = (inex.data ?? []).reduce(
         (acc, m) => acc + (Number(m.incomes || 0) - Number(m.expenses || 0)),
@@ -53,22 +55,18 @@ export default function DashboardPage() {
       );
       setTotalAhorrado(Math.max(0, Math.round(total)));
 
-      // 2) Real vs Sugerido (para metaMensual y progreso mensual)
       const rvs = await getMonthlyRealVsSuggested({});
       const serie = rvs.data ?? [];
       const ultimo = serie[serie.length - 1] || { real: 0, suggested: 0 };
       const sug = Number(ultimo.suggested || 0);
-      const real = Number(usuarioSeguro(ultimo.real)); // helper abajo por si viene undefined
+      const real = Number.isFinite(ultimo.real) ? Number(ultimo.real) : 0;
       setMetaMensualSugerida(Math.round(sug));
       setProgresoMensual(sug > 0 ? Math.round((real / sug) * 100) : 0);
 
-      // 3) Distribución de estados (para metas activas)
       const dist = await getGoalsStatusDistribution({});
       const actRow = (dist.data || []).find((x) => x.status === "Activa");
       setMetasActivas(Number(actRow?.value || 0));
 
-      // 4) Metas para listas (activas + completadas)
-      //    Tu adapter ya convierte category/status y trae currentAmount (si backend lo manda).
       const resGoals = await listGoals({ page: 1, pageSize: 100, filters: {} });
       const rows = (resGoals.data ?? []).map(goalApiToUi);
 
@@ -87,8 +85,9 @@ export default function DashboardPage() {
         .filter((g) => g.status === "Completada")
         .map((g) => ({
           id: g.id,
-          title: g.name,
-          when: niceWhen(g.updatedAt || g.createdAt),
+          name: g.name,
+          finishedAt: g.finishedAt || "",
+          deadline: g.deadline || "",
           updatedAt: g.updatedAt || g.createdAt,
         }))
         .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
@@ -105,7 +104,7 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  // valores de sparkle de ejemplo (puedes alimentar con algo real si quieres)
+  // valores de sparkle de ejemplo
   const spark1 = useMemo(() => [45, 48, 52, 60, 62, 67, 72, 74, 78], []);
   const spark2 = useMemo(() => [20, 24, 26, 28, 30, 35, 38, 40, 42], []);
   const spark3 = useMemo(() => [30, 35, 40, 38, 42, 45, 48, 50, 55], []);
@@ -200,7 +199,14 @@ export default function DashboardPage() {
                 {loading ? (
                   <div className="text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
                 ) : goalsCompleted.length ? (
-                  <CompletedList items={goalsCompleted} />
+                  <CompletedList
+                    items={goalsCompleted.map((g) => ({
+                      id: g.id,
+                      name: g.name,
+                      finishedAt: g.finishedAt, 
+                      deadline: g.deadline,     
+                    }))}
+                  />
                 ) : (
                   <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
                 )}
@@ -211,14 +217,4 @@ export default function DashboardPage() {
       </div>
     </AppLayout>
   );
-}
-
-// Helpers menores
-function niceWhen(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-EC", { day: "2-digit", month: "short" });
-}
-function usuarioSeguro(n) {
-  return Number.isFinite(n) ? n : 0;
 }

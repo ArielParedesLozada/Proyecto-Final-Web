@@ -44,3 +44,39 @@ export function dateToYMD(date) {
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
 }
+
+export function formatYMDToShort(ymd, locale = "es-EC") {
+    const dt = parseYMDToUTCDate(ymd);
+    if (!dt) return "";
+    const s = new Intl.DateTimeFormat(locale, {
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC",
+    }).format(dt);
+    return s.replace(".", "");
+}
+
+export function formatISOToDisplayUTC(iso, locale = "es-EC") {
+    if (!iso) return "";
+    const dt = new Date(iso);
+    return new Intl.DateTimeFormat(locale, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: "UTC",
+    }).format(dt);
+}
+
+export function formatYMDShort(ymd, locale = "es-EC") {
+    if (!ymd) return "";
+    const dt = parseYMDToUTCDate(ymd);
+    if (!dt) return "";
+    return new Intl.DateTimeFormat(locale, {
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC",
+    })
+        .format(dt)
+        .replace(/\.$/, ""); 
+}
+
