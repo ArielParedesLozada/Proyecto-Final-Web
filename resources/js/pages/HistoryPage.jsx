@@ -43,7 +43,7 @@ function HistoryPageInner() {
 
     const firstLoadRef = useRef(true);
 
-
+    /** Construye filtros efectivos para API (omite rango si está incompleto o inválido) */
     function buildEffectiveFilters() {
         const f = { ...filters, search: debouncedSearch };
 
@@ -51,12 +51,9 @@ function HistoryPageInner() {
         const hasEnd = !!f.venceHasta;
 
         if (hasStart && hasEnd) {
-            if (f.venceHasta >= f.creadaDesde) {
-
-                return f;
-            }
+            if (f.venceHasta >= f.creadaDesde) return f; // rango válido
             const { creadaDesde, venceHasta, ...rest } = f;
-            return rest;
+            return rest; // rango inválido → se omite
         }
 
         const { creadaDesde, venceHasta, ...rest } = f;
@@ -90,7 +87,7 @@ function HistoryPageInner() {
         localStorage.setItem(LS_KEY, JSON.stringify(filters));
     }, [filters]);
 
-    // recargar por página o búsqueda (debounced)
+    // primera carga y cambios de búsqueda (debounced)
     useEffect(() => {
         const silent = !firstLoadRef.current;
         load(page, { silent }).finally(() => {
@@ -101,14 +98,22 @@ function HistoryPageInner() {
     useEffect(() => {
         setPage(1);
         load(1, { silent: false });
-    }, [
-        filters.categoria,
-        filters.estados,
-        filters.creadaDesde,
-        filters.venceHasta,
-        filters.vence7dias,
-    ]);
+    }, [filters.categoria, filters.estados, filters.vence7dias]);
 
+    useEffect(() => {
+        const start = filters.creadaDesde;
+        const end = filters.venceHasta;
+
+        const bothEmpty = !start && !end;
+        const bothValid = !!start && !!end && end >= start;
+
+        if (bothEmpty || bothValid) {
+            setPage(1);
+            load(1, { silent: false });
+        }
+    }, [filters.creadaDesde, filters.venceHasta]);
+
+    // toasts informativos/errores por fechas
     const lastDateStateRef = useRef("init");
     useEffect(() => {
         const start = filters.creadaDesde;
@@ -239,7 +244,7 @@ function HistoryPageInner() {
     );
 }
 
-export default function GoalsPage() {
+export default function HistoryPage() {
     return (
         <ToastProvider placement="top-right">
             <HistoryPageInner />
