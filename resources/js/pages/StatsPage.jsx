@@ -24,7 +24,32 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-const COLORS = ["#6366F1", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4", "#A855F7"];
+// Paleta de colores moderna y profesional
+const COLORS = {
+  primary: "#6366F1",     // Indigo principal
+  success: "#10B981",     // Emerald
+  warning: "#F59E0B",     // Amber
+  danger: "#EF4444",      // Red
+  info: "#06B6D4",        // Cyan
+  purple: "#8B5CF6",      // Violet
+  gradient: {
+    primary: ["#6366F1", "#4F46E5"],
+    success: ["#10B981", "#059669"],
+    warning: ["#F59E0B", "#D97706"],
+    danger: ["#EF4444", "#DC2626"],
+    info: ["#06B6D4", "#0891B2"],
+    purple: ["#8B5CF6", "#7C3AED"]
+  }
+};
+
+const CHART_COLORS = [
+  COLORS.primary,
+  COLORS.success, 
+  COLORS.warning,
+  COLORS.danger,
+  COLORS.info,
+  COLORS.purple
+];
 
 function StatsPageInner() {
   const toast = useToast();
@@ -187,11 +212,14 @@ function StatsPageInner() {
         <ScrollArea className="">
           <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* 1) Estados de las metas (donut) */}
-            <div className="fin-card p-4">
-              <div className="mb-2">
-                <h3 className="font-semibold">Estados de las metas</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Activas vs Completadas vs Vencidas
+            <div className="fin-card p-6 card-hover">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-8 bg-gradient-to-b from-indigo-500 to-indigo-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Estados de las metas</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-5">
+                  Distribución entre metas activas, completadas y vencidas
                 </p>
               </div>
 
@@ -205,18 +233,37 @@ function StatsPageInner() {
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip />
-                      <Legend />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(value, name) => [`${value} metas`, name]}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="circle"
+                      />
                       <Pie
                         data={pieData}
                         dataKey="value"
                         nameKey="name"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={3}
+                        innerRadius={70}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        stroke="rgba(255, 255, 255, 0.8)"
+                        strokeWidth={2}
                       >
                         {pieData.map((_, i) => (
-                          <Cell key={i} fill={[COLORS[0], COLORS[1], COLORS[2]][i % 3]} />
+                          <Cell 
+                            key={i} 
+                            fill={CHART_COLORS[i % CHART_COLORS.length]}
+                            stroke="rgba(255, 255, 255, 0.8)"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                     </PieChart>
@@ -226,10 +273,15 @@ function StatsPageInner() {
             </div>
 
             {/* 2) Real vs Sugerido mensual */}
-            <div className="fin-card p-4">
-              <div className="mb-2">
-                <h3 className="font-semibold">Ahorro real vs sugerido</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Suma mensual (todos tus objetivos)</p>
+            <div className="fin-card p-6 card-hover">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-emerald-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ahorro real vs sugerido</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-5">
+                  Comparación entre el ahorro real y el sugerido mensualmente
+                </p>
               </div>
 
               {loading ? (
@@ -242,13 +294,59 @@ function StatsPageInner() {
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={realVsSuggested}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="real" name="Real" stroke={COLORS[0]} dot={false} />
-                      <Line type="monotone" dataKey="suggested" name="Sugerido" stroke={COLORS[2]} dot={false} />
+                      <defs>
+                        <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor={COLORS.success} stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="suggestedGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.warning} stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor={COLORS.warning} stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.3)" />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                        tickFormatter={(value) => `$${value}`}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(value, name) => [`$${value}`, name]}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="circle"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="real" 
+                        name="Real" 
+                        stroke={COLORS.success} 
+                        strokeWidth={3}
+                        dot={{ fill: COLORS.success, strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: COLORS.success, strokeWidth: 2 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="suggested" 
+                        name="Sugerido" 
+                        stroke={COLORS.warning} 
+                        strokeWidth={3}
+                        dot={{ fill: COLORS.warning, strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: COLORS.warning, strokeWidth: 2 }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -256,10 +354,15 @@ function StatsPageInner() {
             </div>
 
             {/* 3) Cumplimiento mensual */}
-            <div className="fin-card p-4">
-              <div className="mb-2">
-                <h3 className="font-semibold">Cumplimiento mensual</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Promedio de avance (%) al cierre de cada mes</p>
+            <div className="fin-card p-6 card-hover">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-8 bg-gradient-to-b from-amber-500 to-amber-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cumplimiento mensual</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-5">
+                  Promedio de avance porcentual al cierre de cada mes
+                </p>
               </div>
 
               {loading ? (
@@ -272,12 +375,47 @@ function StatsPageInner() {
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={monthlyCompletion}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                      <Tooltip formatter={(v) => `${v}%`} />
-                      <Legend />
-                      <Line type="monotone" dataKey="completion" name="Cumplimiento" stroke={COLORS[1]} dot={false} />
+                      <defs>
+                        <linearGradient id="completionGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.warning} stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor={COLORS.warning} stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.3)" />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        tickFormatter={(v) => `${v}%`}
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(v) => [`${v}%`, 'Cumplimiento']}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="circle"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="completion" 
+                        name="Cumplimiento" 
+                        stroke={COLORS.warning} 
+                        strokeWidth={3}
+                        dot={{ fill: COLORS.warning, strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: COLORS.warning, strokeWidth: 2 }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -285,10 +423,15 @@ function StatsPageInner() {
             </div>
 
             {/* 4) Categorías de metas */}
-            <div className="fin-card p-4">
-              <div className="mb-2">
-                <h3 className="font-semibold">Categorías de metas</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Distribución por categoría</p>
+            <div className="fin-card p-6 card-hover">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Categorías de metas</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-5">
+                  Distribución de metas por categoría de ahorro
+                </p>
               </div>
 
               {loading ? (
@@ -301,18 +444,37 @@ function StatsPageInner() {
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip />
-                      <Legend />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(value, name) => [`${value} metas`, name]}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="circle"
+                      />
                       <Pie
                         data={categoryDist}
                         dataKey="value"
                         nameKey="category"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={3}
+                        innerRadius={70}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        stroke="rgba(255, 255, 255, 0.8)"
+                        strokeWidth={2}
                       >
                         {categoryDist.map((_, idx) => (
-                          <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                          <Cell 
+                            key={idx} 
+                            fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                            stroke="rgba(255, 255, 255, 0.8)"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                     </PieChart>
@@ -322,10 +484,15 @@ function StatsPageInner() {
             </div>
 
             {/* 5) Ingresos vs Gastos mensual */}
-            <div className="fin-card p-4">
-              <div className="mb-2">
-                <h3 className="font-semibold">Ingresos vs Gastos (mensual)</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Suma mensual de ingresos y gastos</p>
+            <div className="fin-card p-6 card-hover">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-8 bg-gradient-to-b from-cyan-500 to-cyan-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ingresos vs Gastos</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-5">
+                  Comparación mensual entre ingresos y gastos totales
+                </p>
               </div>
 
               {loading ? (
@@ -337,14 +504,58 @@ function StatsPageInner() {
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={incomeExpense}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="incomes" name="Ingresos" fill={COLORS[1]} />
-                      <Bar dataKey="expenses" name="Gastos" fill={COLORS[3]} />
+                    <BarChart data={incomeExpense} barCategoryGap="20%">
+                      <defs>
+                        <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor={COLORS.success} stopOpacity={0.4}/>
+                        </linearGradient>
+                        <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.danger} stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor={COLORS.danger} stopOpacity={0.4}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.3)" />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                        tickFormatter={(value) => `$${value}`}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(value, name) => [`$${value}`, name]}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="rect"
+                      />
+                      <Bar 
+                        dataKey="incomes" 
+                        name="Ingresos" 
+                        fill="url(#incomeGradient)"
+                        radius={[4, 4, 0, 0]}
+                        stroke={COLORS.success}
+                        strokeWidth={1}
+                      />
+                      <Bar 
+                        dataKey="expenses" 
+                        name="Gastos" 
+                        fill="url(#expenseGradient)"
+                        radius={[4, 4, 0, 0]}
+                        stroke={COLORS.danger}
+                        strokeWidth={1}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -352,10 +563,15 @@ function StatsPageInner() {
             </div>
 
             {/* 6) Top 5 metas por avance */}
-            <div className="fin-card p-4">
-              <div className="mb-2">
-                <h3 className="font-semibold">Top 5 metas por avance</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Metas con mayor % de progreso en el rango</p>
+            <div className="fin-card p-6 card-hover">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-8 bg-gradient-to-b from-red-500 to-red-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top 5 metas por avance</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-5">
+                  Metas con mayor porcentaje de progreso en el período
+                </p>
               </div>
 
               {loading ? (
@@ -367,13 +583,58 @@ function StatsPageInner() {
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topGoals}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                      <Tooltip formatter={(v) => `${v}%`} />
-                      <Legend />
-                      <Bar dataKey="progress" name="Progreso (%)" fill={COLORS[5]} />
+                    <BarChart data={topGoals} barCategoryGap="10%">
+                      <defs>
+                        {topGoals.map((_, index) => (
+                          <linearGradient key={index} id={`progressGradient${index}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={CHART_COLORS[index % CHART_COLORS.length]} stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor={CHART_COLORS[index % CHART_COLORS.length]} stopOpacity={0.4}/>
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.3)" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 11, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        tickFormatter={(v) => `${v}%`}
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        axisLine={{ stroke: 'rgba(156, 163, 175, 0.3)' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(v) => [`${v}%`, 'Progreso']}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="rect"
+                      />
+                      <Bar 
+                        dataKey="progress" 
+                        name="Progreso (%)" 
+                        radius={[4, 4, 0, 0]}
+                        strokeWidth={1}
+                      >
+                        {topGoals.map((_, index) => (
+                          <Cell 
+                            key={index} 
+                            fill={`url(#progressGradient${index})`}
+                            stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                          />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
