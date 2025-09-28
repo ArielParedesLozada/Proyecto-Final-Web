@@ -1,35 +1,92 @@
-export default function StatPro({ title, value, delta, deltaLabel, positive=true, spark=[] , icon }) {
-  // spark: array de números (0-100). Se renderiza como un polilínea simple
-  const H = 28, W = 80;
-  const pts = spark.map((v, i) => `${(i/(spark.length-1))*W},${H - (v/100)*H}`).join(" ");
+const THEMES = {
+  indigo: {
+    iconWrap: "bg-indigo-500/15 ring-indigo-500/25 text-indigo-400",
+    cardRing: "ring-indigo-500/10",
+    stripe: "from-indigo-400/50 via-indigo-500/30 to-indigo-600/40",
+  },
+  emerald: {
+    iconWrap: "bg-emerald-500/15 ring-emerald-500/25 text-emerald-400",
+    cardRing: "ring-emerald-500/10",
+    stripe: "from-emerald-400/50 via-emerald-500/30 to-emerald-600/40",
+  },
+  amber: {
+    iconWrap: "bg-amber-500/15 ring-amber-500/25 text-amber-400",
+    cardRing: "ring-amber-500/10",
+    stripe: "from-amber-400/50 via-amber-500/30 to-amber-600/40",
+  },
+  violet: {
+    iconWrap: "bg-violet-500/15 ring-violet-500/25 text-violet-400",
+    cardRing: "ring-violet-500/10",
+    stripe: "from-violet-400/50 via-violet-500/30 to-violet-600/40",
+  },
+};
+
+export default function StatPro({
+  title,
+  value,
+  sublabel,    
+  icon,      
+  variant = "indigo",
+  loading = false,
+}) {
+  const t = THEMES[variant] ?? THEMES.indigo;
 
   return (
-    <div className="fin-card card-hover p-4 md:p-5 h-full">
-      <div className="flex items-start justify-between">
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
-        {icon && <span className="text-gray-400">{icon}</span>}
-      </div>
+    <div
+      className={[
+        "fin-card p-4 md:p-5 h-full flex flex-col justify-between relative overflow-hidden",
+        "ring-1 ring-white/5", 
+        t.cardRing,           
+      ].join(" ")}
+    >
+      {/* franja decorativa inferior */}
+      <div
+        className={[
+          "pointer-events-none absolute bottom-0 left-3 right-3 h-1.5 rounded-full",
+          "bg-gradient-to-r",
+          t.stripe,
+        ].join(" ")}
+      />
 
-      <div className="mt-2 md:mt-3 flex items-end justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-2xl md:text-3xl font-semibold tracking-tight">{value}</p>
-          {delta != null && (
-            <div className="mt-1 inline-flex items-center gap-1 text-xs">
-              <span className={positive ? "text-emerald-500" : "text-red-400"}>
-                {positive ? "▲" : "▼"} {delta}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">{deltaLabel}</span>
-            </div>
+          {/* título con mayor contraste */}
+          <p className="text-[13px] font-semibold text-white/95 tracking-wide">
+            {title}
+          </p>
+
+          {/* valor */}
+          {loading ? (
+            <div className="mt-2 h-8 w-28 rounded-md bg-gray-300/30 dark:bg-gray-700/40 animate-pulse" />
+          ) : (
+            <p className="text-3xl font-semibold tracking-tight mt-1">
+              {value}
+            </p>
           )}
         </div>
 
-        {/* Sparkline */}
-        {spark.length > 1 && (
-          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="opacity-80">
-            <polyline fill="none" stroke="currentColor" strokeWidth="2" className="text-primary-600" points={pts}/>
-          </svg>
-        )}
+        {/* Icono (coloreado por la variante) */}
+        {icon ? (
+          <div
+            className={[
+              "ms-3 inline-flex items-center justify-center rounded-xl p-2",
+              "ring-1",
+              t.iconWrap,
+            ].join(" ")}
+            aria-hidden
+          >
+            {icon}
+          </div>
+        ) : null}
       </div>
+
+      {/* sublabel opcional */}
+      {sublabel ? (
+        <p className="mt-3 text-xs text-gray-400">{sublabel}</p>
+      ) : (
+        <span className="mt-2" />
+      )}
     </div>
   );
 }
