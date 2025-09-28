@@ -33,7 +33,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Errores de validación',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -58,7 +58,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'User registered successfully',
+            'message' => 'Usuario registrado correctamente',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -89,7 +89,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Errores de validación',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -100,7 +100,7 @@ class AuthController extends Controller
             if (!$token = JWTAuth::attempt($credentials)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials'
+                    'message' => 'Credenciales invalidas'
                 ], 401);
             }
         } catch (JWTException $e) {
@@ -114,7 +114,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Login successful',
+            'message' => 'Inicio de sesión exitoso',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -163,7 +163,7 @@ class AuthController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'Usuario no encontrado'
                 ], 404);
             }
 
@@ -288,10 +288,9 @@ class AuthController extends Controller
                     'expires_at' => $passwordReset->expires_at->format('H:i:s')
                 ]
             ]);
-
         } catch (\Exception $e) {
             \Log::error('Error sending password reset email: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar el correo. Intenta nuevamente.'
@@ -383,7 +382,7 @@ class AuthController extends Controller
         try {
             // Buscar el usuario
             $user = User::where('email', $email)->first();
-            
+
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -403,14 +402,52 @@ class AuthController extends Controller
                 'success' => true,
                 'message' => 'Contraseña restablecida exitosamente'
             ]);
-
         } catch (\Exception $e) {
             \Log::error('Error resetting password: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al restablecer la contraseña. Intenta nuevamente.'
             ], 500);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            $data = $request->validate([
+                'current_password' => ['required'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'], // requiere password_confirmation
+            ]);
+
+            if (!Hash::check($data['current_password'], $user->password_hash)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La contraseña actual no es correcta.'
+                ], 422);
+            }
+
+            $user->password_hash = Hash::make($data['password']);
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contraseña actualizada correctamente.'
+            ]);
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token invalid'
+            ], 401);
         }
     }
 }

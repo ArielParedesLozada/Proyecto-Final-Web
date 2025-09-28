@@ -2,14 +2,27 @@ import React, { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import GoalGrid from "../components/goals/GoalGrid";
 import NewGoalModal from "../components/goals/NewGoalModal";
-import EmptyGoals from "../components/goals/EmptyGoals";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AddTxModal from "../components/goals/AddTxModal";
-import { GoalsAPI } from "../services/API";
 import Pagination from "../components/ui/Pagination";
 import ResponsivePane from "../layouts/ResponsivePane";
+import Empty from "../components/ui/Empty";
 
-export default function GoalsPage() {
+// Toasts
+import { ToastProvider, useToast } from "../components/ui/ToastProvider";
+
+// Servicios reales
+import {
+  listGoals,
+  createGoal,
+  updateGoal,
+  deleteGoal,
+  getGoal,
+} from "../services/goals";
+import { addTransaction } from "../services/transactions";
+import { goalApiToUi, goalUiToApi } from "../services/adapters";
+
+function GoalsPageInner() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,37 +39,53 @@ export default function GoalsPage() {
   const [txOpen, setTxOpen] = useState(false);
   const [txGoal, setTxGoal] = useState(null);
 
-  // paginación
+  // paginación (UI)
   const [page, setPage] = useState(1);
   const pageSize = 4;
   const [total, setTotal] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [lastPage, setLastPage] = useState(1);
 
-  async function load(p = page) {
-    setLoading(true);
+  const toast = useToast();
+
+  // Carga con opción “silenciosa” (no muestra loader)
+  async function load(p = page, { silent = false } = {}) {
+    if (!silent) setLoading(true);
     try {
-      const res = await GoalsAPI.list({ page: p, pageSize });
-      setGoals(res.data);
-      setTotal(res.total);
+      const res = await listGoals({ page: p, pageSize });
+      const rows = (res.data ?? []).map(goalApiToUi);
+      setGoals(rows);
+      setTotal(res.total ?? rows.length);
+      const lp =
+        res.last_page ??
+        Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
+      setLastPage(lp);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
   useEffect(() => {
-    load(page);
+    // Al cambiar de página sí queremos mostrar loader
+    load(page, { silent: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Crear
+  // Crear (optimista + refresh silencioso)
   async function handleCreateGoal(payload) {
-    await GoalsAPI.create(payload);
-    setModalOpen(false);
-    setPage(1);
-    await load(1);
+    try {
+      const resp = await createGoal(goalUiToApi(payload));
+      toast.push({ tone: "success", title: "Meta creada" });
+      setModalOpen(false);
+
+      // Ir a página 1 y refrescar silenciosamente
+      setPage(1);
+      await load(1, { silent: true });
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error al crear", message: e?.message || "No se pudo crear la meta." });
+    }
   }
 
-  // Editar
+  // Editar (optimista + refresh silencioso)
   function handleEditGoal(goal) {
     setEditingGoal(goal);
     setModalMode("edit");
@@ -65,13 +94,46 @@ export default function GoalsPage() {
 
   async function handleSubmitEdit(payload) {
     const { id, ...rest } = payload;
-    await GoalsAPI.update(id, rest);
-    setModalOpen(false);
-    setEditingGoal(null);
-    await load(page);
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === id
+          ? {
+            ...g,
+            name: rest.name ?? g.name,
+            category: rest.category ?? g.category,
+            description: rest.description ?? g.description,
+            targetAmount: typeof rest.targetAmount === "number" ? rest.targetAmount : g.targetAmount,
+            deadline: rest.deadline ?? g.deadline,
+            status: rest.status ?? g.status,
+          }
+          : g
+      )
+    );
+
+    try {
+      await updateGoal(id, goalUiToApi(rest));
+      toast.push({ tone: "success", title: "Cambios guardados" });
+
+      // Traer versión canónica del back 
+      try {
+        const detail = await getGoal(id);
+        const updated = goalApiToUi(detail.data);
+        setGoals((arr) => arr.map((g) => (g.id === id ? updated : g)));
+      } catch {
+        // si falla el detalle, recargamos la página de forma silenciosa
+        await load(page, { silent: true });
+      }
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error al actualizar", message: e?.message || "No se pudo actualizar la meta." });
+      // Podríamos revertir, pero la previa recarga silenciosa al fallar ya “corrige” el estado:
+      await load(page, { silent: true });
+    } finally {
+      setModalOpen(false);
+      setEditingGoal(null);
+    }
   }
 
-  // Eliminar
+  // Eliminar (optimista + refresh silencioso)
   function askDelete(id) {
     setToDeleteId(id);
     setConfirmOpen(true);
@@ -79,33 +141,83 @@ export default function GoalsPage() {
 
   async function confirmDelete() {
     if (toDeleteId == null) return;
-    await GoalsAPI.remove(toDeleteId);
+
+    // Optimista: eliminamos de la lista al instante
+    setGoals((prev) => prev.filter((g) => g.id !== toDeleteId));
     setConfirmOpen(false);
-    const next = Math.min(page, Math.ceil((total - 1) / pageSize) || 1);
-    setPage(next);
-    await load(next);
+
+    try {
+      await deleteGoal(toDeleteId);
+      toast.push({ tone: "success", title: "Meta eliminada" });
+
+      // Si quedó la página vacía, traer contenido de la previa; siempre en silencio
+      const afterDeleteCount = goals.length - 1;
+      const pageNowEmpty = afterDeleteCount === 0 && page > 1;
+      const nextPage = pageNowEmpty ? page - 1 : page;
+
+      setPage(nextPage); // actualiza el pager
+      await load(nextPage, { silent: true });
+    } catch (e) {
+      toast.push({ tone: "error", title: "Error al eliminar", message: e?.message || "No se pudo eliminar la meta." });
+      // Recuperar estado real desde el back sin loader
+      await load(page, { silent: true });
+    } finally {
+      setToDeleteId(null);
+    }
   }
 
-  // ===== Ingreso / Gasto =====
+  // Ingreso / Gasto (optimista + refresh silencioso)
   function handleAddTx(goal) {
     setTxGoal(goal);
     setTxOpen(true);
   }
 
-  async function handleSaveTx({ goalId, type, amount }) {
+  async function handleSaveTx({ goalId, type, kind, amount }) {
+    const delta = type === "income" ? Number(amount) : -Number(amount);
+
+    // Optimista
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId
+          ? { ...g, currentAmount: Math.max(0, Math.min(g.targetAmount, (g.currentAmount || 0) + delta)) }
+          : g
+      )
+    );
+
     try {
-      const goal = goals.find((g) => g.id === goalId);
-      if (!goal) return;
+      await addTransaction(goalId, {
+        type,
+        is_fixed: kind === "Fijo",
+        amount: Number(amount),
+      });
 
-      const delta = type === "income" ? amount : -amount;
-      const newAmount = Math.max(0, (goal.currentAmount ?? 0) + delta);
+      // Sin loader: refrescamos solo la meta desde el back o la página si no hay detalle
+      try {
+        const detail = await getGoal(goalId);
+        const updated = goalApiToUi(detail.data);
+        setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
+      } catch {
+        await load(page, { silent: true });
+      }
 
-      await GoalsAPI.update(goalId, { currentAmount: newAmount });
+      toast.push({
+        tone: "success",
+        title: type === "income" ? "Ingreso registrado" : "Gasto registrado",
+        message: `${type === "income" ? "+" : "-"}$${Number(amount).toLocaleString()}`,
+      });
+    } catch (e) {
+      // Revertir optimista
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === goalId
+            ? { ...g, currentAmount: Math.max(0, Math.min(g.targetAmount, (g.currentAmount || 0) - delta)) }
+            : g
+        )
+      );
+      toast.push({ tone: "error", title: "Error al guardar", message: e?.message || "No se pudo registrar el movimiento." });
+    } finally {
       setTxOpen(false);
       setTxGoal(null);
-      await load(page);
-    } catch (e) {
-      console.error(e);
     }
   }
 
@@ -121,7 +233,6 @@ export default function GoalsPage() {
 
   return (
     <AppLayout header={header}>
-      {/* Pane reutilizable: toolbar fija + contenido scrolleable (solo en XL) */}
       <ResponsivePane
         toolbar={
           <div className="flex items-center justify-end">
@@ -139,38 +250,26 @@ export default function GoalsPage() {
         }
       >
         {loading ? (
-          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
-            Cargando…
-          </div>
+          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
         ) : goals.length === 0 ? (
-          <EmptyGoals
-            onCreate={() => {
-              setModalMode("create");
-              setEditingGoal(null);
-              setModalOpen(true);
-            }}
+          <Empty
+            title="Aún no tienes metas de ahorro"
+            subtitle="Crea tu primera meta para comenzar a registrar tu progreso financiero."
           />
         ) : (
           <>
-            <GoalGrid
-              goals={goals}
-              onAddTx={handleAddTx}
-              onEdit={handleEditGoal}
-              onDelete={askDelete}
-            />
+            <GoalGrid goals={goals} onAddTx={handleAddTx} onEdit={handleEditGoal} onDelete={askDelete} />
 
-            {/* Paginación simple */}
             <Pagination
               page={page}
-              totalPages={totalPages}
+              totalPages={lastPage}
               onPrev={() => setPage((p) => Math.max(1, p - 1))}
-              onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
             />
           </>
         )}
       </ResponsivePane>
 
-      {/* Modal Crear / Editar */}
       <NewGoalModal
         open={modalOpen}
         onClose={() => {
@@ -182,7 +281,6 @@ export default function GoalsPage() {
         initialGoal={editingGoal}
       />
 
-      {/* Confirmación de eliminación */}
       <ConfirmModal
         open={confirmOpen}
         title="Eliminar meta"
@@ -193,13 +291,15 @@ export default function GoalsPage() {
         onCancel={() => setConfirmOpen(false)}
       />
 
-      {/* Modal Ingreso/Gasto */}
-      <AddTxModal
-        open={txOpen}
-        onClose={() => setTxOpen(false)}
-        goal={txGoal}
-        onSubmit={handleSaveTx}
-      />
+      <AddTxModal open={txOpen} onClose={() => setTxOpen(false)} goal={txGoal} onSubmit={handleSaveTx} />
     </AppLayout>
+  );
+}
+
+export default function GoalsPage() {
+  return (
+    <ToastProvider placement="top-right">
+      <GoalsPageInner />
+    </ToastProvider>
   );
 }

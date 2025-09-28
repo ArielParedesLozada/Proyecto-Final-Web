@@ -1,3 +1,5 @@
+import { formatYMDToDisplay } from "../../services/dates";
+
 export default function GoalHistoryRow({ goal, onOpen }) {
     const {
         name,
@@ -13,22 +15,25 @@ export default function GoalHistoryRow({ goal, onOpen }) {
         Math.round((Number(currentAmount) / Math.max(Number(targetAmount), 1)) * 100)
     );
 
-    const visualStatus = progress >= 100 ? "Completada" : status;
+    const normalizedStatus =
+        status === "expired" ? "Vencida" : status;
+
+    const visualStatus = progress >= 100 ? "Completada" : normalizedStatus;
 
     const statusStyles = {
         Activa:
             "bg-green-500/15 text-green-600 dark:text-green-300 ring-1 ring-green-500/20",
-        "En pausa":
-            "bg-amber-500/15 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/20",
         Completada:
             "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/20",
+        Vencida:
+            "bg-rose-500/15 text-rose-600 dark:text-rose-300 ring-1 ring-rose-500/20",
     };
     const badgeCls =
         statusStyles[visualStatus] ??
         "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
 
     const deadlineText = deadline
-        ? new Date(deadline).toLocaleDateString()
+        ? formatYMDToDisplay(deadline, "es-EC")
         : "Sin fecha límite";
 
     let barGradient = "from-indigo-500 to-indigo-600";
@@ -54,9 +59,11 @@ export default function GoalHistoryRow({ goal, onOpen }) {
                     </div>
                     <p
                         className="text-xs text-gray-500 dark:text-gray-400 truncate"
-                        title={`${category ?? "—"} • ${deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}`}
+                        title={`${category ?? "—"} • ${deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"
+                            }`}
                     >
-                        {category ?? "—"} • {deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}
+                        {category ?? "—"} •{" "}
+                        {deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}
                     </p>
                 </div>
 
@@ -87,13 +94,7 @@ export default function GoalHistoryRow({ goal, onOpen }) {
                         title="Ver más"
                     >
                         <span className="hidden sm:inline">Ver más</span>
-                        <svg
-                            className="sm:hidden"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                        >
+                        <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <path
                                 d="M9 6l6 6-6 6"
                                 className="stroke-current/80"

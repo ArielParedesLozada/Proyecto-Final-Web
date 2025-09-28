@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
-import ResponsivePane from "../layouts/ResponsivePane"; // 👈 NUEVO
+import ResponsivePane from "../layouts/ResponsivePane";
+import { ToastProvider, useToast } from "../components/ui/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
+import { getProfile, updateProfile, changePassword } from "../services/profile";
+import PasswordInput from "../components/login/PasswordInput";
 
 /* --- Subcomponentes pequeños para mantener orden --- */
 function SectionHeader({ title, subtitle, right }) {
@@ -25,11 +29,11 @@ function Field({ id, label, children, hint, className = "" }) {
   );
 }
 
-function AvatarReadOnly({ nameFull = "Elkinnn Lopez_10", initials = "EL" }) {
+function AvatarReadOnly({ nameFull = "Usuario", initials = "U" }) {
   return (
     <div className="flex items-center gap-4">
       <div className="h-16 w-16 rounded-full bg-primary-600 text-white grid place-items-center text-xl font-semibold ring-1 ring-black/5 shadow">
-        {initials}
+        {initials || "U"}
       </div>
       <div>
         <p className="font-semibold leading-tight">{nameFull}</p>
@@ -39,17 +43,54 @@ function AvatarReadOnly({ nameFull = "Elkinnn Lopez_10", initials = "EL" }) {
   );
 }
 
-/* --- Página --- */
-export default function ProfilePage() {
-  // Datos de la cuenta (ejemplo local; conecta con tu API cuando quieras)
-  const [firstName, setFirstName] = useState("Elkinnn");
-  const [lastName, setLastName] = useState("Lopez_10");
-  const [email, setEmail] = useState("usuario@correo.com");
+/* --- Página (inner) --- */
+function ProfilePageInner() {
+  const { user, setUser } = useAuth();
+  const toast = useToast();
+  const { updateUser } = useAuth();
+
+  // Estado datos de la cuenta
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
 
   // Cambio de contraseña
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
+
+  // Flags
+  const [saving, setSaving] = useState(false);
+  const [changing, setChanging] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Cargar perfil
+  useEffect(() => {
+    (async () => {
+      try {
+        const p = await getProfile();
+        setFirstName(p.first_name || "");
+        setLastName(p.last_name || "");
+        setEmail(p.email || "");
+        setUser?.((prev) => ({
+          ...(prev || {}),
+          ...p,
+          full_name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
+        }));
+      } catch (e) {
+        toast.push({ tone: "error", title: "No se pudo cargar tu perfil" });
+      } finally {
+        setLoaded(true);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const initials = useMemo(() => {
+    const a = (firstName || "").trim()[0] || "";
+    const b = (lastName || "").trim()[0] || "";
+    return (a + b).toUpperCase() || "U";
+  }, [firstName, lastName]);
 
   const header = (
     <div>
@@ -60,42 +101,96 @@ export default function ProfilePage() {
     </div>
   );
 
-  const handleSaveAccount = (e) => {
+  // Guardar datos de la cuenta
+  async function handleSaveAccount(e) {
     e.preventDefault();
-    // TODO: integrar con API
-    alert("Datos de cuenta guardados (demo)");
-  };
+    setSaving(true);
 
-  const handleChangePassword = (e) => {
+    const nextFirst = firstName.trim();
+    const nextLast = lastName.trim();
+    const nextEmail = email.trim();
+
+    try {
+      const updated = await updateProfile({
+        first_name: nextFirst,
+        last_name: nextLast,
+        email: nextEmail,
+      });
+
+      updateUser({
+        ...(updated || {}),
+        first_name: nextFirst,
+        last_name: nextLast,
+        email: nextEmail,
+        full_name: `${nextFirst} ${nextLast}`.trim(),
+      });
+
+      toast.push({ tone: "success", title: "Cambios guardados" });
+    } catch (err) {
+      const msg = err?.response?.data?.message || "No se pudo guardar.";
+      toast.push({ tone: "error", title: "Error al guardar", message: msg });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Cambiar contraseña
+  async function handleChangePassword(e) {
     e.preventDefault();
     if (!newPwd || newPwd !== confirmPwd) {
-      alert("Las contraseñas no coinciden.");
+      toast.push({ tone: "warning", title: "Las contraseñas no coinciden" });
       return;
     }
-    // TODO: integrar con API
-    alert("Contraseña actualizada (demo)");
-    setCurrentPwd("");
-    setNewPwd("");
-    setConfirmPwd("");
-  };
+    setChanging(true);
+    try {
+      await changePassword({
+        current_password: currentPwd,
+        password: newPwd,
+        password_confirmation: confirmPwd,
+      });
+      toast.push({ tone: "success", title: "Contraseña actualizada" });
+      setCurrentPwd("");
+      setNewPwd("");
+      setConfirmPwd("");
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message || "No se pudo actualizar la contraseña.";
+      toast.push({ tone: "error", title: "Error", message: msg });
+    } finally {
+      setChanging(false);
+    }
+  }
+
+  if (!loaded) {
+    return (
+      <AppLayout header={header}>
+        <ResponsivePane>
+          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
+            Cargando perfil…
+          </div>
+        </ResponsivePane>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout header={header}>
-      {/* Igual que en Goals: en móvil fluye; en XL, scroll interno invisible */}
       <ResponsivePane toolbar={null}>
-        {/* Layout principal */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-          {/* Columna izquierda: Identidad */}
+          {/* Columna izquierda */}
           <aside className="xl:col-span-1">
             <section className="fin-card p-5 md:p-6">
               <SectionHeader title="Identidad" />
               <div className="mt-4">
-                <AvatarReadOnly nameFull={`${firstName} ${lastName}`} initials="EL" />
+                <AvatarReadOnly
+                  nameFull={`${firstName} ${lastName}`.trim() || "Usuario"}
+                  initials={initials}
+                />
               </div>
             </section>
           </aside>
 
-          {/* Columna derecha: Contenido principal */}
+          {/* Columna derecha */}
           <main className="xl:col-span-2 space-y-5">
             {/* Datos de la cuenta */}
             <form onSubmit={handleSaveAccount} className="fin-card p-5 md:p-6">
@@ -103,8 +198,12 @@ export default function ProfilePage() {
                 title="Datos de la cuenta"
                 subtitle="Información básica para identificar tu perfil."
                 right={
-                  <button type="submit" className="btn btn-primary">
-                    Guardar cambios
+                  <button
+                    type="submit"
+                    className="btn btn-primary disabled:opacity-60"
+                    disabled={saving}
+                  >
+                    {saving ? "Guardando…" : "Guardar cambios"}
                   </button>
                 }
               />
@@ -138,13 +237,12 @@ export default function ProfilePage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="usuario@correo.com"
-                    readOnly
                   />
                 </Field>
               </div>
             </form>
 
-            {/* Seguridad / Cambiar contraseña */}
+            {/* Seguridad */}
             <form onSubmit={handleChangePassword} className="fin-card p-5 md:p-6">
               <SectionHeader
                 title="Seguridad"
@@ -153,35 +251,35 @@ export default function ProfilePage() {
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Field id="pwd-current" label="Actual">
-                  <input
+                  <PasswordInput
                     id="pwd-current"
-                    className="input-base"
-                    type="password"
+                    name="current_password"
                     value={currentPwd}
                     onChange={(e) => setCurrentPwd(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                   />
                 </Field>
 
                 <Field id="pwd-new" label="Nueva" hint="Mínimo 8 caracteres.">
-                  <input
+                  <PasswordInput
                     id="pwd-new"
-                    className="input-base"
-                    type="password"
+                    name="new_password"
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="new-password"
                   />
                 </Field>
 
                 <Field id="pwd-confirm" label="Confirmar">
-                  <input
+                  <PasswordInput
                     id="pwd-confirm"
-                    className="input-base"
-                    type="password"
+                    name="confirm_password"
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="new-password"
                   />
                 </Field>
               </div>
@@ -198,8 +296,12 @@ export default function ProfilePage() {
                 >
                   Limpiar
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Actualizar contraseña
+                <button
+                  type="submit"
+                  className="btn btn-primary disabled:opacity-60"
+                  disabled={changing}
+                >
+                  {changing ? "Actualizando…" : "Actualizar contraseña"}
                 </button>
               </div>
             </form>
@@ -207,5 +309,13 @@ export default function ProfilePage() {
         </div>
       </ResponsivePane>
     </AppLayout>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <ToastProvider placement="top-right">
+      <ProfilePageInner />
+    </ToastProvider>
   );
 }

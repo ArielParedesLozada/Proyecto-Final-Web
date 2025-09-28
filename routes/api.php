@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GoalController;
+use App\Http\Controllers\StatsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,9 +37,27 @@ Route::middleware('jwt.auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
-    
+    Route::put('/profile/password', [AuthController::class, 'changePassword']);
+
     // Test route to verify authentication
     Route::get('/user', function (Request $request) {
         return $request->user();
+    });
+    Route::get('/goals', [GoalController::class, 'index']);
+    Route::get('/goals/{id}', [GoalController::class, 'show']);
+    Route::post('/goals', [GoalController::class, 'store']);
+    Route::put('/goals/{id}', [GoalController::class, 'update']);
+    Route::delete('/goals/{id}', [GoalController::class, 'destroy']);
+    Route::post('/goals/{goalId}/transactions', [GoalController::class, 'addTransaction']);
+    Route::get('/goals/{goalId}/transactions', [GoalController::class, 'listTransactions']);
+    Route::delete('/transactions/{id}', [GoalController::class, 'deleteTransaction']);
+
+    Route::prefix('stats')->group(function () {
+        Route::get('/goals/status-distribution', [StatsController::class, 'goalsStatusDistribution']);
+        Route::get('/monthly/real-vs-suggested', [StatsController::class, 'monthlyRealVsSuggested']);
+        Route::get('/monthly/completion', [StatsController::class, 'monthlyCompletion']);
+        Route::get('/categories/distribution', [StatsController::class, 'categoryDistribution']);
+        Route::get('/monthly/income-expense', [StatsController::class, 'monthlyIncomeExpense']);
+        Route::get('/goals/top-progress', [StatsController::class, 'topGoalsProgress']);
     });
 });

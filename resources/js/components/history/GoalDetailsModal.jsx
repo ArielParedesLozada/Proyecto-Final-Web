@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import ScrollArea from "../ui/ScrollArea";
+import { formatYMDToDisplay } from "../../services/dates";
 
 export default function GoalDetailsModal({ open, onClose, goal }) {
     if (!open || !goal) return null;
@@ -37,10 +38,11 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
         "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
 
     const deadlineText = deadline
-        ? new Date(deadline).toLocaleDateString()
+        ? formatYMDToDisplay(deadline, "es-EC")
         : "Sin fecha límite";
+
     const createdText = createdAt
-        ? new Date(createdAt).toLocaleDateString()
+        ? formatYMDToDisplay(createdAt, "es-EC")   
         : "—";
 
     let barGradient = "from-indigo-500 to-indigo-600";
@@ -78,7 +80,7 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
                     </button>
                 </div>
 
-                {/* Contenido con scroll propio (se mantiene tu ScrollArea) */}
+                {/* Contenido con scroll propio */}
                 <ScrollArea className="px-5 pt-4 pb-5 space-y-5" maxHeight="75vh">
                     {/* Resumen en 2 columnas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,15 +107,21 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
                             <dl className="text-sm space-y-1">
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-gray-500 dark:text-gray-400">Objetivo</dt>
-                                    <dd className="text-right">${Number(targetAmount).toLocaleString()}</dd>
+                                    <dd className="text-right">
+                                        ${Number(targetAmount).toLocaleString()}
+                                    </dd>
                                 </div>
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-gray-500 dark:text-gray-400">Acumulado</dt>
-                                    <dd className="text-right">${Number(currentAmount).toLocaleString()}</dd>
+                                    <dd className="text-right">
+                                        ${Number(currentAmount).toLocaleString()}
+                                    </dd>
                                 </div>
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-gray-500 dark:text-gray-400">Restante</dt>
-                                    <dd className="text-right">${Number(remaining).toLocaleString()}</dd>
+                                    <dd className="text-right">
+                                        ${Number(remaining).toLocaleString()}
+                                    </dd>
                                 </div>
                             </dl>
 
@@ -124,7 +132,9 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>
-                                <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{progress}%</div>
+                                <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                                    {progress}%
+                                </div>
                             </div>
                         </div>
                     </div>

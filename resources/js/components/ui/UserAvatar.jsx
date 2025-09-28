@@ -1,4 +1,3 @@
-// resources/js/components/ui/UserAvatar.jsx
 export default function UserAvatar({
   name = "ElkinnnLopez_10",
   initials = "EL",
@@ -31,7 +30,7 @@ export default function UserAvatar({
         )}
       </div>
 
-      {/* Nombre al lado derecho del avatar */}
+      {/* Nombre al lado derecho del avatar (1 sola línea, ellipsis si es largo) */}
       <div
         className="
           absolute top-1/2 -translate-y-1/2 left-[calc(100%+0.5rem)]
@@ -46,10 +45,18 @@ export default function UserAvatar({
             bg-gray-900/90 dark:bg-gray-800/90 
             backdrop-blur-md shadow-lg 
             ring-1 ring-white/10
-            whitespace-nowrap
+            max-w-[70vw] md:max-w-[40vw] lg:max-w-[24rem]
           "
+          title={name}  
         >
-          <p className="text-sm font-medium text-white">{name}</p>
+          <p
+            className="
+              text-sm font-medium text-white leading-snug
+              whitespace-nowrap overflow-hidden truncate
+            "
+          >
+            {name}
+          </p>
         </div>
       </div>
     </div>

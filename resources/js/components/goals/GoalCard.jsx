@@ -1,3 +1,5 @@
+import { formatYMDToDisplay } from "../../services/dates";
+
 export default function GoalCard({
   goal,
   onAddTx,
@@ -21,63 +23,55 @@ export default function GoalCard({
     Math.round(((currentAmount ?? 0) / Math.max(targetAmount, 1)) * 100)
   );
 
-  // Si llegó a 100% lo mostramos como "Completada" (solo a nivel UI)
-  const isCompleted = progress >= 100;
-  const visualStatus = isCompleted ? "Completada" : status;
+  const visualStatus =
+    progress >= 100 ? "Completada" : (status === "Vencida" ? "Vencida" : status);
 
-  // Fecha límite
   const deadlineText = deadline
-    ? new Date(deadline).toLocaleDateString()
+    ? formatYMDToDisplay(deadline)
     : "Sin fecha límite";
 
-  // Colores por estado (badge)
   const statusStyles = {
     Activa:
-      "bg-green-500/15 text-green-600 dark:text-green-300 ring-1 ring-green-500/20",
-    "En pausa":
-      "bg-amber-500/15 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/20",
+      "bg-green-500/15 text-green-500 dark:text-green-300 ring-1 ring-green-500/20",
     Completada:
-      "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/20",
+      "bg-indigo-500/15 text-indigo-400 dark:text-indigo-300 ring-1 ring-indigo-500/20",
+    Vencida:
+      "bg-rose-500/15 text-rose-400 dark:text-rose-300 ring-1 ring-rose-500/20",
   };
   const badgeCls =
     statusStyles[visualStatus] ??
-    "bg-gray-500/15 text-gray-600 dark:text-gray-300 ring-1 ring-gray-500/20";
+    "bg-gray-500/15 text-gray-400 ring-1 ring-gray-500/20";
 
-  // Colores dinámicos de la BARRA según porcentaje
   let barGradient = "from-indigo-500 to-indigo-600";
-  if (progress < 33) {
+  if (visualStatus === "Vencida") {
+    barGradient = "from-rose-500 to-rose-600";
+  } else if (progress < 33) {
     barGradient = "from-rose-500 to-rose-600";
   } else if (progress < 75) {
     barGradient = "from-amber-400 to-amber-500";
   }
-  // (si es 100%, queda en índigo/azul como definiste)
 
   return (
     <div className="fin-card p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
-        {/* Texto (truncado a una línea) */}
         <div className="min-w-0">
-          <h3
-            className="font-semibold truncate whitespace-nowrap overflow-hidden"
-            title={name}
-          >
+          <h3 className="font-semibold truncate" title={name}>
             {name}
           </h3>
           <p
-            className="text-sm text-gray-500 dark:text-gray-400 truncate whitespace-nowrap overflow-hidden"
+            className="text-sm text-gray-500 dark:text-gray-400 truncate"
             title={`${category} • ${deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}`}
           >
             {category} • {deadline ? `Finaliza el ${deadlineText}` : "Sin fecha límite"}
           </p>
         </div>
 
-        {/* Acciones */}
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-xs px-2 py-1 rounded-full ${badgeCls}`}>
             {visualStatus}
           </span>
           <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 cursor-pointer"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60"
             onClick={() => onEdit?.(goal)}
             title="Editar"
           >
@@ -86,7 +80,7 @@ export default function GoalCard({
             </svg>
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 cursor-pointer"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60"
             onClick={() => onDelete?.(id)}
             title="Eliminar"
           >
@@ -98,10 +92,7 @@ export default function GoalCard({
       </div>
 
       {description ? (
-        <p
-          className="text-sm text-gray-600 dark:text-gray-300 truncate whitespace-nowrap overflow-hidden"
-          title={description}
-        >
+        <p className="text-sm text-gray-600 dark:text-gray-300 truncate" title={description}>
           {description}
         </p>
       ) : null}
@@ -115,7 +106,6 @@ export default function GoalCard({
           <span>${targetAmount?.toLocaleString()}</span>
         </div>
 
-        {/* Barra con color dinámico */}
         <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700/70 overflow-hidden">
           <div
             className={`h-2 rounded-full bg-gradient-to-r ${barGradient}`}
@@ -127,10 +117,7 @@ export default function GoalCard({
       </div>
 
       <div className="pt-2">
-        <button
-          className="btn btn-ghost cursor-pointer"
-          onClick={() => onAddTx?.(goal)}
-        >
+        <button className="btn btn-ghost" onClick={() => onAddTx?.(goal)}>
           Agregar Ingreso/Gasto
         </button>
       </div>

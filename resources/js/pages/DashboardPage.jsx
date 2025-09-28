@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import StatPro from "../components/ui/StatPro";
 import GoalItem from "../components/dashboard/GoalItem";
@@ -5,79 +6,136 @@ import CompletedList from "../components/dashboard/CompletedList";
 import Empty from "../components/ui/Empty";
 import ScrollArea from "../components/ui/ScrollArea";
 
+// servicios
+import { listGoals } from "../services/goals";
+import {
+  getMonthlyIncomeExpense,
+  getMonthlyRealVsSuggested,
+  getGoalsStatusDistribution,
+} from "../services/stats";
+import { goalApiToUi } from "../services/adapters";
+
+// Helpers de fechas
+function ymd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+/** Íconos inline */
+const MoneyIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="2.75" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M7 9h1.5M15.5 15H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+const TargetIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+  </svg>
+);
+const ListIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="6" width="16" height="2" rx="1" fill="currentColor" />
+    <rect x="4" y="11" width="16" height="2" rx="1" fill="currentColor" />
+    <rect x="4" y="16" width="10" height="2" rx="1" fill="currentColor" />
+  </svg>
+);
+const TrendingIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <path d="M3 17l6-6 4 4 7-7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M17 7h4v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function DashboardPage() {
-  const totalAhorrado = 15750, metaMensual = 2000, metasActivas = 3, progresoMensual = 63;
+  const [loading, setLoading] = useState(true);
 
-  const activas = [
-    { name: "1", current: 3200, target: 5000 },
-    { name: "2", current: 3200, target: 5000 },
-    { name: "V3", current: 3200, target: 5000 },
-    { name: "4", current: 3200, target: 5000 },
-    { name: "5", current: 3200, target: 5000 },
-    { name: "6", current: 3200, target: 5000 },
-    { name: "7", current: 3200, target: 5000 },
-    { name: "8", current: 3200, target: 5000 },
-    { name: "9", current: 3200, target: 5000 },
-    { name: "10", current: 3200, target: 5000 },
-    { name: "11", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    { name: "Vacaciones de Verano", current: 3200, target: 5000 },
-    // añade más para probar el scroll...
-  ];
+  // KPIs
+  const [totalAhorrado, setTotalAhorrado] = useState(0);
+  const [metaMensualSugerida, setMetaMensualSugerida] = useState(0);
+  const [metasActivas, setMetasActivas] = useState(0);
+  const [progresoMensual, setProgresoMensual] = useState(0);
 
-  const completadas = [
+  // Listas
+  const [goalsActive, setGoalsActive] = useState([]);
+  const [goalsCompleted, setGoalsCompleted] = useState([]);
 
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "Meta “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "Meta “Nuevo Laptop” completada", when: "Ayer" },
+  async function load() {
+    setLoading(true);
+    try {
+      // Últimos 12 meses para "Total Ahorrado"
+      const end = new Date();
+      const start = new Date();
+      start.setMonth(start.getMonth() - 11);
+      const params12m = {
+        start: ymd(new Date(start.getFullYear(), start.getMonth(), 1)),
+        end: ymd(end),
+      };
 
-    { id: 1, title: "1”", when: "Hace 2 horas" },
-    { id: 2, title: "2op” completada", when: "Ayer" },
-    { id: 1, title: "3a “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "4 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "5 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "6 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "7 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "8 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "9 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "10 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "11 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "12 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "13 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "14 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "15 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "16 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "17 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "18 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "19 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "20 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "21 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "22 “Nuevo Laptop” completada", when: "Ayer" },
-    { id: 1, title: "23 “Vacaciones”", when: "Hace 2 horas" },
-    { id: 2, title: "24 “Nuevo Laptop” completada", when: "Ayer" },
+      // 1) Total Ahorrado (ingresos - gastos)
+      const inex = await getMonthlyIncomeExpense(params12m);
+      const total = (inex.data ?? []).reduce(
+        (acc, m) => acc + (Number(m.incomes || 0) - Number(m.expenses || 0)),
+        0
+      );
+      setTotalAhorrado(Math.max(0, Math.round(total)));
 
-    // añade más para probar el scroll...
-  ];
+      // 2) Meta mensual sugerida y progreso del mes
+      const rvs = await getMonthlyRealVsSuggested({});
+      const serie = rvs.data ?? [];
+      const ultimo = serie[serie.length - 1] || { real: 0, suggested: 0 };
+      const sug = Number(ultimo.suggested || 0);
+      const real = Number.isFinite(ultimo.real) ? Number(ultimo.real) : 0;
+      setMetaMensualSugerida(Math.round(sug));
+      setProgresoMensual(sug > 0 ? Math.round((real / sug) * 100) : 0);
 
-  // 👇 helper para limitar altura SOLO en móvil cuando hay más de 6 ítems
-  const capMobileClass = (shouldCap) =>
-    shouldCap ? " max-h-[60vh] overflow-y-auto scroll-invisible xl:max-h-none" : "";
+      // 3) Metas activas
+      const dist = await getGoalsStatusDistribution({});
+      const actRow = (dist.data || []).find((x) => x.status === "Activa");
+      setMetasActivas(Number(actRow?.value || 0));
+
+      // 4) Listas (activas / completadas)
+      const resGoals = await listGoals({ page: 1, pageSize: 100, filters: {} });
+      const rows = (resGoals.data ?? []).map(goalApiToUi);
+
+      const actives = rows
+        .filter((g) => g.status === "Activa")
+        .map((g) => ({
+          id: g.id,
+          name: g.name,
+          current: Number(g.currentAmount || 0),
+          target: Number(g.targetAmount || 0),
+          updatedAt: g.updatedAt || g.createdAt,
+        }))
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+      const completed = rows
+        .filter((g) => g.status === "Completada")
+        .map((g) => ({
+          id: g.id,
+          name: g.name,
+          finishedAt: g.finishedAt || "",
+          deadline: g.deadline || "",
+          updatedAt: g.updatedAt || g.createdAt,
+        }))
+        .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+        .slice(0, 20);
+
+      setGoalsActive(actives);
+      setGoalsCompleted(completed);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const header = (
     <div>
@@ -90,90 +148,90 @@ export default function DashboardPage() {
 
   return (
     <AppLayout header={header}>
-      {/* === WRAPPER ===
-          En móvil: grid simple (sin forzar alto).
-          En XL: reparte el alto entre KPIs y contenido. */}
       <div className="grid gap-4 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
         {/* KPIs */}
         <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 auto-rows-fr">
           <div className="h-full">
             <StatPro
               title="Total Ahorrado"
-              value={`$${totalAhorrado.toLocaleString()}`}
-              delta="+12%"
-              deltaLabel="vs. mes pasado"
-              positive
-              spark={[45, 48, 52, 60, 62, 67, 72, 74, 78]}
-              icon={<span className="opacity-70">$</span>}
+              value={`$${Number(totalAhorrado).toLocaleString()}`}
+              sublabel="Últimos 12 meses"
+              icon={<MoneyIcon />}
+              variant="emerald"   
+              loading={loading}
             />
           </div>
           <div className="h-full">
             <StatPro
-              title="Meta Mensual"
-              value={`$${metaMensual.toLocaleString()}`}
-              delta="+$250"
-              deltaLabel="vs. promedio"
-              positive
-              spark={[20, 24, 26, 28, 30, 35, 38, 40, 42]}
+              title="Meta Mensual Sugerida"
+              value={`$${Number(metaMensualSugerida).toLocaleString()}`}
+              sublabel="Estimación por metas activas"
+              icon={<TargetIcon />}
+              variant="violet"    
+              loading={loading}
             />
           </div>
           <div className="h-full">
             <StatPro
               title="Metas Activas"
               value={metasActivas}
-              delta="2"
-              deltaLabel="completadas"
-              positive
-              spark={[30, 35, 40, 38, 42, 45, 48, 50, 55]}
+              sublabel="Actualmente en curso"
+              icon={<ListIcon />}
+              variant="indigo"   
+              loading={loading}
             />
           </div>
           <div className="h-full">
             <StatPro
               title="Progreso Mensual"
-              value={`${progresoMensual}%`}
-              delta="+5%"
-              deltaLabel="vs. mes anterior"
-              positive
-              spark={[40, 45, 47, 50, 55, 58, 60, 62, 63]}
+              value={`${Number(progresoMensual)}%`}
+              sublabel="Real vs sugerido"
+              icon={<TrendingIcon />}
+              variant="amber"      
+              loading={loading}
             />
           </div>
         </section>
 
-        {/* Grid principal
-            En móvil: flujo natural.
-            En XL: estira y reparte el alto entre columnas. */}
+        {/* Grid principal */}
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:min-h-0 xl:items-stretch">
-          {/* Columna izquierda */}
+          {/* IZQ: metas activas */}
           <div className="min-h-0 xl:col-span-2 xl:h-full">
             <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
               <h2 className="text-sm font-semibold mb-3">Metas de Ahorro Activas</h2>
-              <ScrollArea
-                className={
-                  "space-y-3" +
-                  capMobileClass(activas.length > 6) // 👈 límite y scroll interno solo en móvil si > 6
-                }
-              >
-                {activas.length
-                  ? activas.map((g, idx) => <GoalItem key={`${g.name}-${idx}`} {...g} />)
-                  : <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
-                }
+              <ScrollArea className="space-y-3">
+                {loading ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
+                ) : goalsActive.length ? (
+                  goalsActive.map((g) => (
+                    <GoalItem key={g.id} name={g.name} current={g.current} target={g.target} />
+                  ))
+                ) : (
+                  <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
+                )}
               </ScrollArea>
             </div>
           </div>
 
-          {/* Columna derecha */}
+          {/* DER: completadas */}
           <div className="min-h-0 xl:h-full">
             <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
               <h2 className="text-sm font-semibold mb-3">Metas Completadas</h2>
-              <ScrollArea
-                className={
-                  capMobileClass(completadas.length > 6) // 👈 igual comportamiento en móvil
-                }
-              >
-                {completadas.length
-                  ? <CompletedList items={completadas} />
-                  : <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
-                }
+              <ScrollArea>
+                {loading ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
+                ) : goalsCompleted.length ? (
+                  <CompletedList
+                    items={goalsCompleted.map((g) => ({
+                      id: g.id,
+                      name: g.name,
+                      finishedAt: g.finishedAt,
+                      deadline: g.deadline,
+                    }))}
+                  />
+                ) : (
+                  <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
+                )}
               </ScrollArea>
             </div>
           </div>

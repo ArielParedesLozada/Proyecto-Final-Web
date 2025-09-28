@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { isAuthenticated, getProfile, logout as authLogout } from '../services/auth';
 
 const AuthContext = createContext();
@@ -11,6 +11,17 @@ export function useAuth() {
   return context;
 }
 
+// Normaliza el objeto user y garantiza full_name
+function normalizeUser(user) {
+  if (!user) return null;
+  const first = (user.first_name || '').trim();
+  const last = (user.last_name || '').trim();
+  const full = (user.full_name || '').trim();
+  const full_name = (full || `${first} ${last}`.trim()) || user.name || '';
+
+  return { ...user, full_name };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,25 +32,28 @@ export function AuthProvider({ children }) {
       if (isAuthenticated()) {
         try {
           const response = await getProfile();
-          if (response.success) {
-            setUser(response.data.user);
+          if (response?.success) {
+            setUser(normalizeUser(response.data.user));
           } else {
-            // Token inválido, limpiar
             authLogout();
+            setUser(null);
           }
-        } catch (error) {
-          // Error al obtener perfil, limpiar
+        } catch {
           authLogout();
+          setUser(null);
         }
       }
       setLoading(false);
     };
-
     checkAuth();
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
+    setUser(normalizeUser(userData));
+  };
+
+  const updateUser = (partial) => {
+    setUser(prev => normalizeUser({ ...(prev || {}), ...(partial || {}) }));
   };
 
   const logout = async () => {
@@ -52,13 +66,14 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     login,
     logout,
+    updateUser,        
     isAuthenticated: !!user,
-  };
+  }), [user, loading]);
 
   return (
     <AuthContext.Provider value={value}>
