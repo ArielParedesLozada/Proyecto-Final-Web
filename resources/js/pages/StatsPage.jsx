@@ -35,7 +35,7 @@ function StatsPageInner() {
   const [loading, setLoading] = useState(false);
 
   // datasets
-  const [statusPie, setStatusPie] = useState([]);          // <- array [{status, value}]
+  const [statusPie, setStatusPie] = useState([]);          
   const [realVsSuggested, setRealVsSuggested] = useState([]);
   const [monthlyCompletion, setMonthlyCompletion] = useState([]);
   const [categoryDist, setCategoryDist] = useState([]);
@@ -56,9 +56,9 @@ function StatsPageInner() {
   // rango válido para enviar al backend
   const validRange = useMemo(() => {
     const { start, end } = range;
-    if (!start && !end) return {};            // sin rango → backend usa últimos 6 meses
+    if (!start && !end) return {};            
     if (start && end && end >= start) return { start, end };
-    return {};                                // incompleto o inválido → no enviamos nada
+    return {};                                
   }, [range]);
 
   async function loadAll() {
@@ -75,7 +75,7 @@ function StatsPageInner() {
         getTopGoalsProgress(params),
       ]);
 
-      setStatusPie(st.data || []);            // <- guardamos el array tal cual
+      setStatusPie(st.data || []);           
       setRealVsSuggested(rvs.data || []);
       setMonthlyCompletion(comp.data || []);
       setCategoryDist(cat.data || []);
@@ -182,7 +182,7 @@ function StatsPageInner() {
               {loading ? (
                 <ChartPlaceholder variant="pie" height={240} />
               ) : statusTotal === 0 ? (
-                <div className="h-[260px] flex items-center">
+                <div className="h-[260px] flex items-center justify-center">
                   <Empty title="Sin datos" subtitle="No hay metas en el rango." />
                 </div>
               ) : (
@@ -278,7 +278,7 @@ function StatsPageInner() {
               {loading ? (
                 <ChartPlaceholder variant="pie" height={240} />
               ) : categoryDist.length === 0 ? (
-                <div className="h-[260px] flex items-center">
+                <div className="h-[260px] flex items-center justify-center">
                   <Empty title="Sin datos" subtitle="No hay metas en el rango." />
                 </div>
               ) : (

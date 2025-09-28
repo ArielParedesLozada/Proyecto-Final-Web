@@ -36,9 +36,7 @@ export default function StatsFilters({
           <button
             type="button"
             onClick={onClear}
-            className="px-3 py-2 rounded-md text-sm font-medium
-                       bg-indigo-500/15 text-indigo-500 ring-1 ring-indigo-500/30
-                       hover:bg-indigo-500/20 transition-colors"
+            className="btn btn-primary cursor-pointer shadow-sm"
           >
             Limpiar
           </button>
