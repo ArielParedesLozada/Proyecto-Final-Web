@@ -24,6 +24,9 @@ class Kernel extends ConsoleKernel
         
         // Verificar metas completadas cada hora
         $schedule->command('goals:check-completion')->hourly();
+        
+        // Verificar metas en declive diariamente a las 09:00
+        $schedule->command('goals:check-decline')->dailyAt('09:00');
     }
 
     /**

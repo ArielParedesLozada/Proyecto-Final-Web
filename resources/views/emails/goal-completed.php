@@ -170,7 +170,21 @@
             <div class="stats-title">Resumen de tu logro</div>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-value"><?php echo $goal->category === 'emergency_fund' ? 'Fondo de Emergencia' : ucfirst(str_replace('_', ' ', $goal->category)); ?></div>
+                    <div class="stat-value"><?php 
+                        $categoryTranslations = [
+                            'emergency_fund' => 'Fondo de Emergencia',
+                            'education' => 'Educación',
+                            'vacation' => 'Vacaciones',
+                            'home' => 'Hogar',
+                            'car' => 'Automóvil',
+                            'wedding' => 'Boda',
+                            'business' => 'Negocio',
+                            'retirement' => 'Jubilación',
+                            'health' => 'Salud',
+                            'others' => 'Otros'
+                        ];
+                        echo $categoryTranslations[$goal->category] ?? ucfirst(str_replace('_', ' ', $goal->category));
+                    ?></div>
                     <div class="stat-label">Categoría</div>
                 </div>
                 <div class="stat-item">
