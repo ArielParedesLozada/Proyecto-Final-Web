@@ -30,8 +30,8 @@ export default function GoogleCallbackPage() {
         // Parsear datos del usuario
         const userData = JSON.parse(decodeURIComponent(userParam));
         
-        // Guardar token y datos del usuario
-        localStorage.setItem("token", token);
+        // Guardar token y datos del usuario (usar la misma clave que el interceptor)
+        localStorage.setItem("jwt_token", token);
         localStorage.setItem("user", JSON.stringify(userData));
         
         // Actualizar contexto de autenticación
