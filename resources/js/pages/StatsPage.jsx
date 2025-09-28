@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import ScrollArea from "../components/ui/ScrollArea";
+import Empty from "../components/ui/Empty";
 import StatsFilters from "../components/stats/StatsFilters";
 import ChartPlaceholder from "../components/stats/ChartPlaceholder";
+import { ToastProvider, useToast } from "../components/ui/ToastProvider";
 
 import {
-  getGoalsStatusDistribution,
+  getGoalsStatusDistribution,     
   getMonthlyRealVsSuggested,
   getMonthlyCompletion,
   getCategoryDistribution,
@@ -21,24 +23,24 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-// PDF
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-// Paletas suaves
 const COLORS = ["#6366F1", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4", "#A855F7"];
 
-export default function StatsPage() {
+function StatsPageInner() {
+  const toast = useToast();
+
   const [range, setRange] = useState({ start: "", end: "" });
   const [loading, setLoading] = useState(false);
 
-  // NUEVO: distribución de estados
-  const [statusDist, setStatusDist] = useState([]);               // dona estados
-  const [realVsSuggested, setRealVsSuggested] = useState([]);     // líneas
-  const [monthlyCompletion, setMonthlyCompletion] = useState([]); // línea %
-  const [categoryDist, setCategoryDist] = useState([]);           // pie categorías
-  const [incomeExpense, setIncomeExpense] = useState([]);         // barras
-  const [topGoals, setTopGoals] = useState([]);                   // barras top
+  // datasets
+  const [statusPie, setStatusPie] = useState([]);          // <- array [{status, value}]
+  const [realVsSuggested, setRealVsSuggested] = useState([]);
+  const [monthlyCompletion, setMonthlyCompletion] = useState([]);
+  const [categoryDist, setCategoryDist] = useState([]);
+  const [incomeExpense, setIncomeExpense] = useState([]);
+  const [topGoals, setTopGoals] = useState([]);
 
   const chartsRef = useRef(null);
 
@@ -51,18 +53,20 @@ export default function StatsPage() {
     </div>
   );
 
+  // rango válido para enviar al backend
   const validRange = useMemo(() => {
     const { start, end } = range;
-    if (!start && !end) return {};
+    if (!start && !end) return {};            // sin rango → backend usa últimos 6 meses
     if (start && end && end >= start) return { start, end };
-    return {};
+    return {};                                // incompleto o inválido → no enviamos nada
   }, [range]);
 
   async function loadAll() {
     setLoading(true);
     try {
-      const params = { ...validRange }; // {start,end} o {}
-      const [p1, p2, p3, p4, p5, p6] = await Promise.all([
+      const params = { ...validRange };
+
+      const [st, rvs, comp, cat, incExp, top] = await Promise.all([
         getGoalsStatusDistribution(params),
         getMonthlyRealVsSuggested(params),
         getMonthlyCompletion(params),
@@ -71,47 +75,87 @@ export default function StatsPage() {
         getTopGoalsProgress(params),
       ]);
 
-      setStatusDist(p1.data || []);
-      setRealVsSuggested(p2.data || []);
-      setMonthlyCompletion(p3.data || []);
-      setCategoryDist(p4.data || []);
-      setIncomeExpense(p5.data || []);
-      setTopGoals(p6.data || []);
+      setStatusPie(st.data || []);            // <- guardamos el array tal cual
+      setRealVsSuggested(rvs.data || []);
+      setMonthlyCompletion(comp.data || []);
+      setCategoryDist(cat.data || []);
+      setIncomeExpense(incExp.data || []);
+      setTopGoals(top.data || []);
     } finally {
       setLoading(false);
     }
   }
 
+  // primera carga (backend trae últimos 6 meses por defecto)
   useEffect(() => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onClear = () => setRange({ start: "", end: "" });
-  const onApply = () => loadAll();
+  // validación suave de fechas + auto-aplicar cuando el rango es válido
+  const lastDateStateRef = useRef("init");
+  useEffect(() => {
+    const { start, end } = range;
+
+    let state = "none";
+    if (start && !end) state = "start-only";
+    else if (!start && end) state = "end-only";
+    else if (start && end && end < start) state = "invalid";
+    else if (start && end) state = "ok";
+
+    if (state === lastDateStateRef.current) return;
+    lastDateStateRef.current = state;
+
+    if (state === "start-only") {
+      toast.push({
+        tone: "info",
+        title: "Rango incompleto",
+        message: 'Selecciona también "Fecha fin" para aplicar el rango.',
+      });
+      return;
+    }
+    if (state === "end-only") {
+      toast.push({
+        tone: "info",
+        title: "Rango incompleto",
+        message: 'Selecciona también "Fecha inicio" para aplicar el rango.',
+      });
+      return;
+    }
+    if (state === "invalid") {
+      toast.push({
+        tone: "error",
+        title: "Rango inválido",
+        message: "La fecha fin no puede ser anterior a la fecha inicio.",
+      });
+      return;
+    }
+    if (state === "ok" || (state === "none" && (validRange.start === undefined))) {
+      // ok → aplica; none → vuelve a modo 'por defecto' (últimos 6 meses)
+      loadAll();
+    }
+  }, [range, toast, validRange.start]);
+
+  const onClear = () => {
+    setRange({ start: "", end: "" });
+    toast.push({ tone: "success", title: "Filtros limpiados", message: "Se restableció el rango por defecto." });
+  };
 
   const onDownloadPDF = async () => {
     if (!chartsRef.current) return;
+
     const canvas = await html2canvas(chartsRef.current, {
       backgroundColor: "#0b1220",
       scale: 2,
     });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: "landscape",
-      unit: "px",
-      format: [canvas.width, canvas.height],
-    });
-    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+    const img = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [canvas.width, canvas.height] });
+    pdf.addImage(img, "PNG", 0, 0, canvas.width, canvas.height);
     pdf.save("estadisticas_metas.pdf");
   };
 
-  // Colores fijos para estados: Activa/Completada/Vencida
-  const STATUS_COLORS = {
-    Activa: "#22C55E",
-    Completada: "#6366F1",
-    Vencida: "#EF4444",
-  };
+  // total para decidir si mostramos el donut o el Empty
+  const statusTotal = statusPie.reduce((acc, it) => acc + (it?.value || 0), 0);
 
   return (
     <AppLayout header={header}>
@@ -121,43 +165,42 @@ export default function StatsPage() {
           end={range.end}
           onChange={(partial) => setRange((r) => ({ ...r, ...partial }))}
           onClear={onClear}
-          onApply={onApply}
           onDownload={onDownloadPDF}
         />
 
-        <ScrollArea>
+        <ScrollArea className="">
           <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* 1) Distribución de estados (dona) — REEMPLAZA la gráfica anterior */}
+            {/* 1) Estados de las metas (donut) */}
             <div className="fin-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">Estados de las metas</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Activas vs Completadas vs Vencidas
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold">Estados de las metas</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Activas vs Completadas vs Vencidas
+                </p>
               </div>
+
               {loading ? (
                 <ChartPlaceholder variant="pie" height={240} />
+              ) : statusTotal === 0 ? (
+                <div className="h-[260px] flex items-center">
+                  <Empty title="Sin datos" subtitle="No hay metas en el rango." />
+                </div>
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip formatter={(v) => `${v} metas`} />
+                      <Tooltip />
                       <Legend />
                       <Pie
-                        data={statusDist}
+                        data={statusPie}
                         dataKey="value"
                         nameKey="status"
                         innerRadius={60}
                         outerRadius={90}
                         paddingAngle={3}
                       >
-                        {statusDist.map((s, idx) => (
-                          <Cell
-                            key={idx}
-                            fill={STATUS_COLORS[s.status] || COLORS[idx % COLORS.length]}
-                          />
+                        {statusPie.map((_, i) => (
+                          <Cell key={i} fill={[COLORS[0], COLORS[1], COLORS[2]][i % 3]} />
                         ))}
                       </Pie>
                     </PieChart>
@@ -166,18 +209,19 @@ export default function StatsPage() {
               )}
             </div>
 
-            {/* 2) Real vs Sugerido mensual (líneas) */}
+            {/* 2) Real vs Sugerido mensual */}
             <div className="fin-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">Ahorro real vs sugerido</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Suma mensual (todos tus objetivos)
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold">Ahorro real vs sugerido</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Suma mensual (todos tus objetivos)</p>
               </div>
+
               {loading ? (
                 <ChartPlaceholder variant="line" height={240} />
+              ) : realVsSuggested.length === 0 ? (
+                <div className="h-[260px] flex items-center">
+                  <Empty title="Sin datos" subtitle="No hay movimientos en el rango." />
+                </div>
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -195,18 +239,19 @@ export default function StatsPage() {
               )}
             </div>
 
-            {/* 3) Cumplimiento mensual (%) */}
+            {/* 3) Cumplimiento mensual */}
             <div className="fin-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">Cumplimiento mensual</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Promedio de avance (%) al cierre de cada mes
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold">Cumplimiento mensual</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Promedio de avance (%) al cierre de cada mes</p>
               </div>
+
               {loading ? (
                 <ChartPlaceholder variant="line" height={240} />
+              ) : monthlyCompletion.length === 0 ? (
+                <div className="h-[260px] flex items-center">
+                  <Empty title="Sin datos" subtitle="No hay información de cumplimiento en el rango." />
+                </div>
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -223,23 +268,24 @@ export default function StatsPage() {
               )}
             </div>
 
-            {/* 4) Categorías (dona) */}
+            {/* 4) Categorías de metas */}
             <div className="fin-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">Categorías de metas</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Distribución por categoría
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold">Categorías de metas</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Distribución por categoría</p>
               </div>
+
               {loading ? (
                 <ChartPlaceholder variant="pie" height={240} />
+              ) : categoryDist.length === 0 ? (
+                <div className="h-[260px] flex items-center">
+                  <Empty title="Sin datos" subtitle="No hay metas en el rango." />
+                </div>
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip formatter={(v) => `${v} metas`} />
+                      <Tooltip />
                       <Legend />
                       <Pie
                         data={categoryDist}
@@ -261,16 +307,17 @@ export default function StatsPage() {
 
             {/* 5) Ingresos vs Gastos mensual */}
             <div className="fin-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">Ingresos vs Gastos (mensual)</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Suma mensual de ingresos y gastos
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold">Ingresos vs Gastos (mensual)</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Suma mensual de ingresos y gastos</p>
               </div>
+
               {loading ? (
                 <ChartPlaceholder variant="bar" height={240} />
+              ) : incomeExpense.length === 0 ? (
+                <div className="h-[260px] flex items-center">
+                  <Empty title="Sin datos" subtitle="No hay movimientos en el rango." />
+                </div>
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -280,8 +327,8 @@ export default function StatsPage() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="incomes" name="Ingresos" fill="#22C55E" />
-                      <Bar dataKey="expenses" name="Gastos" fill="#EF4444" />
+                      <Bar dataKey="incomes" name="Ingresos" fill={COLORS[1]} />
+                      <Bar dataKey="expenses" name="Gastos" fill={COLORS[3]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -290,16 +337,17 @@ export default function StatsPage() {
 
             {/* 6) Top 5 metas por avance */}
             <div className="fin-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">Top 5 metas por avance</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Metas con mayor % de progreso en el rango
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold">Top 5 metas por avance</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Metas con mayor % de progreso en el rango</p>
               </div>
+
               {loading ? (
                 <ChartPlaceholder variant="bar" height={240} />
+              ) : topGoals.length === 0 ? (
+                <div className="h-[260px] flex items-center">
+                  <Empty title="Sin datos" subtitle="No hay metas destacadas en el rango." />
+                </div>
               ) : (
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -319,5 +367,13 @@ export default function StatsPage() {
         </ScrollArea>
       </div>
     </AppLayout>
+  );
+}
+
+export default function StatsPage() {
+  return (
+    <ToastProvider placement="top-right">
+      <StatsPageInner />
+    </ToastProvider>
   );
 }

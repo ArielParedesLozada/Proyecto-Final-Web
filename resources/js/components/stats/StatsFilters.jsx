@@ -1,10 +1,9 @@
 export default function StatsFilters({
   start,
   end,
-  onChange,     
-  onApply,      // () => void
-  onClear,      // () => void
-  onDownload,   // () => void  (PDF)
+  onChange,
+  onClear,
+  onDownload,
 }) {
   return (
     <div className="fin-card p-4">
@@ -42,15 +41,6 @@ export default function StatsFilters({
                        hover:bg-indigo-500/20 transition-colors"
           >
             Limpiar
-          </button>
-
-          <button
-            type="button"
-            onClick={onApply}
-            className="px-3 py-2 rounded-md text-sm font-medium
-                       bg-primary-600 text-white hover:bg-primary-500 transition-colors"
-          >
-            Aplicar
           </button>
 
           <button
