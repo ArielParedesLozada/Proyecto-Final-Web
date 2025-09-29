@@ -142,25 +142,39 @@ function TransactionsByGoalPageInner() {
     }
   }
 
-  async function loadTransactions(goalId, forceRefresh = false) {
+  // Función para aplicar filtros
+  const applyFilters = (newDateRange, newTransactionType) => {
+    if (selectedGoal) {
+      loadTransactions(selectedGoal.id, true, newDateRange, newTransactionType);
+    }
+  };
+
+  async function loadTransactions(goalId, forceRefresh = false, customDateRange = null, customTransactionType = null) {
     try {
       setTransactionsLoading(true);
       console.log('Loading transactions for goal ID:', goalId);
+      
+      // Usar filtros personalizados o los del estado
+      const currentDateRange = customDateRange || dateRange;
+      const currentTransactionType = customTransactionType || transactionType;
       
       // Construir parámetros de filtro
       const params = {};
       
       // Filtros de fecha
-      if (dateRange.start && dateRange.end) {
-        params.start_date = dateRange.start;
-        params.end_date = dateRange.end;
+      if (currentDateRange.start && currentDateRange.end) {
+        params.start_date = currentDateRange.start;
+        params.end_date = currentDateRange.end;
       }
       
-      // Filtros de tipo de transacción
-      if (transactionType.length === 1) {
-        params.is_fixed = transactionType.includes('Fijo') ? true : false;
+      // Filtros de tipo de transacción (exclusivo)
+      if (currentTransactionType.length === 1) {
+        params.is_fixed = currentTransactionType.includes('Fijo') ? true : false;
+        console.log('Filtering by transaction type:', currentTransactionType, 'is_fixed:', params.is_fixed, 'type:', typeof params.is_fixed);
       }
+      // Si no hay tipo seleccionado, no se incluye el parámetro is_fixed
       
+      console.log('Final params being sent to API:', params);
       const cacheKey = `transactions-goal-${goalId}-${JSON.stringify(params)}`;
       const res = await fetchWithCache(
         cacheKey,
@@ -289,6 +303,7 @@ function TransactionsByGoalPageInner() {
             selectedGoal={selectedGoal}
             onGoalChange={handleGoalChange}
             loading={loading}
+            onApplyFilters={applyFilters}
           />
         </div>
 

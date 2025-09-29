@@ -1,4 +1,5 @@
 import GoalSelect from "../goals/GoalSelect";
+import { useToast } from "../ui/ToastProvider";
 
 export default function TransactionsFilters({ 
   dateRange, 
@@ -10,16 +11,93 @@ export default function TransactionsFilters({
   goals,
   selectedGoal,
   onGoalChange,
-  loading
+  loading,
+  onApplyFilters
 }) {
-  const toggleTransactionType = (type) => {
-    const active = transactionType.includes(type);
-    onTransactionTypeChange(
-      active 
-        ? transactionType.filter(t => t !== type)
-        : [...transactionType, type]
-    );
+  const toast = useToast();
+
+  // Validar y aplicar filtros
+  const validateAndFetch = (newDateRange = dateRange, newTransactionType = transactionType) => {
+    // Validar fechas
+    if (newDateRange.start && !newDateRange.end) {
+      toast.push({
+        title: "Filtro de fechas incompleto",
+        message: "Debes ingresar fecha de inicio y fin",
+        tone: "warning"
+      });
+      return false;
+    }
+
+    if (!newDateRange.start && newDateRange.end) {
+      toast.push({
+        title: "Filtro de fechas incompleto", 
+        message: "Debes ingresar fecha de inicio y fin",
+        tone: "warning"
+      });
+      return false;
+    }
+
+    // Validar rango de fechas
+    if (newDateRange.start && newDateRange.end) {
+      const startDate = new Date(newDateRange.start);
+      const endDate = new Date(newDateRange.end);
+      
+      if (endDate < startDate) {
+        toast.push({
+          title: "Rango de fechas inválido",
+          message: "La fecha fin no puede ser anterior a la fecha inicio",
+          tone: "error"
+        });
+        return false;
+      }
+    }
+
+    // Aplicar filtros si son válidos
+    if (onApplyFilters) {
+      onApplyFilters(newDateRange, newTransactionType);
+    }
+    return true;
   };
+
+  // Manejar cambio de fecha
+  const handleDateChange = (field, value) => {
+    const newDateRange = { ...dateRange, [field]: value };
+    onDateRangeChange(newDateRange);
+    
+    // Aplicar automáticamente (con validación)
+    validateAndFetch(newDateRange, transactionType);
+  };
+
+  // Manejar cambio de tipo de transacción (exclusivo)
+  const toggleTransactionType = (type) => {
+    let newTransactionType;
+    
+    if (transactionType.includes(type)) {
+      // Si está activo, desactivarlo (quedar sin tipo)
+      newTransactionType = [];
+    } else {
+      // Si no está activo, activarlo y desactivar el otro
+      newTransactionType = [type];
+    }
+    
+    onTransactionTypeChange(newTransactionType);
+    // Aplicar automáticamente (con validación)
+    validateAndFetch(dateRange, newTransactionType);
+  };
+
+  // Limpiar filtros
+  const handleClear = () => {
+    onDateRangeClear();
+    onTransactionTypeClear();
+    toast.push({
+      title: "Filtros limpiados",
+      message: "Se han restablecido todos los filtros",
+      tone: "info"
+    });
+    // Aplicar automáticamente después de limpiar
+    validateAndFetch({ start: "", end: "" }, []);
+  };
+
 
   // Preparar opciones para el GoalSelect
   const goalOptions = goals.map(goal => ({
@@ -53,7 +131,7 @@ export default function TransactionsFilters({
               type="date"
               className="w-full rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm h-10"
               value={dateRange.start || ""}
-              onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
+              onChange={(e) => handleDateChange('start', e.target.value)}
             />
           </label>
           
@@ -63,7 +141,7 @@ export default function TransactionsFilters({
               type="date"
               className="w-full rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm h-10"
               value={dateRange.end || ""}
-              onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
+              onChange={(e) => handleDateChange('end', e.target.value)}
             />
           </label>
         </div>
@@ -94,11 +172,8 @@ export default function TransactionsFilters({
         {/* Botón limpiar */}
         <button
           type="button"
-          onClick={() => {
-            onDateRangeClear();
-            onTransactionTypeClear();
-          }}
-          className="btn btn-primary cursor-pointer shadow-sm text-sm ml-auto"
+          onClick={handleClear}
+          className="btn btn-primary cursor-pointer shadow-sm text-sm"
           title="Limpiar filtros"
         >
           Limpiar

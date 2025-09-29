@@ -324,12 +324,28 @@ class GoalController extends Controller
 
         // Filtro por tipo de transacción (fijo/variable)
         if ($request->has('is_fixed')) {
-            $query->where('is_fixed', $request->is_fixed);
+            $isFixedValue = $request->is_fixed;
+            // Convertir a boolean para asegurar compatibilidad
+            $isFixedBool = filter_var($isFixedValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            
+            \Illuminate\Support\Facades\Log::info('Filtering by is_fixed:', [
+                'is_fixed_raw' => $isFixedValue, 
+                'is_fixed_type' => gettype($isFixedValue),
+                'is_fixed_bool' => $isFixedBool,
+                'goal_id' => $goalId
+            ]);
+            
+            $query->where('is_fixed', $isFixedBool);
         }
 
         $items = $query->orderByDesc('occurred_on')
             ->orderByDesc('id')
             ->get();
+
+        // Debug: Log all transactions for this goal
+        $allTransactions = Transaction::where('goal_id', $goal->id)->get(['id', 'type', 'is_fixed', 'amount', 'occurred_on']);
+        \Illuminate\Support\Facades\Log::info('All transactions for goal ' . $goalId . ':', $allTransactions->toArray());
+        \Illuminate\Support\Facades\Log::info('Filtered transactions:', $items->toArray());
 
         return response()->json([
             'message' => 'Movimientos obtenidos',
