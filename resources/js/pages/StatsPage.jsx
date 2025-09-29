@@ -537,13 +537,43 @@ function StatsPageInner() {
                       />
                       <Tooltip 
                         contentStyle={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                          backdropFilter: 'blur(10px)'
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                          padding: '12px 16px'
                         }}
-                        formatter={(value, name) => [`$${value}`, name]}
+                        formatter={(value, name) => {
+                          const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+                          return [`$${formattedValue}`, name];
+                        }}
+                        labelFormatter={(label) => `Mes: ${label}`}
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                                <p className="font-semibold text-gray-900 mb-2">
+                                  {label}
+                                </p>
+                                {payload.map((entry, index) => (
+                                  <div key={index} className="flex items-center gap-2 mb-1">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: entry.color }}
+                                    />
+                                    <span className="text-sm text-gray-600">
+                                      {entry.name}:
+                                    </span>
+                                    <span className="text-sm font-medium text-gray-900">
+                                      ${entry.value?.toLocaleString() || '0'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
                       />
                       <Legend 
                         wrapperStyle={{ paddingTop: '20px' }}
