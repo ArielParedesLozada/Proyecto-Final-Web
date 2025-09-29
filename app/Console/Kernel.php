@@ -11,7 +11,8 @@ class Kernel extends ConsoleKernel
      * Define los comandos Artisan que provee tu aplicación.
      */
     protected $commands = [
-        // Tus comandos personalizados van aquí si quieres registrarlos manualmente
+        \App\Console\Commands\RunFixedMovements::class,
+        \App\Console\Commands\MarkExpiredGoals::class,
     ];
 
     /**
@@ -20,7 +21,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Corre todos los días a las 00:10
-        $schedule->command('goals:expire')->dailyAt('00:10');
+        $schedule->command('goals:expire')->dailyAt('00:01');
+        $schedule->command('fixed:run')->hourly();
     }
 
     /**
