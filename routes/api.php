@@ -45,6 +45,7 @@ Route::middleware('jwt.auth')->group(function () {
         return $request->user();
     });
     Route::get('/goals', [GoalController::class, 'index']);
+    Route::get('/goals/history', [GoalController::class, 'history']);
     Route::get('/goals/{id}', [GoalController::class, 'show']);
     Route::post('/goals', [GoalController::class, 'store']);
     Route::put('/goals/{id}', [GoalController::class, 'update']);
