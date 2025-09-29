@@ -34,19 +34,33 @@ class GoogleAuthController extends Controller
             // Usar método alternativo si Socialite falla
             $googleUser = $this->getGoogleUserAlternative();
             
-            // Buscar usuario existente por email o google_id
-            $user = User::where('email', $googleUser->email)
-                       ->orWhere('google_id', $googleUser->id)
-                       ->first();
+            // Buscar usuario existente por email (prioridad) o google_id
+            $user = User::where('email', $googleUser->email)->first();
+            
+            if (!$user) {
+                // Si no existe por email, buscar por google_id
+                $user = User::where('google_id', $googleUser->id)->first();
+            }
 
             if ($user) {
                 // Usuario existente - actualizar información de Google si es necesario
+                $updateData = [];
+                
                 if (!$user->google_id) {
-                    $user->update([
-                        'google_id' => $googleUser->id,
-                        'provider' => 'google',
-                        'profile_image_url' => $googleUser->avatar,
-                    ]);
+                    $updateData['google_id'] = $googleUser->id;
+                }
+                
+                if (!$user->provider || $user->provider !== 'google') {
+                    $updateData['provider'] = 'google';
+                }
+                
+                if ($googleUser->avatar && $user->profile_image_url !== $googleUser->avatar) {
+                    $updateData['profile_image_url'] = $googleUser->avatar;
+                }
+                
+                // Actualizar solo si hay cambios
+                if (!empty($updateData)) {
+                    $user->update($updateData);
                 }
             } else {
                 // Nuevo usuario - crear cuenta
