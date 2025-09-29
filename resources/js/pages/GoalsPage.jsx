@@ -47,17 +47,30 @@ function GoalsPageInner() {
 
   const toast = useToast();
 
-  // Carga con opción “silenciosa” (no muestra loader)
+  // Función auxiliar para filtrar metas completadas
+  const filterCompletedGoals = (goals) => {
+    return goals.filter(goal => {
+      const progress = Math.min(
+        100,
+        Math.round(((goal.currentAmount ?? 0) / Math.max(goal.targetAmount, 1)) * 100)
+      );
+      return progress < 100;
+    });
+  };
+
+  // Carga con opción "silenciosa" (no muestra loader)
   async function load(p = page, { silent = false } = {}) {
     if (!silent) setLoading(true);
     try {
       const res = await listGoals({ page: p, pageSize });
       const rows = (res.data ?? []).map(goalApiToUi);
-      setGoals(rows);
-      setTotal(res.total ?? rows.length);
-      const lp =
-        res.last_page ??
-        Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
+      
+      // Filtrar metas completadas automáticamente
+      const activeGoals = filterCompletedGoals(rows);
+      
+      setGoals(activeGoals);
+      setTotal(activeGoals.length);
+      const lp = Math.max(1, Math.ceil(activeGoals.length / pageSize));
       setLastPage(lp);
     } finally {
       if (!silent) setLoading(false);
@@ -94,8 +107,8 @@ function GoalsPageInner() {
 
   async function handleSubmitEdit(payload) {
     const { id, ...rest } = payload;
-    setGoals((prev) =>
-      prev.map((g) =>
+    setGoals((prev) => {
+      const updated = prev.map((g) =>
         g.id === id
           ? {
             ...g,
@@ -107,8 +120,10 @@ function GoalsPageInner() {
             status: rest.status ?? g.status,
           }
           : g
-      )
-    );
+      );
+      // Filtrar metas completadas automáticamente
+      return filterCompletedGoals(updated);
+    });
 
     try {
       await updateGoal(id, goalUiToApi(rest));
@@ -118,7 +133,11 @@ function GoalsPageInner() {
       try {
         const detail = await getGoal(id);
         const updated = goalApiToUi(detail.data);
-        setGoals((arr) => arr.map((g) => (g.id === id ? updated : g)));
+        setGoals((arr) => {
+          const updatedArr = arr.map((g) => (g.id === id ? updated : g));
+          // Filtrar metas completadas automáticamente
+          return filterCompletedGoals(updatedArr);
+        });
       } catch {
         // si falla el detalle, recargamos la página de forma silenciosa
         await load(page, { silent: true });
@@ -178,9 +197,9 @@ function GoalsPageInner() {
     if (kind === "Variable") {
       const delta = type === "income" ? amt : -amt;
 
-      // Optimista
-      setGoals((prev) =>
-        prev.map((g) =>
+      // Optimista y filtrar metas completadas
+      setGoals((prev) => {
+        const updated = prev.map((g) =>
           g.id === goalId
             ? {
               ...g,
@@ -190,8 +209,10 @@ function GoalsPageInner() {
               ),
             }
             : g
-        )
-      );
+        );
+        // Filtrar metas completadas automáticamente
+        return filterCompletedGoals(updated);
+      });
 
       try {
         await addTransaction(goalId, { type, amount: amt });
@@ -199,7 +220,13 @@ function GoalsPageInner() {
         try {
           const detail = await getGoal(goalId);
           const updated = goalApiToUi(detail.data);
-          setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
+          
+          // Actualizar la meta y filtrar automáticamente las completadas
+          setGoals((arr) => {
+            const updatedArr = arr.map((g) => (g.id === goalId ? updated : g));
+            // Filtrar metas completadas automáticamente
+            return filterCompletedGoals(updatedArr);
+          });
         } catch {
           await load(page, { silent: true });
         }
@@ -210,9 +237,9 @@ function GoalsPageInner() {
           message: `${type === "income" ? "+" : "-"}$${amt.toLocaleString()}`,
         });
       } catch (e) {
-        // Revertir optimista
-        setGoals((prev) =>
-          prev.map((g) =>
+        // Revertir optimista y filtrar metas completadas
+        setGoals((prev) => {
+          const reverted = prev.map((g) =>
             g.id === goalId
               ? {
                 ...g,
@@ -222,8 +249,10 @@ function GoalsPageInner() {
                 ),
               }
               : g
-          )
-        );
+          );
+          // Filtrar metas completadas automáticamente
+          return filterCompletedGoals(reverted);
+        });
         toast.push({
           tone: "error",
           title: "Error al guardar",
