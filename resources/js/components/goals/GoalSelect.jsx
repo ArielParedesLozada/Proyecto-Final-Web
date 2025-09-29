@@ -1,47 +1,77 @@
 // src/components/goals/GoalSelect.jsx
+import { useState, useRef, useEffect } from "react";
+import ScrollArea from "../ui/ScrollArea";
+
 export default function GoalSelect({ goals = [], value, onChange, className = "" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
+
+  // Filtrar metas basado en búsqueda
+  const filteredGoals = goals.filter(goal => {
+    const label = goal.label || goal.name || goal;
+    return label.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  // Obtener la meta seleccionada
+  const selectedGoal = goals.find(goal => 
+    (goal.value || goal.id || goal) === value
+  );
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchTerm("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Enfocar el input de búsqueda cuando se abre
+  useEffect(() => {
+    if (isOpen && searchRef.current) {
+      searchRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const handleSelect = (goalValue) => {
+    onChange?.(goalValue);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
   return (
     <div className={["flex items-center gap-3", className].join(" ")}>
-      <span className="text-base font-medium text-gray-600 dark:text-gray-300">
-        Meta:
-      </span>
+  <span className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
+    Meta:
+  </span>
 
-      <div
-        className={[
-          "relative",
-          "rounded-xl bg-white/95 dark:bg-gray-800/90",
-          "ring-1 ring-gray-200/70 dark:ring-gray-700/60",
-          "hover:ring-gray-300 dark:hover:ring-gray-500",
-          "focus-within:ring-2 focus-within:ring-primary-500",
-          "transition shadow-md"
-        ].join(" ")}
-      >
-        <select
-          value={value ?? ""}
-          onChange={(e) => onChange?.(e.target.value)}
-          className={[
-            "appearance-none outline-none cursor-pointer",
-            "h-12 md:h-13 pl-4 pr-10",
-            "text-sm md:text-base font-semibold",
-            "bg-transparent rounded-xl",
-            "text-gray-900 dark:text-gray-50 tracking-tight"
-          ].join(" ")}
-        >
-          {goals.map((g) => (
-            <option
-              key={g}
-              value={g}
-              className="bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-            >
-              {g}
-            </option>
-          ))}
-        </select>
+  <div className="relative w-50" ref={dropdownRef}>
+
+    <button
+      type="button"
+      onClick={() => setIsOpen(!isOpen)}
+      className="w-full h-10 px-3 pr-8 rounded-lg bg-white dark:bg-gray-800
+                 border border-gray-300 dark:border-gray-600
+                 hover:border-gray-400 dark:hover:border-gray-500
+                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                 text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
+    >
+      {selectedGoal ? (selectedGoal.label || selectedGoal.name || selectedGoal) : "Seleccionar meta..."}
+    </button>
+
 
         {/* Chevron */}
         <svg
-          width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+          width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"
+          className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
         >
           <path
             d="M6 9l6 6 6-6"
@@ -52,6 +82,61 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
             strokeLinejoin="round"
           />
         </svg>
+
+        {/* Dropdown Menu - Altura limitada */}
+        {isOpen && (
+          <div className="absolute z-50 left-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 max-h-64 overflow-hidden w-full">
+            {/* Search Input */}
+            <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder="Buscar meta..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            {/* Options List - Altura limitada con ScrollArea */}
+            <ScrollArea maxHeight="192px" className="max-h-48">
+              {filteredGoals.length > 0 ? (
+                filteredGoals.map((goal) => {
+                  const goalValue = goal.value || goal.id || goal;
+                  const isSelected = goalValue === value;
+                  
+                  return (
+                    <button
+                      key={goalValue}
+                      type="button"
+                      onClick={() => handleSelect(goalValue)}
+                      className={[
+                        "w-full px-3 py-2 text-left text-sm transition-colors duration-150",
+                        "hover:bg-gray-50 dark:hover:bg-gray-700",
+                        isSelected 
+                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" 
+                          : "text-gray-900 dark:text-gray-100"
+                      ].join(" ")}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate">{goal.label || goal.name || goal}</span>
+                        {isSelected && (
+                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                  {searchTerm ? "No se encontraron metas" : "No hay metas disponibles"}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        )}
       </div>
     </div>
   );

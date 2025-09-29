@@ -1,43 +1,211 @@
 // src/pages/TransactionsByGoalPage.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import AppLayout from "../layouts/AppLayout";
-import ResponsivePane from "../layouts/ResponsivePane";
 import TransactionsKpis from "../components/transactions/TransactionsKpis";
 import TransactionItem from "../components/transactions/TransactionItem";
 import ScrollArea from "../components/ui/ScrollArea";
 import GoalSelect from "../components/goals/GoalSelect";
+import Empty from "../components/ui/Empty";
 
-// ⚠️ Ejemplo de datos (igual estructura que ya usas)
-const ALL_ITEMS = [
-  { id: 1, type: "income",  category: "fijo",     categoryLabel: "Fijo",     title: "Salario mensual",        goal: "Vacaciones de Verano", amount: 3000, date: "2026-12-31" },
-  { id: 2, type: "expense", category: "variable", categoryLabel: "Variable", title: "Compras del supermercado", goal: "Fondo de Emergencia", amount: 200,  date: "2026-01-19" },
-  { id: 3, type: "expense", category: "variable", categoryLabel: "Variable", title: "Transporte",               goal: "Vacaciones de Verano", amount: 120,  date: "2026-01-20" },
-  { id: 4, type: "income",  category: "extra",    categoryLabel: "Extra",    title: "Freelance",               goal: "Fondo de Emergencia", amount: 450,  date: "2026-01-21" },
-  { id: 5, type: "expense", category: "variable", categoryLabel: "Variable", title: "Comida fuera",             goal: "Vacaciones de Verano", amount: 90,   date: "2026-01-22" },
-];
+// Servicios
+import { listGoals } from "../services/goals";
+import { listTransactions } from "../services/transactions";
+import { goalApiToUi } from "../services/adapters";
+import useCache from "../hooks/useCache";
 
-export default function TransactionsByGoalPage() {
-  // metas disponibles a partir de los ítems
-  const goals = useMemo(
-    () => Array.from(new Set(ALL_ITEMS.map(i => i.goal))),
-    []
+// Toasts
+import { ToastProvider, useToast } from "../components/ui/ToastProvider";
+
+function TransactionsByGoalPageInner() {
+  const { fetchWithCache, invalidateCache } = useCache();
+  const toast = useToast();
+  
+  // Estados
+  const [goals, setGoals] = useState([]);
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [calculatedProgress, setCalculatedProgress] = useState(0);
+
+  // Cargar metas al montar el componente
+  useEffect(() => {
+    // Invalidar caché de metas al entrar a la página
+    invalidateCache('transactions-goals-list');
+    loadGoals();
+  }, [invalidateCache]);
+
+  // Cargar transacciones cuando cambie la meta seleccionada
+  useEffect(() => {
+    if (selectedGoal) {
+      // Invalidar caché de transacciones al cambiar de meta
+      invalidateCache(`transactions-goal-${selectedGoal.id}`);
+      loadTransactions(selectedGoal.id, true); // Siempre forzar refresh
+    }
+  }, [selectedGoal, invalidateCache]);
+
+  // Escuchar cambios en las transacciones (cuando se agregan desde otras páginas)
+  useEffect(() => {
+    const handleTransactionUpdate = (event) => {
+      if (selectedGoal) {
+        console.log('Transaction update detected, reloading...', event.detail);
+        // Invalidar caché y recargar transacciones con forceRefresh
+        invalidateCache(`transactions-goal-${selectedGoal.id}`);
+        loadTransactions(selectedGoal.id, true); // forceRefresh = true
+      }
+    };
+
+    // Escuchar eventos personalizados de actualización de transacciones
+    window.addEventListener('transactionAdded', handleTransactionUpdate);
+    window.addEventListener('transactionDeleted', handleTransactionUpdate);
+    window.addEventListener('goalUpdated', handleTransactionUpdate);
+
+    return () => {
+      window.removeEventListener('transactionAdded', handleTransactionUpdate);
+      window.removeEventListener('transactionDeleted', handleTransactionUpdate);
+      window.removeEventListener('goalUpdated', handleTransactionUpdate);
+    };
+  }, [selectedGoal?.id, invalidateCache]); // Solo dependencia del ID, no del objeto completo
+
+  // Recargar datos cuando la página se vuelve visible (al regresar de otra página)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && selectedGoal) {
+        console.log('Page became visible, refreshing data...');
+        // Invalidar todos los cachés y recargar
+        invalidateCache('transactions-goals-list');
+        invalidateCache(`transactions-goal-${selectedGoal.id}`);
+        loadGoals();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedGoal?.id, invalidateCache]);
+
+  async function loadGoals() {
+    try {
+      setLoading(true);
+      const cacheKey = 'transactions-goals-list';
+      const res = await fetchWithCache(
+        cacheKey,
+        () => listGoals({ 
+          pageSize: 100,
+          estado: 'active,completed,expired' // Especificar todos los estados para obtener TODAS las metas
+        }),
+        { forceRefresh: true } // Siempre forzar refresh para obtener datos frescos
+      );
+      
+      console.log('Goals API response:', res);
+      console.log('Total goals in response:', res?.data?.length || 0);
+      
+      if (res?.data) {
+        const goalsList = res.data.map(goalApiToUi);
+        console.log('Goals list after mapping:', goalsList);
+        console.log('Goals count after mapping:', goalsList.length);
+        setGoals(goalsList);
+        
+        // Seleccionar la primera meta por defecto
+        if (goalsList.length > 0) {
+          setSelectedGoal(goalsList[0]);
+          console.log('Selected goal:', goalsList[0]);
+        } else {
+          console.log('No goals found!');
+        }
+      } else {
+        console.log('No data in response!');
+      }
+    } catch (error) {
+      console.error('Error loading goals:', error);
+      toast.push({ 
+        tone: "error", 
+        title: "Error al cargar metas", 
+        message: "No se pudieron cargar las metas disponibles" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadTransactions(goalId, forceRefresh = false) {
+    try {
+      setTransactionsLoading(true);
+      console.log('Loading transactions for goal ID:', goalId);
+      const cacheKey = `transactions-goal-${goalId}`;
+      const res = await fetchWithCache(
+        cacheKey,
+        () => listTransactions(goalId),
+        { forceRefresh }
+      );
+      
+      console.log('Transactions API response:', res);
+      
+      if (res?.data) {
+        setTransactions(res.data);
+        console.log('Transactions loaded:', res.data);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      toast.push({ 
+        tone: "error", 
+        title: "Error al cargar transacciones", 
+        message: "No se pudieron cargar las transacciones de esta meta" 
+      });
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }
+
+  // Calcular progreso cuando cambien las transacciones
+  useEffect(() => {
+    if (transactions.length > 0) {
+      const incomes = transactions.filter(t => t.type === 'income');
+      const expenses = transactions.filter(t => t.type === 'expense');
+      const totalIncome = incomes.reduce((a, b) => a + (Number(b.amount) || 0), 0);
+      const totalExpense = expenses.reduce((a, b) => a + (Number(b.amount) || 0), 0);
+      const newAccumulated = totalIncome - totalExpense;
+      setCalculatedProgress(Math.max(0, newAccumulated));
+    }
+  }, [transactions]);
+
+  // Filtrar transacciones por tipo
+  const incomes = useMemo(() => 
+    transactions.filter(t => t.type === 'income'), 
+    [transactions]
   );
-  const [goal, setGoal] = useState(goals[0] ?? "");
-
-  // filtrar por meta
-  const items = useMemo(() => ALL_ITEMS.filter(i => i.goal === goal), [goal]);
-  const incomes = items.filter(i => i.type === "income");
-  const expenses = items.filter(i => i.type === "expense");
+  
+  const expenses = useMemo(() => 
+    transactions.filter(t => t.type === 'expense'), 
+    [transactions]
+  );
 
   // KPIs de la meta seleccionada
   const totals = useMemo(() => {
-    const income = incomes.reduce((a,b) => a + b.amount, 0);
-    const expense = expenses.reduce((a,b) => a + b.amount, 0);
+    const income = incomes.reduce((a, b) => a + (Number(b.amount) || 0), 0);
+    const expense = expenses.reduce((a, b) => a + (Number(b.amount) || 0), 0);
     return { income, expense, balance: income - expense };
   }, [incomes, expenses]);
 
+  // Opciones para el selector de metas
+  const goalOptions = useMemo(() => 
+    goals.map(goal => ({
+      value: goal.id,
+      label: goal.name // Solo mostrar el nombre de la meta
+    })), 
+    [goals]
+  );
+
+  function handleGoalChange(goalId) {
+    const goalIdNum = parseInt(goalId);
+    const goal = goals.find(g => g.id === goalIdNum);
+    setSelectedGoal(goal);
+  }
+
  const header = (
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-4">
     <div>
       <h1 className="text-lg md:text-xl font-semibold">Ingresos y Gastos por Meta</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -45,62 +213,212 @@ export default function TransactionsByGoalPage() {
       </p>
     </div>
 
-    {/* Select más grande y mejor posicionado */}
-    <GoalSelect goals={goals} value={goal} onChange={setGoal} />
+      {/* Selector de meta en su propia línea */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {loading ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Meta:</span>
+              <div className="h-11 w-48 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+            </div>
+          ) : (
+            <GoalSelect 
+              goals={goalOptions} 
+              value={selectedGoal?.id || ""} 
+              onChange={handleGoalChange} 
+            />
+          )}
+        </div>
+        
+      </div>
   </div>
 );
 
 
+  // Mostrar estado de carga inicial
+  if (loading) {
+    return (
+      <AppLayout header={header}>
+        <div className="space-y-6">
+          <div className="grid gap-4">
+            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Mostrar estado vacío si no hay metas
+  if (goals.length === 0) {
+    return (
+      <AppLayout header={header}>
+        <div className="flex items-center justify-center min-h-96">
+          <Empty
+            title="No hay metas disponibles"
+            description="Crea una meta para poder ver sus transacciones"
+            icon="target"
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout header={header}>
-      <div className="grid gap-4 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">
-        <TransactionsKpis totals={totals} />
+      <div className="space-y-6">
+        {/* Información de la meta seleccionada */}
+        {selectedGoal && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">{selectedGoal.name}</h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {selectedGoal.category} • {selectedGoal.status} • 
+                  Progreso: ${calculatedProgress.toLocaleString()} / ${selectedGoal.targetAmount.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-        <ResponsivePane className="xl:min-h-0" toolbar={null} bottomPadding={24} minPx={360}>
-          {/* Dos columnas: ingresos (izq) y gastos (der) con scroll independiente */}
-          <div className="grid gap-4 md:grid-cols-2 h-full">
+        {/* KPIs en la parte superior */}
+        <div className="grid gap-4">
+        <TransactionsKpis totals={totals} />
+        </div>
+
+        {/* Contenido principal */}
+        <div className="grid gap-6 lg:grid-cols-2">
             {/* Ingresos */}
-            <section className="fin-card p-4 md:p-5 grid grid-rows-[auto_minmax(0,1fr)]">
-              <header className="mb-2">
-                <h2 className="text-sm font-semibold">Ingresos</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+          <section className="fin-card p-5">
+            <header className="mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ingresos</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                   {incomes.length} registro(s)
                 </p>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <svg className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                  </svg>
+                </div>
+              </div>
               </header>
+            
               <ScrollArea
                 className="space-y-3"
-                maxHeight="clamp(320px, 56svh, calc(100svh - 18rem))"
-              >
-                {incomes.length ? (
-                  incomes.map((i) => <TransactionItem key={i.id} item={i} />)
-                ) : (
-                  <div className="text-sm text-center text-gray-500 py-8">Sin ingresos</div>
+              maxHeight="clamp(300px, 50vh, 500px)"
+            >
+              {transactionsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : incomes.length ? (
+                incomes.map((transaction) => (
+                  <TransactionItem 
+                    key={transaction.id} 
+                    item={{
+                      id: transaction.id,
+                      type: transaction.type,
+                      category: transaction.is_fixed ? 'fijo' : 'variable',
+                      categoryLabel: transaction.is_fixed ? 'Fijo' : 'Variable',
+                      title: transaction.description || 'Sin descripción',
+                      amount: transaction.amount,
+                      date: transaction.occurred_on
+                    }} 
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Sin ingresos registrados</p>
+                </div>
                 )}
               </ScrollArea>
             </section>
 
             {/* Gastos */}
-            <section className="fin-card p-4 md:p-5 grid grid-rows-[auto_minmax(0,1fr)]">
-              <header className="mb-2">
-                <h2 className="text-sm font-semibold">Gastos</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+          <section className="fin-card p-5">
+            <header className="mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Gastos</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                   {expenses.length} registro(s)
                 </p>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                  <svg className="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                  </svg>
+                </div>
+              </div>
               </header>
+            
               <ScrollArea
                 className="space-y-3"
-                maxHeight="clamp(320px, 56svh, calc(100svh - 18rem))"
-              >
-                {expenses.length ? (
-                  expenses.map((i) => <TransactionItem key={i.id} item={i} />)
-                ) : (
-                  <div className="text-sm text-center text-gray-500 py-8">Sin gastos</div>
+              maxHeight="clamp(300px, 50vh, 500px)"
+            >
+              {transactionsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : expenses.length ? (
+                expenses.map((transaction) => (
+                  <TransactionItem 
+                    key={transaction.id} 
+                    item={{
+                      id: transaction.id,
+                      type: transaction.type,
+                      category: transaction.is_fixed ? 'fijo' : 'variable',
+                      categoryLabel: transaction.is_fixed ? 'Fijo' : 'Variable',
+                      title: transaction.description || 'Sin descripción',
+                      amount: transaction.amount,
+                      date: transaction.occurred_on
+                    }} 
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Sin gastos registrados</p>
+                </div>
                 )}
               </ScrollArea>
             </section>
           </div>
-        </ResponsivePane>
       </div>
     </AppLayout>
+  );
+}
+
+// Wrapper con ToastProvider
+export default function TransactionsByGoalPage() {
+  return (
+    <ToastProvider>
+      <TransactionsByGoalPageInner />
+    </ToastProvider>
   );
 }

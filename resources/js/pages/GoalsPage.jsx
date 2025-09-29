@@ -49,6 +49,11 @@ function GoalsPageInner() {
 
   const toast = useToast();
 
+  // Invalidar caché al montar el componente
+  useEffect(() => {
+    invalidateCache('goals-page');
+  }, [invalidateCache]);
+
   // Función auxiliar para filtrar metas completadas
   const filterCompletedGoals = (goals) => {
     return goals.filter(goal => {
@@ -61,7 +66,7 @@ function GoalsPageInner() {
   };
 
   // Carga con opción "silenciosa" (no muestra loader)
-  async function load(p = page, { silent = false, forceRefresh = false } = {}) {
+  async function load(p = page, { silent = false, forceRefresh = true } = {}) {
     if (!silent) setLoading(true);
     try {
       const cacheKey = `goals-page-${p}`;
@@ -88,10 +93,30 @@ function GoalsPageInner() {
   }
 
   useEffect(() => {
-    // Al cambiar de página sí queremos mostrar loader
-    load(page, { silent: false });
+    // Invalidar caché al cambiar de página y cargar datos frescos
+    invalidateCache(`goals-page-${page}`);
+    load(page, { silent: false, forceRefresh: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+
+  // Recargar datos cuando la página se vuelve visible (al regresar de otra página)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Goals page became visible, refreshing data...');
+        // Invalidar TODOS los cachés de metas y recargar con datos frescos
+        invalidateCache('goals-page');
+        invalidateCache(`goals-page-${page}`);
+        load(page, { silent: false, forceRefresh: true });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [page, invalidateCache]);
 
   // Crear (optimista + refresh silencioso)
   async function handleCreateGoal(payload) {
@@ -139,6 +164,11 @@ function GoalsPageInner() {
     try {
       await updateGoal(id, goalUiToApi(rest));
       toast.push({ tone: "success", title: "Cambios guardados" });
+
+      // Disparar evento para notificar a otras páginas
+      window.dispatchEvent(new CustomEvent('goalUpdated', { 
+        detail: { goalId: id } 
+      }));
 
       // Traer versión canónica del back 
       try {
@@ -232,6 +262,11 @@ function GoalsPageInner() {
 
       try {
         await addTransaction(goalId, { type, amount: amt });
+
+        // Disparar evento para notificar a otras páginas
+        window.dispatchEvent(new CustomEvent('transactionAdded', { 
+          detail: { goalId, type, amount: amt } 
+        }));
 
         try {
           const detail = await getGoal(goalId);
