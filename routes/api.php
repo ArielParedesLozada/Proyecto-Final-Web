@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FixedMovementController;
 use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -60,5 +61,14 @@ Route::middleware('jwt.auth')->group(function () {
         Route::get('/categories/distribution', [StatsController::class, 'categoryDistribution']);
         Route::get('/monthly/income-expense', [StatsController::class, 'monthlyIncomeExpense']);
         Route::get('/goals/top-progress', [StatsController::class, 'topGoalsProgress']);
+    });
+
+    Route::prefix('fixed-movements')->group(function () {
+        Route::get('/', [FixedMovementController::class, 'index']);              
+        Route::post('/', [FixedMovementController::class, 'store']);            
+        Route::put('/{id}', [FixedMovementController::class, 'update']);         
+        Route::delete('/{id}', [FixedMovementController::class, 'destroy']);     
+        Route::post('/{id}/pause', [FixedMovementController::class, 'pause']);  
+        Route::post('/{id}/resume', [FixedMovementController::class, 'resume']); 
     });
 });

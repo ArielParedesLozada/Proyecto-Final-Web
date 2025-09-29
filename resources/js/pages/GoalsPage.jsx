@@ -19,7 +19,7 @@ import {
   deleteGoal,
   getGoal,
 } from "../services/goals";
-import { addTransaction } from "../services/transactions";
+import { addTransaction, createRecurringRule } from "../services/transactions";
 import { goalApiToUi, goalUiToApi } from "../services/adapters";
 
 function GoalsPageInner() {
@@ -172,26 +172,101 @@ function GoalsPageInner() {
     setTxOpen(true);
   }
 
-  async function handleSaveTx({ goalId, type, kind, amount }) {
-    const delta = type === "income" ? Number(amount) : -Number(amount);
+  async function handleSaveTx({ goalId, type, kind, amount, frequency }) {
+    const amt = Number(amount);
 
-    // Optimista
-    setGoals((prev) =>
-      prev.map((g) =>
-        g.id === goalId
-          ? { ...g, currentAmount: Math.max(0, Math.min(g.targetAmount, (g.currentAmount || 0) + delta)) }
-          : g
-      )
-    );
+    if (kind === "Variable") {
+      const delta = type === "income" ? amt : -amt;
+
+      // Optimista
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === goalId
+            ? {
+              ...g,
+              currentAmount: Math.max(
+                0,
+                Math.min(g.targetAmount, (g.currentAmount || 0) + delta)
+              ),
+            }
+            : g
+        )
+      );
+
+      try {
+        await addTransaction(goalId, { type, amount: amt });
+
+        try {
+          const detail = await getGoal(goalId);
+          const updated = goalApiToUi(detail.data);
+          setGoals((arr) => arr.map((g) => (g.id === goalId ? updated : g)));
+        } catch {
+          await load(page, { silent: true });
+        }
+
+        toast.push({
+          tone: "success",
+          title: type === "income" ? "Ingreso registrado" : "Gasto registrado",
+          message: `${type === "income" ? "+" : "-"}$${amt.toLocaleString()}`,
+        });
+      } catch (e) {
+        // Revertir optimista
+        setGoals((prev) =>
+          prev.map((g) =>
+            g.id === goalId
+              ? {
+                ...g,
+                currentAmount: Math.max(
+                  0,
+                  Math.min(g.targetAmount, (g.currentAmount || 0) - (type === "income" ? amt : -amt))
+                ),
+              }
+              : g
+          )
+        );
+        toast.push({
+          tone: "error",
+          title: "Error al guardar",
+          message: e?.message || "No se pudo registrar el movimiento.",
+        });
+      }
+      return;
+    }
 
     try {
-      await addTransaction(goalId, {
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === goalId
+            ? {
+              ...g,
+              currentAmount:
+                type === "income"
+                  ? Math.min((g.currentAmount || 0) + amt, g.targetAmount)
+                  : Math.max((g.currentAmount || 0) - amt, 0),
+            }
+            : g
+        )
+      );
+
+      await createRecurringRule({
+        goal_id: goalId,
         type,
-        is_fixed: kind === "Fijo",
-        amount: Number(amount),
+        amount: amt,
+        frequency: frequency || "monthly",
+        apply_now: true, 
       });
 
-      // Sin loader: refrescamos solo la meta desde el back o la página si no hay detalle
+      toast.push({
+        tone: "success",
+        title: "Regla fija creada",
+        message: `Se aplicó hoy y quedará programada ${frequency === "daily"
+          ? "diariamente"
+          : frequency === "weekly"
+            ? "semanalmente"
+            : "mensualmente"
+          } por $${amt.toLocaleString()}.`,
+      });
+
       try {
         const detail = await getGoal(goalId);
         const updated = goalApiToUi(detail.data);
@@ -199,22 +274,25 @@ function GoalsPageInner() {
       } catch {
         await load(page, { silent: true });
       }
-
-      toast.push({
-        tone: "success",
-        title: type === "income" ? "Ingreso registrado" : "Gasto registrado",
-        message: `${type === "income" ? "+" : "-"}$${Number(amount).toLocaleString()}`,
-      });
     } catch (e) {
-      // Revertir optimista
       setGoals((prev) =>
         prev.map((g) =>
           g.id === goalId
-            ? { ...g, currentAmount: Math.max(0, Math.min(g.targetAmount, (g.currentAmount || 0) - delta)) }
+            ? {
+              ...g,
+              currentAmount:
+                type === "income"
+                  ? Math.max((g.currentAmount || 0) - amt, 0)
+                  : Math.min((g.currentAmount || 0) + amt, g.targetAmount),
+            }
             : g
         )
       );
-      toast.push({ tone: "error", title: "Error al guardar", message: e?.message || "No se pudo registrar el movimiento." });
+      toast.push({
+        tone: "error",
+        title: "Error al crear la regla fija",
+        message: e?.message || "No se pudo crear la regla.",
+      });
     } finally {
       setTxOpen(false);
       setTxGoal(null);
