@@ -11,15 +11,14 @@ export default function TransactionItem({ item }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-medium truncate">{item.title}</p>
-          <span className="text-[10px] rounded-md px-2 py-0.5 bg-primary-600/10 text-primary-700 dark:text-primary-100">
+        <div className="flex items-center justify-center gap-3">
+          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
+            {new Date(item.date).toLocaleDateString()}
+          </p>
+          <span className="text-xs rounded-md px-3 py-1 bg-primary-600/10 text-primary-700 dark:text-primary-100 font-medium">
             {item.categoryLabel}
           </span>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {new Date(item.date).toLocaleDateString()} • {item.goal}
-        </p>
       </div>
 
       {/* 👇 en móvil mantiene derecha y no fuerza salto raro */}

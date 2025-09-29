@@ -308,12 +308,26 @@ class GoalController extends Controller
     /**
      * Listar movimientos de una meta
      */
-    public function listTransactions($goalId)
+    public function listTransactions($goalId, Request $request)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($goalId);
 
-        $items = Transaction::where('goal_id', $goal->id)
-            ->orderByDesc('occurred_on')
+        $query = Transaction::where('goal_id', $goal->id);
+
+        // Filtro por fechas
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('occurred_on', [
+                $request->start_date,
+                $request->end_date
+            ]);
+        }
+
+        // Filtro por tipo de transacción (fijo/variable)
+        if ($request->has('is_fixed')) {
+            $query->where('is_fixed', $request->is_fixed);
+        }
+
+        $items = $query->orderByDesc('occurred_on')
             ->orderByDesc('id')
             ->get();
 

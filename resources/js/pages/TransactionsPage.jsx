@@ -6,6 +6,7 @@ import TransactionItem from "../components/transactions/TransactionItem";
 import ScrollArea from "../components/ui/ScrollArea";
 import GoalSelect from "../components/goals/GoalSelect";
 import Empty from "../components/ui/Empty";
+import TransactionsFilters from "../components/transactions/TransactionsFilters";
 
 // Servicios
 import { listGoals } from "../services/goals";
@@ -27,6 +28,10 @@ function TransactionsByGoalPageInner() {
   const [loading, setLoading] = useState(true);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [calculatedProgress, setCalculatedProgress] = useState(0);
+  
+  // Filtros
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [transactionType, setTransactionType] = useState([]);
 
   // Cargar metas al montar el componente
   useEffect(() => {
@@ -43,6 +48,13 @@ function TransactionsByGoalPageInner() {
       loadTransactions(selectedGoal.id, true); // Siempre forzar refresh
     }
   }, [selectedGoal, invalidateCache]);
+
+  // Recargar transacciones cuando cambien los filtros
+  useEffect(() => {
+    if (selectedGoal) {
+      loadTransactions(selectedGoal.id, true);
+    }
+  }, [dateRange, transactionType]);
 
   // Escuchar cambios en las transacciones (cuando se agregan desde otras páginas)
   useEffect(() => {
@@ -134,10 +146,25 @@ function TransactionsByGoalPageInner() {
     try {
       setTransactionsLoading(true);
       console.log('Loading transactions for goal ID:', goalId);
-      const cacheKey = `transactions-goal-${goalId}`;
+      
+      // Construir parámetros de filtro
+      const params = {};
+      
+      // Filtros de fecha
+      if (dateRange.start && dateRange.end) {
+        params.start_date = dateRange.start;
+        params.end_date = dateRange.end;
+      }
+      
+      // Filtros de tipo de transacción
+      if (transactionType.length === 1) {
+        params.is_fixed = transactionType.includes('Fijo') ? true : false;
+      }
+      
+      const cacheKey = `transactions-goal-${goalId}-${JSON.stringify(params)}`;
       const res = await fetchWithCache(
         cacheKey,
-        () => listTransactions(goalId),
+        () => listTransactions(goalId, params),
         { forceRefresh }
       );
       
@@ -205,32 +232,11 @@ function TransactionsByGoalPageInner() {
   }
 
  const header = (
-    <div className="space-y-4">
     <div>
       <h1 className="text-lg md:text-xl font-semibold">Ingresos y Gastos por Meta</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400">
         Selecciona una meta para ver sus movimientos
       </p>
-    </div>
-
-      {/* Selector de meta en su propia línea */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {loading ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Meta:</span>
-              <div className="h-11 w-48 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
-            </div>
-          ) : (
-            <GoalSelect 
-              goals={goalOptions} 
-              value={selectedGoal?.id || ""} 
-              onChange={handleGoalChange} 
-            />
-          )}
-        </div>
-        
-      </div>
   </div>
 );
 
@@ -269,10 +275,26 @@ function TransactionsByGoalPageInner() {
 
   return (
     <AppLayout header={header}>
-      <div className="space-y-6">
+      <div className="grid gap-4 xl:h-full xl:grid-rows-[auto_auto_auto_minmax(0,1fr)]">
+        {/* Filtros */}
+        <div className="relative z-0 mb-1 overflow-visible">
+          <TransactionsFilters
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onDateRangeClear={() => setDateRange({ start: "", end: "" })}
+            transactionType={transactionType}
+            onTransactionTypeChange={setTransactionType}
+            onTransactionTypeClear={() => setTransactionType([])}
+            goals={goals}
+            selectedGoal={selectedGoal}
+            onGoalChange={handleGoalChange}
+            loading={loading}
+          />
+        </div>
+
         {/* Información de la meta seleccionada */}
         {selectedGoal && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="relative z-0 mt-0 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
                 <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,29 +318,27 @@ function TransactionsByGoalPageInner() {
         </div>
 
         {/* Contenido principal */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:min-h-0 lg:items-stretch">
             {/* Ingresos */}
-          <section className="fin-card p-5">
-            <header className="mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ingresos</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="min-h-0 lg:h-full">
+            <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
+              <header className="mb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Ingresos</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {incomes.length} registro(s)
                 </p>
+                  </div>
+                  <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                    <svg className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <svg className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                  </svg>
-                </div>
-              </div>
               </header>
-            
-              <ScrollArea
-                className="space-y-3"
-              maxHeight="clamp(300px, 50vh, 500px)"
-            >
+              
+                <ScrollArea className="flex-1 min-h-0 space-y-3">
               {transactionsLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
@@ -334,7 +354,7 @@ function TransactionsByGoalPageInner() {
                       type: transaction.type,
                       category: transaction.is_fixed ? 'fijo' : 'variable',
                       categoryLabel: transaction.is_fixed ? 'Fijo' : 'Variable',
-                      title: transaction.description || 'Sin descripción',
+                      title: transaction.description || '—',
                       amount: transaction.amount,
                       date: transaction.occurred_on
                     }} 
@@ -351,30 +371,29 @@ function TransactionsByGoalPageInner() {
                 </div>
                 )}
               </ScrollArea>
-            </section>
+              </div>
+            </div>
 
             {/* Gastos */}
-          <section className="fin-card p-5">
-            <header className="mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Gastos</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="min-h-0 lg:h-full">
+            <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
+              <header className="mb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Gastos</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {expenses.length} registro(s)
                 </p>
+                  </div>
+                  <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                    <svg className="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                  <svg className="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                  </svg>
-                </div>
-              </div>
               </header>
-            
-              <ScrollArea
-                className="space-y-3"
-              maxHeight="clamp(300px, 50vh, 500px)"
-            >
+              
+                <ScrollArea className="flex-1 min-h-0 space-y-3">
               {transactionsLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
@@ -390,7 +409,7 @@ function TransactionsByGoalPageInner() {
                       type: transaction.type,
                       category: transaction.is_fixed ? 'fijo' : 'variable',
                       categoryLabel: transaction.is_fixed ? 'Fijo' : 'Variable',
-                      title: transaction.description || 'Sin descripción',
+                      title: transaction.description || '—',
                       amount: transaction.amount,
                       date: transaction.occurred_on
                     }} 
@@ -407,8 +426,9 @@ function TransactionsByGoalPageInner() {
                 </div>
                 )}
               </ScrollArea>
-            </section>
+            </div>
           </div>
+        </div>
       </div>
     </AppLayout>
   );
