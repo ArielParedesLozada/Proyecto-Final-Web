@@ -1,7 +1,13 @@
+import { isoToLocalYMD } from "./dates"; 
+
 function pickYMD(val) {
     if (!val) return "";
     const m = String(val).match(/^\d{4}-\d{2}-\d{2}/);
     return m ? m[0] : "";
+}
+
+function looksISODateTime(s) {
+    return typeof s === "string" && /T\d{2}:\d{2}/.test(s);
 }
 
 export const CAT_API_TO_UI = {
@@ -49,9 +55,17 @@ export const STATUS_UI_TO_API = {
 export function goalApiToUi(api) {
     const statusUI = STATUS_API_TO_UI[api.status] ?? "Activa";
 
-    const finishedAt =
-        pickYMD(api.completed_at) ||
-        (api.status === "completed" ? pickYMD(api.updated_at) : "");
+    const createdAt = looksISODateTime(api.created_at)
+        ? isoToLocalYMD(api.created_at)
+        : pickYMD(api.created_at);
+
+    const updatedAt = looksISODateTime(api.updated_at)
+        ? isoToLocalYMD(api.updated_at)
+        : pickYMD(api.updated_at);
+
+    const finishedAt = api.completed_at
+        ? (looksISODateTime(api.completed_at) ? isoToLocalYMD(api.completed_at) : pickYMD(api.completed_at))
+        : (api.status === "completed" ? updatedAt : "");
 
     return {
         id: api.id,
@@ -64,10 +78,10 @@ export function goalApiToUi(api) {
         ),
         status: statusUI,
 
-        createdAt: pickYMD(api.created_at),
-        updatedAt: pickYMD(api.updated_at),   
-        deadline: pickYMD(api.target_date),
-        finishedAt,                           
+        createdAt,                
+        updatedAt,                
+        deadline: pickYMD(api.target_date), 
+        finishedAt,            
     };
 }
 
@@ -77,7 +91,7 @@ export function goalUiToApi(ui) {
         category: CAT_UI_TO_API[ui.category] ?? "others",
         description: ui.description?.trim() || null,
         target_amount: Number(ui.targetAmount),
-        target_date: ui.deadline, 
+        target_date: ui.deadline,
     };
 
     if (ui.status) {

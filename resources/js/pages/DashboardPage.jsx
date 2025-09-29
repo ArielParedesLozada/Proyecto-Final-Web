@@ -7,7 +7,7 @@ import Empty from "../components/ui/Empty";
 import ScrollArea from "../components/ui/ScrollArea";
 
 // servicios
-import { listGoals } from "../services/goals";
+import { listGoals, listGoalsHistory } from "../services/goals";
 import {
   getMonthlyIncomeExpense,
   getMonthlyRealVsSuggested,
@@ -94,16 +94,11 @@ export default function DashboardPage() {
       setMetaMensualSugerida(Math.round(sug));
       setProgresoMensual(sug > 0 ? Math.round((real / sug) * 100) : 0);
 
-      // 3) Metas activas
-      const dist = await getGoalsStatusDistribution({});
-      const actRow = (dist.data || []).find((x) => x.status === "Activa");
-      setMetasActivas(Number(actRow?.value || 0));
+      // 3) Metas activas (desde /goals)
+      const resGoals = await listGoals({ page: 1, pageSize: 100, filters: { estados: ["Activa"] } });
+      const rowsActive = (resGoals.data ?? []).map(goalApiToUi);
 
-      // 4) Listas (activas / completadas)
-      const resGoals = await listGoals({ page: 1, pageSize: 100, filters: {} });
-      const rows = (resGoals.data ?? []).map(goalApiToUi);
-
-      const actives = rows
+      const actives = rowsActive
         .filter((g) => g.status === "Activa")
         .map((g) => ({
           id: g.id,
@@ -114,7 +109,15 @@ export default function DashboardPage() {
         }))
         .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-      const completed = rows
+      // 4) Metas completadas (desde /goals/history)
+      const resHistory = await listGoalsHistory({
+        page: 1,
+        pageSize: 100,
+        filters: { estados: ["Completada"] },
+      });
+      const rowsCompleted = (resHistory.data ?? []).map(goalApiToUi);
+
+      const completed = rowsCompleted
         .filter((g) => g.status === "Completada")
         .map((g) => ({
           id: g.id,
@@ -128,6 +131,10 @@ export default function DashboardPage() {
 
       setGoalsActive(actives);
       setGoalsCompleted(completed);
+
+      const dist = await getGoalsStatusDistribution({});
+      const actRow = (dist.data || []).find((x) => x.status === "Activa");
+      setMetasActivas(Number(actRow?.value || 0));
     } finally {
       setLoading(false);
     }
@@ -157,7 +164,7 @@ export default function DashboardPage() {
               value={`$${Number(totalAhorrado).toLocaleString()}`}
               sublabel="Últimos 12 meses"
               icon={<MoneyIcon />}
-              variant="emerald"   
+              variant="emerald"
               loading={loading}
             />
           </div>
@@ -167,7 +174,7 @@ export default function DashboardPage() {
               value={`$${Number(metaMensualSugerida).toLocaleString()}`}
               sublabel="Estimación por metas activas"
               icon={<TargetIcon />}
-              variant="violet"    
+              variant="violet"
               loading={loading}
             />
           </div>
@@ -177,7 +184,7 @@ export default function DashboardPage() {
               value={metasActivas}
               sublabel="Actualmente en curso"
               icon={<ListIcon />}
-              variant="indigo"   
+              variant="indigo"
               loading={loading}
             />
           </div>
@@ -187,7 +194,7 @@ export default function DashboardPage() {
               value={`${Number(progresoMensual)}%`}
               sublabel="Real vs sugerido"
               icon={<TrendingIcon />}
-              variant="amber"      
+              variant="amber"
               loading={loading}
             />
           </div>
