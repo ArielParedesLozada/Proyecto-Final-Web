@@ -15,6 +15,7 @@ import {
   getTopGoalsProgress,
   downloadStatsPDF,
 } from "../services/stats";
+import useCache from "../hooks/useCache";
 
 // Recharts
 import {
@@ -53,6 +54,7 @@ const CHART_COLORS = [
 
 function StatsPageInner() {
   const toast = useToast();
+  const { fetchWithCache, invalidateCache } = useCache();
 
   const [range, setRange] = useState({ start: "", end: "" });
   const [loading, setLoading] = useState(false);
@@ -86,25 +88,28 @@ function StatsPageInner() {
     return {};                                // incompleto o inválido → no enviamos nada
   }, [range]);
 
-  async function loadAll() {
+  async function loadAll(forceRefresh = false) {
     setLoading(true);
     try {
       const params = { ...validRange };
+      const cacheKey = `stats-${JSON.stringify(params)}`;
+      
+      // Usar caché para mejorar el rendimiento
       const [st, rvs, comp, cat, incExp, top] = await Promise.all([
-        getGoalsStatusDistribution(params),
-        getMonthlyRealVsSuggested(params),
-        getMonthlyCompletion(params),
-        getCategoryDistribution(params),
-        getMonthlyIncomeExpense(params),
-        getTopGoalsProgress(params),
+        fetchWithCache(`${cacheKey}-status`, () => getGoalsStatusDistribution(params), { forceRefresh }),
+        fetchWithCache(`${cacheKey}-rvs`, () => getMonthlyRealVsSuggested(params), { forceRefresh }),
+        fetchWithCache(`${cacheKey}-completion`, () => getMonthlyCompletion(params), { forceRefresh }),
+        fetchWithCache(`${cacheKey}-category`, () => getCategoryDistribution(params), { forceRefresh }),
+        fetchWithCache(`${cacheKey}-income`, () => getMonthlyIncomeExpense(params), { forceRefresh }),
+        fetchWithCache(`${cacheKey}-top`, () => getTopGoalsProgress(params), { forceRefresh }),
       ]);
 
-      setStatusData(Array.isArray(st.data) ? st.data : []);
-      setRealVsSuggested(rvs.data || []);
-      setMonthlyCompletion(comp.data || []);
-      setCategoryDist(cat.data || []);
-      setIncomeExpense(incExp.data || []);
-      setTopGoals(top.data || []);
+      if (st) setStatusData(Array.isArray(st.data) ? st.data : []);
+      if (rvs) setRealVsSuggested(rvs.data || []);
+      if (comp) setMonthlyCompletion(comp.data || []);
+      if (cat) setCategoryDist(cat.data || []);
+      if (incExp) setIncomeExpense(incExp.data || []);
+      if (top) setTopGoals(top.data || []);
     } catch (e) {
       toast.push({ tone: "error", title: "Error", message: "No se pudieron cargar las estadísticas." });
     } finally {
@@ -157,7 +162,11 @@ function StatsPageInner() {
       return;
     }
 
-    if (state === "ok" || state === "none") loadAll();
+    if (state === "ok" || state === "none") {
+      // Invalidar caché cuando cambien los filtros
+      invalidateCache('stats-');
+      loadAll(true);
+    }
   }, [range, toast]);
 
   const onClear = () => {

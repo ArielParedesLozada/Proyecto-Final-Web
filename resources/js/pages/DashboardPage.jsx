@@ -7,13 +7,8 @@ import Empty from "../components/ui/Empty";
 import ScrollArea from "../components/ui/ScrollArea";
 
 // servicios
-import { listGoals, listGoalsHistory } from "../services/goals";
-import {
-  getMonthlyIncomeExpense,
-  getMonthlyRealVsSuggested,
-  getGoalsStatusDistribution,
-} from "../services/stats";
-import { goalApiToUi } from "../services/adapters";
+import { getDashboardSummary } from "../services/stats";
+import useCache from "../hooks/useCache";
 
 // Helpers de fechas
 function ymd(d) {
@@ -53,6 +48,7 @@ const TrendingIcon = () => (
 );
 
 export default function DashboardPage() {
+  const { fetchWithCache, invalidateCache } = useCache();
   const [loading, setLoading] = useState(true);
 
   // KPIs
@@ -65,80 +61,42 @@ export default function DashboardPage() {
   const [goalsActive, setGoalsActive] = useState([]);
   const [goalsCompleted, setGoalsCompleted] = useState([]);
 
-  async function load() {
+  async function load(forceRefresh = false) {
     setLoading(true);
     try {
-      // Últimos 12 meses para "Total Ahorrado"
-      const end = new Date();
-      const start = new Date();
-      start.setMonth(start.getMonth() - 11);
-      const params12m = {
-        start: ymd(new Date(start.getFullYear(), start.getMonth(), 1)),
-        end: ymd(end),
-      };
-
-      // 1) Total Ahorrado (ingresos - gastos)
-      const inex = await getMonthlyIncomeExpense(params12m);
-      const total = (inex.data ?? []).reduce(
-        (acc, m) => acc + (Number(m.incomes || 0) - Number(m.expenses || 0)),
-        0
+      // Usar caché para mejorar el rendimiento
+      const response = await fetchWithCache(
+        'dashboard-summary',
+        () => getDashboardSummary(),
+        { forceRefresh }
       );
-      setTotalAhorrado(Math.max(0, Math.round(total)));
+      
+      if (response) {
+        const data = response.data;
 
-      // 2) Meta mensual sugerida y progreso del mes
-      const rvs = await getMonthlyRealVsSuggested({});
-      const serie = rvs.data ?? [];
-      const ultimo = serie[serie.length - 1] || { real: 0, suggested: 0 };
-      const sug = Number(ultimo.suggested || 0);
-      const real = Number.isFinite(ultimo.real) ? Number(ultimo.real) : 0;
-      setMetaMensualSugerida(Math.round(sug));
-      setProgresoMensual(sug > 0 ? Math.round((real / sug) * 100) : 0);
-
-      // 3) Metas activas (desde /goals)
-      const resGoals = await listGoals({ page: 1, pageSize: 100, filters: { estados: ["Activa"] } });
-      const rowsActive = (resGoals.data ?? []).map(goalApiToUi);
-
-      const actives = rowsActive
-        .filter((g) => g.status === "Activa")
-        .map((g) => ({
-          id: g.id,
-          name: g.name,
-          current: Number(g.currentAmount || 0),
-          target: Number(g.targetAmount || 0),
-          updatedAt: g.updatedAt || g.createdAt,
-        }))
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-
-      // 4) Metas completadas (desde /goals/history)
-      const resHistory = await listGoalsHistory({
-        page: 1,
-        pageSize: 100,
-        filters: { estados: ["Completada"] },
-      });
-      const rowsCompleted = (resHistory.data ?? []).map(goalApiToUi);
-
-      const completed = rowsCompleted
-        .filter((g) => g.status === "Completada")
-        .map((g) => ({
-          id: g.id,
-          name: g.name,
-          finishedAt: g.finishedAt || "",
-          deadline: g.deadline || "",
-          updatedAt: g.updatedAt || g.createdAt,
-        }))
-        .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
-        .slice(0, 20);
-
-      setGoalsActive(actives);
-      setGoalsCompleted(completed);
-
-      const dist = await getGoalsStatusDistribution({});
-      const actRow = (dist.data || []).find((x) => x.status === "Activa");
-      setMetasActivas(Number(actRow?.value || 0));
+        // Establecer todos los datos de una vez
+        setTotalAhorrado(data.totalAhorrado);
+        setMetaMensualSugerida(data.metaMensualSugerida);
+        setProgresoMensual(data.progresoMensual);
+        setMetasActivas(data.metasActivas);
+        setGoalsActive(data.goalsActive);
+        setGoalsCompleted(data.goalsCompleted);
+      }
     } finally {
       setLoading(false);
     }
   }
+
+  // Función para refrescar datos (útil para actualizaciones después de cambios)
+  const refreshData = () => {
+    invalidateCache('dashboard-summary');
+    load(true);
+  };
+
+  // Invalidar caché al cargar la página para asegurar datos frescos
+  useEffect(() => {
+    invalidateCache('dashboard-summary');
+  }, []);
 
   useEffect(() => {
     load();

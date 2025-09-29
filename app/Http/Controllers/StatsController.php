@@ -323,4 +323,128 @@ class StatsController extends Controller
 
         return response()->json(['data' => $data]);
     }
+
+    /**
+     * Endpoint optimizado para el dashboard que combina múltiples estadísticas
+     */
+    public function dashboardSummary(Request $request)
+    {
+        $userId = Auth::id();
+        
+        // Últimos 12 meses para estadísticas
+        $end = Carbon::now();
+        $start = (clone $end)->subMonths(11)->startOfMonth();
+        $params12m = [
+            'start' => $start->toDateString(),
+            'end' => $end->toDateString(),
+        ];
+
+        // Cargar datos en paralelo usando consultas optimizadas
+        $goals = Goal::where('user_id', $userId)
+            ->withSum(['transactions as income_sum' => function ($q) {
+                $q->where('type', 'income');
+            }], 'amount')
+            ->withSum(['transactions as expense_sum' => function ($q) {
+                $q->where('type', 'expense');
+            }], 'amount')
+            ->get();
+
+        // Calcular total ahorrado de los últimos 12 meses
+        $totalAhorrado = Transaction::where('user_id', $userId)
+            ->whereBetween('occurred_on', [$start->toDateString(), $end->toDateString()])
+            ->selectRaw("
+                SUM(CASE WHEN type='income' THEN amount ELSE 0 END) - 
+                SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as total
+            ")
+            ->value('total') ?? 0;
+
+        // Metas activas con progreso calculado (todas las metas activas)
+        $goalsActive = $goals->where('status', 'active')->map(function ($goal) {
+            $accumulated = (float) (($goal->income_sum ?? 0) - ($goal->expense_sum ?? 0));
+            return [
+                'id' => $goal->id,
+                'name' => $goal->name,
+                'current' => max(0, min($goal->target_amount, $accumulated)),
+                'target' => $goal->target_amount,
+                'updatedAt' => $goal->updated_at,
+            ];
+        })->sortBy('name')->values();
+
+        // Metas completadas
+        $goalsCompleted = $goals->where('status', 'completed')
+            ->map(function ($goal) {
+                return [
+                    'id' => $goal->id,
+                    'name' => $goal->name,
+                    'finishedAt' => $goal->updated_at ? $goal->updated_at->toDateString() : '',
+                    'deadline' => $goal->target_date,
+                    'updatedAt' => $goal->updated_at,
+                ];
+            })
+            ->sortByDesc('updatedAt')
+            ->take(20)
+            ->values();
+
+        // Calcular meta mensual sugerida y progreso
+        $currentMonth = Carbon::now()->format('Y-m');
+        $monthlyData = $this->calculateMonthlySuggested($goals, $currentMonth);
+        
+        // Distribución de metas
+        $statusDistribution = $goals->groupBy('status')->map->count();
+        $metasActivas = $statusDistribution->get('active', 0);
+
+        return response()->json([
+            'data' => [
+                'totalAhorrado' => max(0, round($totalAhorrado)),
+                'metaMensualSugerida' => round($monthlyData['suggested']),
+                'progresoMensual' => $monthlyData['progress'],
+                'metasActivas' => $metasActivas,
+                'goalsActive' => $goalsActive,
+                'goalsCompleted' => $goalsCompleted,
+            ]
+        ]);
+    }
+
+    private function calculateMonthlySuggested($goals, $currentMonth)
+    {
+        $suggested = 0;
+        $real = 0;
+
+        foreach ($goals as $goal) {
+            if (!$goal->target_date) continue;
+
+            $createdMonth = Carbon::parse($goal->created_at)->format('Y-m');
+            $targetMonth = Carbon::parse($goal->target_date)->format('Y-m');
+
+            // Si la meta está activa en el mes actual
+            if ($currentMonth >= $createdMonth && $currentMonth <= $targetMonth) {
+                $monthsCount = Carbon::parse($goal->created_at)->diffInMonths(Carbon::parse($goal->target_date)) + 1;
+                if ($monthsCount > 0) {
+                    $suggested += $goal->target_amount / $monthsCount;
+                }
+            }
+
+            // Calcular real del mes actual
+            $monthStart = Carbon::parse($currentMonth . '-01')->startOfMonth();
+            $monthEnd = Carbon::parse($currentMonth . '-01')->endOfMonth();
+            
+            $monthlyTransactions = Transaction::where('goal_id', $goal->id)
+                ->whereBetween('occurred_on', [$monthStart->toDateString(), $monthEnd->toDateString()])
+                ->selectRaw("
+                    SUM(CASE WHEN type='income' THEN amount ELSE 0 END) - 
+                    SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as total
+                ")
+                ->value('total') ?? 0;
+
+            $real += $monthlyTransactions;
+        }
+
+        $progress = $suggested > 0 ? round(($real / $suggested) * 100) : 0;
+
+        return [
+            'suggested' => $suggested,
+            'real' => $real,
+            'progress' => $progress,
+        ];
+    }
 }

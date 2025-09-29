@@ -5,6 +5,7 @@ import { ToastProvider, useToast } from "../components/ui/ToastProvider";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfile, updateProfile, changePassword } from "../services/profile";
 import PasswordInput from "../components/login/PasswordInput";
+import useCache from "../hooks/useCache";
 
 /* --- Subcomponentes pequeños para mantener orden --- */
 function SectionHeader({ title, subtitle, right }) {
@@ -48,6 +49,7 @@ function ProfilePageInner() {
   const { user, setUser } = useAuth();
   const toast = useToast();
   const { updateUser } = useAuth();
+  const { fetchWithCache, invalidateCache } = useCache();
 
   // Estado datos de la cuenta
   const [firstName, setFirstName] = useState("");
@@ -68,15 +70,17 @@ function ProfilePageInner() {
   useEffect(() => {
     (async () => {
       try {
-        const p = await getProfile();
-        setFirstName(p.first_name || "");
-        setLastName(p.last_name || "");
-        setEmail(p.email || "");
-        setUser?.((prev) => ({
-          ...(prev || {}),
-          ...p,
-          full_name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
-        }));
+        const p = await fetchWithCache('user-profile', () => getProfile());
+        if (p) {
+          setFirstName(p.first_name || "");
+          setLastName(p.last_name || "");
+          setEmail(p.email || "");
+          setUser?.((prev) => ({
+            ...(prev || {}),
+            ...p,
+            full_name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
+          }));
+        }
       } catch (e) {
         toast.push({ tone: "error", title: "No se pudo cargar tu perfil" });
       } finally {
@@ -124,6 +128,9 @@ function ProfilePageInner() {
         email: nextEmail,
         full_name: `${nextFirst} ${nextLast}`.trim(),
       });
+
+      // Invalidar caché del perfil
+      invalidateCache('user-profile');
 
       toast.push({ tone: "success", title: "Cambios guardados" });
     } catch (err) {

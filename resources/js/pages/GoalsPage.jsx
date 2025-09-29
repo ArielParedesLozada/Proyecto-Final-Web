@@ -21,8 +21,10 @@ import {
 } from "../services/goals";
 import { addTransaction, createRecurringRule } from "../services/transactions";
 import { goalApiToUi, goalUiToApi } from "../services/adapters";
+import useCache from "../hooks/useCache";
 
 function GoalsPageInner() {
+  const { fetchWithCache, invalidateCache } = useCache();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,19 +61,27 @@ function GoalsPageInner() {
   };
 
   // Carga con opción "silenciosa" (no muestra loader)
-  async function load(p = page, { silent = false } = {}) {
+  async function load(p = page, { silent = false, forceRefresh = false } = {}) {
     if (!silent) setLoading(true);
     try {
-      const res = await listGoals({ page: p, pageSize });
-      const rows = (res.data ?? []).map(goalApiToUi);
+      const cacheKey = `goals-page-${p}`;
+      const res = await fetchWithCache(
+        cacheKey,
+        () => listGoals({ page: p, pageSize }),
+        { forceRefresh }
+      );
       
-      // Filtrar metas completadas automáticamente
-      const activeGoals = filterCompletedGoals(rows);
-      
-      setGoals(activeGoals);
-      setTotal(activeGoals.length);
-      const lp = Math.max(1, Math.ceil(activeGoals.length / pageSize));
-      setLastPage(lp);
+      if (res) {
+        const rows = (res.data ?? []).map(goalApiToUi);
+        
+        // Filtrar metas completadas automáticamente
+        const activeGoals = filterCompletedGoals(rows);
+        
+        setGoals(activeGoals);
+        setTotal(activeGoals.length);
+        const lp = Math.max(1, Math.ceil(activeGoals.length / pageSize));
+        setLastPage(lp);
+      }
     } finally {
       if (!silent) setLoading(false);
     }
@@ -90,9 +100,10 @@ function GoalsPageInner() {
       toast.push({ tone: "success", title: "Meta creada" });
       setModalOpen(false);
 
-      // Ir a página 1 y refrescar silenciosamente
+      // Invalidar caché y refrescar
+      invalidateCache('goals-page');
       setPage(1);
-      await load(1, { silent: true });
+      await load(1, { silent: true, forceRefresh: true });
     } catch (e) {
       toast.push({ tone: "error", title: "Error al crear", message: e?.message || "No se pudo crear la meta." });
     }
@@ -144,8 +155,9 @@ function GoalsPageInner() {
       }
     } catch (e) {
       toast.push({ tone: "error", title: "Error al actualizar", message: e?.message || "No se pudo actualizar la meta." });
-      // Podríamos revertir, pero la previa recarga silenciosa al fallar ya “corrige” el estado:
-      await load(page, { silent: true });
+      // Podríamos revertir, pero la previa recarga silenciosa al fallar ya "corrige" el estado:
+      invalidateCache('goals-page');
+      await load(page, { silent: true, forceRefresh: true });
     } finally {
       setModalOpen(false);
       setEditingGoal(null);
@@ -169,17 +181,21 @@ function GoalsPageInner() {
       await deleteGoal(toDeleteId);
       toast.push({ tone: "success", title: "Meta eliminada" });
 
+      // Invalidar caché
+      invalidateCache('goals-page');
+
       // Si quedó la página vacía, traer contenido de la previa; siempre en silencio
       const afterDeleteCount = goals.length - 1;
       const pageNowEmpty = afterDeleteCount === 0 && page > 1;
       const nextPage = pageNowEmpty ? page - 1 : page;
 
       setPage(nextPage); // actualiza el pager
-      await load(nextPage, { silent: true });
+      await load(nextPage, { silent: true, forceRefresh: true });
     } catch (e) {
       toast.push({ tone: "error", title: "Error al eliminar", message: e?.message || "No se pudo eliminar la meta." });
       // Recuperar estado real desde el back sin loader
-      await load(page, { silent: true });
+      invalidateCache('goals-page');
+      await load(page, { silent: true, forceRefresh: true });
     } finally {
       setToDeleteId(null);
     }

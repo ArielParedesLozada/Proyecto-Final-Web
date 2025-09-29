@@ -11,11 +11,13 @@ import useDebouncedValue from "../hooks/useDebouncedValue";
 import { listGoalsHistory, getGoal } from "../services/goals";
 import { goalApiToUi } from "../services/adapters";
 import { useToast, ToastProvider } from "../components/ui/ToastProvider";
+import useCache from "../hooks/useCache";
 
 const LS_KEY = "fs_history_filters";
 
 function HistoryPageInner() {
     const toast = useToast();
+    const { fetchWithCache, invalidateCache } = useCache();
 
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -60,23 +62,31 @@ function HistoryPageInner() {
         return rest;
     }
 
-    async function load(p = page, { silent = false } = {}) {
+    async function load(p = page, { silent = false, forceRefresh = false } = {}) {
         if (!silent) setLoading(true);
         try {
             const effective = buildEffectiveFilters();
-            const res = await listGoalsHistory({
-                page: p,
-                pageSize,
-                filters: effective,
-            });
+            const cacheKey = `history-${p}-${JSON.stringify(effective)}`;
+            
+            const res = await fetchWithCache(
+                cacheKey,
+                () => listGoalsHistory({
+                    page: p,
+                    pageSize,
+                    filters: effective,
+                }),
+                { forceRefresh }
+            );
 
-            const rows = (res.data ?? []).map(goalApiToUi);
-            setItems(rows);
+            if (res) {
+                const rows = (res.data ?? []).map(goalApiToUi);
+                setItems(rows);
 
-            const lp =
-                res.last_page ??
-                Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
-            setLastPage(lp);
+                const lp =
+                    res.last_page ??
+                    Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
+                setLastPage(lp);
+            }
         } finally {
             if (!silent) setLoading(false);
         }
@@ -97,7 +107,8 @@ function HistoryPageInner() {
 
     useEffect(() => {
         setPage(1);
-        load(1, { silent: false });
+        invalidateCache('history-');
+        load(1, { silent: false, forceRefresh: true });
     }, [filters.categoria, filters.estados, filters.vence7dias]);
 
     useEffect(() => {
@@ -109,7 +120,8 @@ function HistoryPageInner() {
 
         if (bothEmpty || bothValid) {
             setPage(1);
-            load(1, { silent: false });
+            invalidateCache('history-');
+            load(1, { silent: false, forceRefresh: true });
         }
     }, [filters.creadaDesde, filters.venceHasta]);
 
