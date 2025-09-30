@@ -39,7 +39,7 @@ class PasswordReset extends Model
         return self::create([
             'email' => $email,
             'code' => self::generateCode(),
-            'expires_at' => Carbon::now()->addMinutes(15), // Expira en 15 minutos
+            'expires_at' => Carbon::now()->addMinutes(3), // Expira en 3 minutos
             'used' => false
         ]);
     }
@@ -74,5 +74,37 @@ class PasswordReset extends Model
     public static function cleanExpiredCodes(): int
     {
         return self::where('expires_at', '<', Carbon::now())->delete();
+    }
+
+    /**
+     * Obtener el tiempo restante del código en segundos
+     */
+    public static function getTimeRemaining(string $email): int
+    {
+        $now = Carbon::now();
+        
+        $passwordReset = self::where('email', $email)
+            ->where('used', false)
+            ->where('expires_at', '>', $now)
+            ->first();
+
+        if (!$passwordReset) {
+            \Log::info("No valid password reset found for email: {$email}");
+            return 0;
+        }
+
+        $expiresAt = $passwordReset->expires_at;
+        
+        \Log::info("Password reset found - Email: {$email}, Now: {$now}, Expires: {$expiresAt}");
+        
+        // Calcular segundos restantes hasta la expiración
+        if ($expiresAt->isFuture()) {
+            $secondsRemaining = $now->diffInSeconds($expiresAt, false);
+            \Log::info("Seconds remaining: {$secondsRemaining}");
+            return max(0, $secondsRemaining);
+        }
+        
+        \Log::info("Code has expired");
+        return 0;
     }
 }

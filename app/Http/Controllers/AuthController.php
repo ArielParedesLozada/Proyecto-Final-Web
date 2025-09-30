@@ -480,4 +480,36 @@ class AuthController extends Controller
             ], 401);
         }
     }
+
+    /**
+     * Obtener tiempo restante del código de verificación
+     */
+    public function getCodeTimeRemaining(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email'
+        ], [
+            'email.required' => 'El correo electrónico es obligatorio',
+            'email.email' => 'El formato del correo no es válido',
+            'email.exists' => 'No existe una cuenta con este correo electrónico'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Por favor, revisa los siguientes errores:',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $timeRemaining = PasswordReset::getTimeRemaining($request->email);
+        
+        \Log::info("Time remaining for email {$request->email}: {$timeRemaining} seconds");
+        
+        return response()->json([
+            'success' => true,
+            'time_remaining' => $timeRemaining,
+            'expired' => $timeRemaining === 0
+        ]);
+    }
 }

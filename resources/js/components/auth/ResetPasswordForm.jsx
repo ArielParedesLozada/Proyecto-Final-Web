@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../common/Input";
 import PasswordInput from "../login/PasswordInput";
-import { verifyResetCode, resetPassword } from "../../services/auth";
+import { verifyResetCode, resetPassword, getCodeTimeRemaining, requestPasswordReset } from "../../services/auth";
 
 export default function ResetPasswordForm({ email, onBack }) {
   const navigate = useNavigate();
@@ -14,6 +14,9 @@ export default function ResetPasswordForm({ email, onBack }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+  const [resending, setResending] = useState(false);
 
   // Auto-dismiss messages after 5 seconds
   useEffect(() => {
@@ -43,6 +46,89 @@ export default function ResetPasswordForm({ email, onBack }) {
       return () => clearTimeout(timer);
     }
   }, [codeVerified]);
+
+  // Contador de tiempo restante
+  useEffect(() => {
+    const fetchTimeRemaining = async () => {
+      try {
+        console.log("Fetching time remaining for email:", email);
+        const response = await getCodeTimeRemaining(email);
+        console.log("Full response from server:", response);
+        
+        if (response.success) {
+          console.log("Time remaining from server:", response.time_remaining);
+          console.log("Expired status:", response.expired);
+          setTimeRemaining(response.time_remaining);
+          setCanResend(response.expired);
+        } else {
+          console.log("No valid code found, setting to expired");
+          setTimeRemaining(0);
+          setCanResend(true);
+        }
+      } catch (err) {
+        console.error("Error fetching time remaining:", err);
+        console.error("Error details:", err.response?.data);
+        setTimeRemaining(0);
+        setCanResend(true);
+      }
+    };
+
+    // Obtener tiempo inicial del servidor
+    fetchTimeRemaining();
+
+    // Actualizar cada segundo
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [email]);
+
+  // Función para formatear el tiempo
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Función para reenviar código
+  const handleResendCode = async () => {
+    setResending(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await requestPasswordReset(email);
+      if (response.success) {
+        setSuccess("Código reenviado exitosamente");
+        
+        // Obtener el tiempo real del servidor después de reenviar
+        try {
+          const timeResponse = await getCodeTimeRemaining(email);
+          if (timeResponse.success) {
+            setTimeRemaining(timeResponse.time_remaining);
+            setCanResend(timeResponse.expired);
+          }
+        } catch (timeErr) {
+          console.error("Error getting time after resend:", timeErr);
+          setTimeRemaining(180); // Fallback a 3 minutos
+          setCanResend(false);
+        }
+      } else {
+        setError(response.message || "Error al reenviar el código");
+      }
+    } catch (err) {
+      setError(err.message || "Error al reenviar el código");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleVerifyCode = async (e) => {
     e.preventDefault();
@@ -122,6 +208,13 @@ export default function ResetPasswordForm({ email, onBack }) {
           required
         />
 
+        {/* Contador de tiempo */}
+        <div className="mb-4 text-center">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Tiempo restante: <span className="font-semibold text-indigo-600">{formatTime(timeRemaining)}</span>
+          </p>
+        </div>
+
         <button
           type="submit"
           disabled={loading || code.length !== 6}
@@ -129,6 +222,18 @@ export default function ResetPasswordForm({ email, onBack }) {
         >
           {loading ? "Verificando..." : "Verificar código"}
         </button>
+
+        {/* Botón de reenviar código */}
+        {canResend && (
+          <button
+            type="button"
+            onClick={handleResendCode}
+            disabled={resending}
+            className="w-full mt-3 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resending ? "Reenviando..." : "Reenviar código"}
+          </button>
+        )}
 
         <button
           type="button"

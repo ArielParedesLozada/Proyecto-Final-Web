@@ -130,7 +130,7 @@
             <div class="code-container">
                 <div class="code-label">Tu código de verificación es:</div>
                 <div class="code">{{ $code }}</div>
-                <div class="code-label">Válido por 15 minutos</div>
+                <div class="code-label">Válido por 3 minutos</div>
             </div>
 
             <div class="warning">
@@ -144,7 +144,7 @@
             <div class="info">
                 <h3>Instrucciones:</h3>
                 <div class="info-item">Ingresa este código en la página de restablecimiento de contraseña</div>
-                <div class="info-item">El código es válido por 15 minutos desde su envío</div>
+                <div class="info-item">El código es válido por 3 minutos desde su envío</div>
                 <div class="info-item">Solo puedes usar este código una vez</div>
                 <div class="info-item">Si el código expira, solicita uno nuevo</div>
             </div>

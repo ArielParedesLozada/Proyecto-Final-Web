@@ -301,3 +301,23 @@ export async function resetPassword(email, code, password, passwordConfirmation)
     throw error;
   }
 }
+
+export async function getCodeTimeRemaining(email) {
+  try {
+    const res = await rawFetch(`${BASE}/password/time-remaining`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || "get_time_remaining_failed");
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("Get time remaining error:", error);
+    throw error;
+  }
+}

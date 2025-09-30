@@ -27,6 +27,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/reset-request', [AuthController::class, 'requestPasswordReset']);
 Route::post('/password/verify-code', [AuthController::class, 'verifyResetCode']);
 Route::post('/password/reset', [AuthController::class, 'resetPassword']);
+Route::post('/password/time-remaining', [AuthController::class, 'getCodeTimeRemaining']);
 
 // Google OAuth routes
 Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
