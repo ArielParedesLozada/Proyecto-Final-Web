@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../common/Input";
 import PasswordInput from "../login/PasswordInput";
@@ -14,6 +14,35 @@ export default function ResetPasswordForm({ email, onBack }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
+
+  // Auto-dismiss messages after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Auto-dismiss codeVerified message after 5 seconds
+  useEffect(() => {
+    if (codeVerified) {
+      const timer = setTimeout(() => {
+        setCodeVerified(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [codeVerified]);
 
   const handleVerifyCode = async (e) => {
     e.preventDefault();
@@ -81,14 +110,6 @@ export default function ResetPasswordForm({ email, onBack }) {
           </div>
         )}
 
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Verificar código
-          </h2>
-          <p className="text-gray-600">
-            Hemos enviado un código de 6 dígitos a <strong>{email}</strong>
-          </p>
-        </div>
 
         <Input
           id="code"
@@ -140,17 +161,9 @@ export default function ResetPasswordForm({ email, onBack }) {
         </div>
       )}
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Nueva contraseña
-        </h2>
-        <p className="text-gray-600">
-          Crea una nueva contraseña segura para tu cuenta
-        </p>
-      </div>
 
       <label className="block mb-4" htmlFor="password">
-        <span className="block mb-1 text-sm text-gray-700">Nueva contraseña</span>
+        <span className="block mb-1 text-sm text-gray-700 dark:text-gray-300">Nueva contraseña</span>
         <PasswordInput
           id="password"
           name="password"
@@ -165,7 +178,7 @@ export default function ResetPasswordForm({ email, onBack }) {
       </label>
 
       <label className="block mb-4" htmlFor="password_confirmation">
-        <span className="block mb-1 text-sm text-gray-700">Confirmar contraseña</span>
+        <span className="block mb-1 text-sm text-gray-700 dark:text-gray-300">Confirmar contraseña</span>
         <PasswordInput
           id="password_confirmation"
           name="password_confirmation"
@@ -184,13 +197,6 @@ export default function ResetPasswordForm({ email, onBack }) {
         {loading ? "Restableciendo..." : success ? "Redirigiendo..." : "Restablecer contraseña"}
       </button>
 
-      <button
-        type="button"
-        onClick={() => setStep("verify")}
-        className="w-full mt-3 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
-      >
-        Volver a verificar código
-      </button>
     </form>
   );
 }

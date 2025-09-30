@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Input from "../common/Input";
 import { requestPasswordReset } from "../../services/auth";
 
@@ -7,6 +7,25 @@ export default function RequestResetCode({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Auto-dismiss messages after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,14 +62,6 @@ export default function RequestResetCode({ onSuccess }) {
         </div>
       )}
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          ¿Olvidaste tu contraseña?
-        </h2>
-        <p className="text-gray-600">
-          No te preocupes, te enviaremos un código de verificación a tu correo electrónico para restablecer tu contraseña.
-        </p>
-      </div>
 
       <Input
         id="email"

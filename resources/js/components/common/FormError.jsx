@@ -1,5 +1,21 @@
+import { useState, useEffect } from "react";
+
 export default function FormError({ message }) {
-  if (!message) return null;
+  const [show, setShow] = useState(!!message);
+
+  useEffect(() => {
+    if (message) {
+      setShow(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setShow(false);
+    }
+  }, [message]);
+
+  if (!show) return null;
 
   return (
     <div

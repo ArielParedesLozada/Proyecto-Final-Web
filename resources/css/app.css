@@ -94,20 +94,24 @@ html, body, #root, #__next {
   height: 100%;
 }
 html, body {
-  overflow: hidden; /* quita la barra de la derecha */
+  overflow-y: auto; /* quita la barra de la derecha */
 }
 
 /* 9) Utilidades para el dashboard (opcionales) */
-.app-viewport {               /* úsala como wrapper general del Dashboard */
+/* Ajuste al wrapper del Dashboard */
+.app-viewport {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100svh;   /* <- agregado */
   overflow: hidden;
 }
-.app-content {                /* contenedor del contenido bajo los KPIs */
+
+/* Ajuste al contenedor de contenido */
+.app-content {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto; /* <- cambiado */
 }
 .list-scroll {                /* aplica a las listas que deben scrollear */
   flex: 1 1 auto;

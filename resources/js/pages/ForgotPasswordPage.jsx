@@ -18,9 +18,11 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthLayout
-      title="Recuperar contraseña"
+    <AuthLayout 
+      title="Recuperar contraseña" 
       subtitle="Te ayudaremos a restablecer tu contraseña de forma segura"
+      step={step} 
+      email={email}
     >
       {step === "request" ? (
         <RequestResetCode onSuccess={handleCodeSent} />

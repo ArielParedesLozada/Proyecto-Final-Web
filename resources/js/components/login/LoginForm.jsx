@@ -62,7 +62,6 @@ export default function LoginForm({ onSuccess }) {
         value={values.email}
         onChange={handleChange}
         error={errors.email}
-        hint="Usa el correo con el que verificaste tu cuenta"
         left={<span>@</span>}
       />
 
@@ -79,29 +78,15 @@ export default function LoginForm({ onSuccess }) {
       </label>
 
       {/* Ayudas sobre el password */}
-      <div className="mb-4 flex items-center justify-between">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-          <input
-            type="checkbox"
-            name="remember"
-            checked={values.remember}
-            onChange={handleChange}
-            className="checkbox"
-          />
-          Recordarme
-        </label>
-
-        <p className="mt-4 text-center text-sm">
-  <a href="/forgot-password" className="text-indigo-600 hover:underline">
-    ¿Olvidaste tu contraseña?
-  </a>
-</p>
-
+      <div className="mb-4 flex justify-end">
+        <a href="/forgot-password" className="text-sm text-indigo-600 hover:underline">
+          ¿Olvidaste tu contraseña?
+        </a>
       </div>
 
       {/* ACCIÓN PRINCIPAL */}
-      <div className="mt-6">
-        <Button type="submit" loading={loading}>
+      <div className="mt-4">
+        <Button type="submit" className="btn btn-primary w-full" loading={loading}>
           Ingresar
         </Button>
       </div>

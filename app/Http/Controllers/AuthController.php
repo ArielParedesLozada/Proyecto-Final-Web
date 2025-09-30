@@ -215,7 +215,7 @@ class AuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation errors',
+                    'message' => 'Por favor, revisa los siguientes errores:',
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -262,7 +262,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Por favor, revisa los siguientes errores:',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -316,7 +316,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Por favor, revisa los siguientes errores:',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -345,7 +345,8 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
             'code' => 'required|string|size:6',
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()]
+            'password' => 'required|confirmed|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+            'password_confirmation' => 'required'
         ], [
             'email.required' => 'El correo electrónico es obligatorio',
             'email.email' => 'El formato del correo no es válido',
@@ -355,14 +356,14 @@ class AuthController extends Controller
             'password.required' => 'La contraseña es obligatoria',
             'password.confirmed' => 'Las contraseñas no coinciden',
             'password.min' => 'La contraseña debe tener al menos 8 caracteres',
-            'password.mixed' => 'La contraseña debe contener mayúsculas y minúsculas',
-            'password.numbers' => 'La contraseña debe contener al menos un número'
+            'password.regex' => 'La contraseña debe incluir letras mayúsculas, minúsculas y al menos un número',
+            'password_confirmation.required' => 'La confirmación de contraseña es obligatoria'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation errors',
+                'message' => 'Por favor, revisa los siguientes errores:',
                 'errors' => $validator->errors()
             ], 422);
         }

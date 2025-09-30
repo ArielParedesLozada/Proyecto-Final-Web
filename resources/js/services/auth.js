@@ -204,6 +204,16 @@ export async function requestPasswordReset(email) {
 
     if (!res.ok) {
       const error = await res.json();
+      console.error("Request password reset error response:", error);
+
+      if (error.errors) {
+        const errorMessages = [];
+        for (const field in error.errors) {
+          errorMessages.push(error.errors[field].join(", "));
+        }
+        throw new Error(errorMessages.join("; "));
+      }
+
       throw new Error(error.message || "Error al solicitar código de verificación");
     }
 
@@ -272,9 +282,9 @@ export async function resetPassword(email, code, password, passwordConfirmation)
       if (error.errors) {
         const errorMessages = [];
         for (const field in error.errors) {
-          errorMessages.push(`${field}: ${error.errors[field].join(", ")}`);
+          errorMessages.push(error.errors[field].join(", "));
         }
-        throw new Error(`Errores de validación: ${errorMessages.join("; ")}`);
+        throw new Error(`Por favor, revisa los siguientes errores: ${errorMessages.join("; ")}`);
       }
 
       throw new Error(error.message || "Error al restablecer contraseña");
