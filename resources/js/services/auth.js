@@ -174,17 +174,22 @@ export async function getProfile() {
 }
 
 export async function updateProfile(payload) {
-  const res = await authenticatedFetch(`${BASE}/profile`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+  try {
+    const res = await api.put(`${BASE}/profile`, payload);
+    return res.data;
+  } catch (err) {
+    console.error("Update profile error response:", err.response?.data);
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "update_profile_failed");
+    if (err.response?.data?.errors) {
+      const errorMessages = [];
+      for (const field in err.response.data.errors) {
+        errorMessages.push(err.response.data.errors[field].join(", "));
+      }
+      throw new Error(errorMessages.join("; "));
+    }
+
+    throw new Error(err.response?.data?.message || err.message || "update_profile_failed");
   }
-
-  return await res.json();
 }
 
 // Función para verificar si el usuario está autenticado

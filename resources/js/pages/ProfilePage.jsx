@@ -36,8 +36,13 @@ function AvatarReadOnly({ nameFull = "Usuario", initials = "U" }) {
       <div className="h-16 w-16 rounded-full bg-primary-600 text-white grid place-items-center text-xl font-semibold ring-1 ring-black/5 shadow">
         {initials || "U"}
       </div>
-      <div>
-        <p className="font-semibold leading-tight">{nameFull}</p>
+      <div className="min-w-0 flex-1">
+        <p 
+          className="font-semibold leading-tight truncate" 
+          title={nameFull}
+        >
+          {nameFull}
+        </p>
         <p className="text-sm text-gray-500">Avatar del usuario (no editable)</p>
       </div>
     </div>
@@ -55,11 +60,21 @@ function ProfilePageInner() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  
+  // Valores originales para comparar cambios
+  const [originalFirstName, setOriginalFirstName] = useState("");
+  const [originalLastName, setOriginalLastName] = useState("");
+  const [originalEmail, setOriginalEmail] = useState("");
 
   // Cambio de contraseña
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState({
+    current_password: "",
+    password: "",
+    password_confirmation: ""
+  });
 
   // Flags
   const [saving, setSaving] = useState(false);
@@ -75,6 +90,12 @@ function ProfilePageInner() {
           setFirstName(p.first_name || "");
           setLastName(p.last_name || "");
           setEmail(p.email || "");
+          
+          // Guardar valores originales
+          setOriginalFirstName(p.first_name || "");
+          setOriginalLastName(p.last_name || "");
+          setOriginalEmail(p.email || "");
+          
           setUser?.((prev) => ({
             ...(prev || {}),
             ...p,
@@ -95,6 +116,88 @@ function ProfilePageInner() {
     const b = (lastName || "").trim()[0] || "";
     return (a + b).toUpperCase() || "U";
   }, [firstName, lastName]);
+
+  // Función para verificar si hay cambios en los datos de la cuenta
+  const hasAccountChanges = useMemo(() => {
+    return (
+      firstName.trim() !== originalFirstName ||
+      lastName.trim() !== originalLastName ||
+      email.trim() !== originalEmail
+    );
+  }, [firstName, lastName, email, originalFirstName, originalLastName, originalEmail]);
+
+  // Función para verificar si se puede cambiar la contraseña
+  const canChangePassword = useMemo(() => {
+    // Verificar que todos los campos estén llenos
+    if (!currentPwd.trim() || !newPwd.trim() || !confirmPwd.trim()) {
+      return false;
+    }
+    
+    // Verificar que las contraseñas coincidan
+    if (newPwd !== confirmPwd) {
+      return false;
+    }
+    
+    // Verificar que la nueva contraseña sea diferente a la actual
+    if (currentPwd === newPwd) {
+      return false;
+    }
+    
+    // Verificar que la nueva contraseña cumpla los requisitos
+    if (newPwd.length < 8) {
+      return false;
+    }
+    
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPwd)) {
+      return false;
+    }
+    
+    return true;
+  }, [currentPwd, newPwd, confirmPwd]);
+
+  // Validación en tiempo real de contraseñas
+  const validatePassword = (field, value) => {
+    const errors = { ...passwordErrors };
+    
+    if (field === 'password') {
+      if (value && value.length < 8) {
+        errors.password = "La contraseña debe tener al menos 8 caracteres";
+      } else if (value && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+        errors.password = "Debe incluir mayúsculas, minúsculas y números";
+      } else if (value && currentPwd && value === currentPwd) {
+        errors.password = "La nueva contraseña debe ser diferente a la actual";
+      } else {
+        errors.password = "";
+      }
+    }
+    
+    if (field === 'password_confirmation') {
+      if (value && newPwd && value !== newPwd) {
+        errors.password_confirmation = "Las contraseñas no coinciden";
+      } else {
+        errors.password_confirmation = "";
+      }
+    }
+    
+    if (field === 'password' && confirmPwd) {
+      if (confirmPwd && value !== confirmPwd) {
+        errors.password_confirmation = "Las contraseñas no coinciden";
+      } else {
+        errors.password_confirmation = "";
+      }
+    }
+    
+    // Si cambia la contraseña actual, revalidar la nueva
+    if (field === 'current_password' && newPwd) {
+      if (newPwd === value) {
+        errors.password = "La nueva contraseña debe ser diferente a la actual";
+      } else {
+        errors.password = "";
+      }
+    }
+    
+    setPasswordErrors(errors);
+  };
 
   const header = (
     <div>
@@ -129,13 +232,37 @@ function ProfilePageInner() {
         full_name: `${nextFirst} ${nextLast}`.trim(),
       });
 
+      // Actualizar valores originales
+      setOriginalFirstName(nextFirst);
+      setOriginalLastName(nextLast);
+      setOriginalEmail(nextEmail);
+
       // Invalidar caché del perfil
       invalidateCache('user-profile');
 
       toast.push({ tone: "success", title: "Cambios guardados" });
     } catch (err) {
-      const msg = err?.response?.data?.message || "No se pudo guardar.";
-      toast.push({ tone: "error", title: "Error al guardar", message: msg });
+      console.error("Profile save error:", err);
+      
+      // Manejar errores específicos
+      let errorMessage = "No se pudo guardar.";
+      
+      if (err.response?.data?.errors) {
+        // Errores de validación del backend
+        const errorMessages = [];
+        for (const field in err.response.data.errors) {
+          errorMessages.push(err.response.data.errors[field].join(", "));
+        }
+        errorMessage = errorMessages.join("; ");
+      } else if (err.response?.data?.message) {
+        // Mensaje directo del backend
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        // Mensaje del error de JavaScript
+        errorMessage = err.message;
+      }
+      
+      toast.push({ tone: "error", title: "Error al guardar", message: errorMessage });
     } finally {
       setSaving(false);
     }
@@ -144,10 +271,7 @@ function ProfilePageInner() {
   // Cambiar contraseña
   async function handleChangePassword(e) {
     e.preventDefault();
-    if (!newPwd || newPwd !== confirmPwd) {
-      toast.push({ tone: "warning", title: "Las contraseñas no coinciden" });
-      return;
-    }
+    
     setChanging(true);
     try {
       await changePassword({
@@ -160,9 +284,26 @@ function ProfilePageInner() {
       setNewPwd("");
       setConfirmPwd("");
     } catch (err) {
-      const msg =
-        err?.response?.data?.message || "No se pudo actualizar la contraseña.";
-      toast.push({ tone: "error", title: "Error", message: msg });
+      console.error("Change password error:", err);
+      
+      // Mostrar errores como notificaciones
+      if (err.message && err.message.includes(";")) {
+        // Múltiples errores - mostrar el primero como notificación
+        const errorMessages = err.message.split("; ");
+        toast.push({ tone: "error", title: "Error de validación", message: errorMessages[0] });
+      } else if (err.message && (
+        err.message.includes("contraseña debe") || 
+        err.message.includes("contraseña actual") ||
+        err.message.includes("coinciden") ||
+        err.message.includes("mínimo 8 caracteres") ||
+        err.message.includes("incorrecta")
+      )) {
+        // Error de validación específico - mostrar como notificación
+        toast.push({ tone: "error", title: "Error de validación", message: err.message });
+      } else {
+        // Error general
+        toast.push({ tone: "error", title: "Error", message: err.message });
+      }
     } finally {
       setChanging(false);
     }
@@ -208,7 +349,7 @@ function ProfilePageInner() {
                   <button
                     type="submit"
                     className="btn btn-primary disabled:opacity-60"
-                    disabled={saving}
+                    disabled={saving || !hasAccountChanges}
                   >
                     {saving ? "Guardando…" : "Guardar cambios"}
                   </button>
@@ -299,6 +440,11 @@ function ProfilePageInner() {
                     setCurrentPwd("");
                     setNewPwd("");
                     setConfirmPwd("");
+                    setPasswordErrors({
+                      current_password: "",
+                      password: "",
+                      password_confirmation: ""
+                    });
                   }}
                 >
                   Limpiar
@@ -306,7 +452,7 @@ function ProfilePageInner() {
                 <button
                   type="submit"
                   className="btn btn-primary disabled:opacity-60"
-                  disabled={changing}
+                  disabled={changing || !canChangePassword}
                 >
                   {changing ? "Actualizando…" : "Actualizar contraseña"}
                 </button>

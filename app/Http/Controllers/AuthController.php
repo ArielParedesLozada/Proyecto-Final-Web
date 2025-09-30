@@ -210,6 +210,17 @@ class AuthController extends Controller
                 'last_name' => ['sometimes', 'required', 'string', 'max:80'],
                 'email' => ['sometimes', 'required', 'string', 'email', 'max:191', 'unique:users,email,' . $user->id],
                 'profile_image_url' => ['nullable', 'string', 'max:255', 'url'],
+            ], [
+                'first_name.required' => 'Los nombres son obligatorios',
+                'first_name.max' => 'Los nombres no pueden tener más de 60 caracteres',
+                'last_name.required' => 'Los apellidos son obligatorios',
+                'last_name.max' => 'Los apellidos no pueden tener más de 80 caracteres',
+                'email.required' => 'El correo electrónico es obligatorio',
+                'email.email' => 'El formato del correo no es válido',
+                'email.unique' => 'Este correo ya está registrado por otro usuario',
+                'email.max' => 'El correo no puede tener más de 191 caracteres',
+                'profile_image_url.url' => 'La URL de la imagen no es válida',
+                'profile_image_url.max' => 'La URL de la imagen no puede tener más de 255 caracteres'
             ]);
 
             if ($validator->fails()) {
@@ -425,10 +436,28 @@ class AuthController extends Controller
                 ], 404);
             }
 
-            $data = $request->validate([
-                'current_password' => ['required'],
-                'password' => ['required', 'string', 'min:8', 'confirmed'], // requiere password_confirmation
+            $validator = Validator::make($request->all(), [
+                'current_password' => 'required|string',
+                'password' => 'required|confirmed|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+                'password_confirmation' => 'required'
+            ], [
+                'current_password.required' => 'La contraseña actual es obligatoria',
+                'password.required' => 'La nueva contraseña es obligatoria',
+                'password.confirmed' => 'Las contraseñas no coinciden',
+                'password.min' => 'La contraseña debe tener al menos 8 caracteres',
+                'password.regex' => 'La contraseña debe incluir letras mayúsculas, minúsculas y al menos un número',
+                'password_confirmation.required' => 'La confirmación de contraseña es obligatoria'
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Por favor, revisa los siguientes errores:',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $data = $request->all();
 
             if (!Hash::check($data['current_password'], $user->password_hash)) {
                 return response()->json([

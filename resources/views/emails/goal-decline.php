@@ -248,12 +248,6 @@
             </ul>
         </div>
 
-        <div style="text-align: center;">
-            <a href="<?php echo config('app.url'); ?>/goals" class="cta-button">
-                Revisar mis metas
-            </a>
-        </div>
-
         <div class="footer">
             <p>Esta alerta se envió el <?php echo e($alertDate); ?> porque tu progreso está por debajo del objetivo sugerido.</p>
             <p><strong>FinSave</strong> - Te ayudamos a mantenerte en el camino hacia tus objetivos financieros</p>

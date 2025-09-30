@@ -198,12 +198,6 @@
             </div>
         </div>
 
-        <div style="text-align: center;">
-            <a href="<?php echo config('app.url'); ?>/goals" class="cta-button">
-                Ver mis metas
-            </a>
-        </div>
-
         <div class="footer">
             <p>Este es un logro importante. ¡Sigue así con tus próximas metas financieras!</p>
             <p><strong>FinSave</strong> - Tu compañero en el ahorro inteligente</p>

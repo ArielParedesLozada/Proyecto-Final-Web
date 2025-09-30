@@ -19,27 +19,38 @@ export default function NewGoalModal({
     deadline: "",
   });
   const [errors, setErrors] = useState({});
+  const [originalForm, setOriginalForm] = useState({
+    name: "",
+    category: "",
+    description: "",
+    targetAmount: "",
+    deadline: "",
+  });
 
   useEffect(() => {
     if (!open) return;
 
     if (mode === "edit" && initialGoal) {
-      setForm({
+      const editForm = {
         name: initialGoal.name ?? "",
         category: initialGoal.category ?? "",
         description: initialGoal.description ?? "",
         targetAmount:
           initialGoal.targetAmount != null ? String(initialGoal.targetAmount) : "",
         deadline: initialGoal.deadline ?? "",
-      });
+      };
+      setForm(editForm);
+      setOriginalForm(editForm);
     } else {
-      setForm({
+      const createForm = {
         name: "",
         category: "",
         description: "",
         targetAmount: "",
         deadline: "",
-      });
+      };
+      setForm(createForm);
+      setOriginalForm(createForm);
     }
 
     setErrors({});
@@ -60,6 +71,38 @@ export default function NewGoalModal({
     }
     return e;
   }
+
+  // Función para verificar si el formulario está completo (para crear)
+  const isFormComplete = () => {
+    return (
+      form.name.trim() &&
+      form.category &&
+      form.targetAmount &&
+      Number(form.targetAmount) > 0 &&
+      form.deadline &&
+      isTodayOrFuture(form.deadline)
+    );
+  };
+
+  // Función para verificar si hay cambios (para editar)
+  const hasChanges = () => {
+    return (
+      form.name.trim() !== originalForm.name ||
+      form.category !== originalForm.category ||
+      form.description.trim() !== originalForm.description ||
+      form.targetAmount !== originalForm.targetAmount ||
+      form.deadline !== originalForm.deadline
+    );
+  };
+
+  // Función para determinar si el botón debe estar habilitado
+  const isButtonEnabled = () => {
+    if (mode === "create") {
+      return isFormComplete();
+    } else {
+      return hasChanges() && isFormComplete();
+    }
+  };
 
   function handleSubmit(ev) {
     ev.preventDefault();
@@ -196,7 +239,11 @@ export default function NewGoalModal({
 
               {/* Actions */}
               <div className="flex items-center justify-center gap-2 pt-2">
-                <button type="submit" className="btn btn-primary cursor-pointer">
+                <button 
+                  type="submit" 
+                  className="btn btn-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!isButtonEnabled()}
+                >
                   {isEdit ? "Guardar cambios" : "Crear Meta"}
                 </button>
               </div>

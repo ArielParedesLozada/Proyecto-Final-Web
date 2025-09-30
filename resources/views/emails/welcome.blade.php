@@ -110,12 +110,6 @@
                 <div class="feature-item">Acceder a tu dashboard personalizado desde cualquier dispositivo</div>
             </div>
 
-            <div style="text-align: center;">
-                <a href="{{ config('app.url') }}/dashboard" class="cta-button">
-                    Ir a mi Dashboard
-                </a>
-            </div>
-
             <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos. Estamos aquí para ayudarte a alcanzar tus objetivos financieros.</p>
 
             <p>¡Que tengas un excelente día!</p>
