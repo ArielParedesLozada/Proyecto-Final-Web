@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import GoalGrid from "../components/goals/GoalGrid";
+import GoalGridSkeleton from "../components/goals/GoalGridSkeleton";
 import NewGoalModal from "../components/goals/NewGoalModal";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AddTxModal from "../components/goals/AddTxModal";
@@ -66,7 +67,7 @@ function GoalsPageInner() {
   };
 
   // Carga con opción "silenciosa" (no muestra loader)
-  async function load(p = page, { silent = false, forceRefresh = true } = {}) {
+  async function load(p = page, { silent = false, forceRefresh = false } = {}) {
     if (!silent) setLoading(true);
     try {
       const cacheKey = `goals-page-${p}`;
@@ -93,9 +94,8 @@ function GoalsPageInner() {
   }
 
   useEffect(() => {
-    // Invalidar caché al cambiar de página y cargar datos frescos
-    invalidateCache(`goals-page-${page}`);
-    load(page, { silent: false, forceRefresh: true });
+    // Cargar datos con caché para mejor rendimiento
+    load(page, { silent: false, forceRefresh: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
@@ -408,7 +408,7 @@ function GoalsPageInner() {
         }
       >
         {loading ? (
-          <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
+          <GoalGridSkeleton />
         ) : goals.length === 0 ? (
           <Empty
             title="Aún no tienes metas de ahorro"

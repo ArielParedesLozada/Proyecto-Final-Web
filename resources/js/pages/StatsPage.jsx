@@ -236,7 +236,7 @@ function StatsPageInner() {
                 <ChartPlaceholder variant="pie" height={240} />
               ) : statusTotal === 0 ? (
                 <div className="h-[260px] flex items-center">
-                  <Empty title="Sin datos" subtitle="No hay metas en el rango." />
+                  <Empty title="Sin datos" subtitle="No hay metas en el rango." variant="chart" />
                 </div>
               ) : (
                 <div className="h-[260px]">
@@ -297,7 +297,7 @@ function StatsPageInner() {
                 <ChartPlaceholder variant="line" height={240} />
               ) : realVsSuggested.length === 0 ? (
                 <div className="h-[260px] flex items-center">
-                  <Empty title="Sin datos" subtitle="No hay movimientos en el rango." />
+                  <Empty title="Sin datos" subtitle="No hay movimientos en el rango." variant="chart" />
                 </div>
               ) : (
                 <div className="h-[260px]">
@@ -378,7 +378,7 @@ function StatsPageInner() {
                 <ChartPlaceholder variant="line" height={240} />
               ) : monthlyCompletion.length === 0 ? (
                 <div className="h-[260px] flex items-center">
-                  <Empty title="Sin datos" subtitle="No hay información de cumplimiento en el rango." />
+                  <Empty title="Sin datos" subtitle="No hay información de cumplimiento en el rango." variant="chart" />
                 </div>
               ) : (
                 <div className="h-[260px]">
@@ -447,7 +447,7 @@ function StatsPageInner() {
                 <ChartPlaceholder variant="pie" height={240} />
               ) : categoryDist.length === 0 ? (
                 <div className="h-[260px] flex items-center">
-                  <Empty title="Sin datos" subtitle="No hay metas en el rango." />
+                  <Empty title="Sin datos" subtitle="No hay metas en el rango." variant="chart" />
                 </div>
               ) : (
                 <div className="h-[260px]">
@@ -508,7 +508,7 @@ function StatsPageInner() {
                 <ChartPlaceholder variant="bar" height={240} />
               ) : incomeExpense.length === 0 ? (
                 <div className="h-[260px] flex items-center">
-                  <Empty title="Sin datos" subtitle="No hay movimientos en el rango." />
+                  <Empty title="Sin datos" subtitle="No hay movimientos en el rango." variant="chart" />
                 </div>
               ) : (
                 <div className="h-[260px]">
@@ -617,7 +617,7 @@ function StatsPageInner() {
                 <ChartPlaceholder variant="bar" height={240} />
               ) : topGoals.length === 0 ? (
                 <div className="h-[260px] flex items-center">
-                  <Empty title="Sin datos" subtitle="No hay metas destacadas en el rango." />
+                  <Empty title="Sin datos" subtitle="No hay metas destacadas en el rango." variant="chart" />
                 </div>
               ) : (
                 <div className="h-[260px]">

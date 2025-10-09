@@ -45,7 +45,7 @@ function TransactionsByGoalPageInner() {
     if (selectedGoal) {
       // Invalidar caché de transacciones al cambiar de meta
       invalidateCache(`transactions-goal-${selectedGoal.id}`);
-      loadTransactions(selectedGoal.id, true); // Siempre forzar refresh
+      loadTransactions(selectedGoal.id, false); // Usar caché para mejor rendimiento
     }
   }, [selectedGoal, invalidateCache]);
 
@@ -108,7 +108,7 @@ function TransactionsByGoalPageInner() {
           pageSize: 100,
           estado: 'active,completed,expired' // Especificar todos los estados para obtener TODAS las metas
         }),
-        { forceRefresh: true } // Siempre forzar refresh para obtener datos frescos
+        { forceRefresh: false } // Usar caché para mejor rendimiento
       );
       
       console.log('Goals API response:', res);
@@ -276,13 +276,10 @@ function TransactionsByGoalPageInner() {
   if (goals.length === 0) {
     return (
       <AppLayout header={header}>
-        <div className="flex items-center justify-center min-h-96">
-          <Empty
-            title="No hay metas disponibles"
-            description="Crea una meta para poder ver sus transacciones"
-            icon="target"
-          />
-        </div>
+        <Empty
+          title="No hay metas disponibles"
+          subtitle="Crea una meta para poder ver sus transacciones"
+        />
       </AppLayout>
     );
   }
