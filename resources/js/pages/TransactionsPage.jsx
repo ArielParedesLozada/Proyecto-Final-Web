@@ -43,6 +43,8 @@ function TransactionsByGoalPageInner() {
   // Cargar transacciones cuando cambie la meta seleccionada
   useEffect(() => {
     if (selectedGoal) {
+      // Resetear progreso al cambiar de meta
+      setCalculatedProgress(0);
       // Invalidar caché de transacciones al cambiar de meta
       invalidateCache(`transactions-goal-${selectedGoal.id}`);
       loadTransactions(selectedGoal.id, false); // Usar caché para mejor rendimiento
@@ -209,6 +211,9 @@ function TransactionsByGoalPageInner() {
       const totalExpense = expenses.reduce((a, b) => a + (Number(b.amount) || 0), 0);
       const newAccumulated = totalIncome - totalExpense;
       setCalculatedProgress(Math.max(0, newAccumulated));
+    } else {
+      // Resetear a 0 cuando no hay transacciones
+      setCalculatedProgress(0);
     }
   }, [transactions]);
 
@@ -306,16 +311,16 @@ function TransactionsByGoalPageInner() {
 
         {/* Información de la meta seleccionada */}
         {selectedGoal && (
-          <div className="relative z-0 mt-0 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
+          <div className="relative z-0 mt-0 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                <svg className="h-5 w-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">{selectedGoal.name}</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{selectedGoal.name}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {selectedGoal.category} • {selectedGoal.status} • 
                   Progreso: ${calculatedProgress.toLocaleString()} / ${selectedGoal.targetAmount.toLocaleString()}
                 </p>

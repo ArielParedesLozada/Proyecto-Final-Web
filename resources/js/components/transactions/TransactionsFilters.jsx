@@ -106,49 +106,24 @@ export default function TransactionsFilters({
   }));
 
   return (
-    <div className="fin-card px-4 py-3 md:px-5 md:py-4 mb-0 overflow-visible bg-white dark:bg-gray-800">
-      <div className="flex flex-wrap items-end gap-3 overflow-visible">
+    <div className="fin-card p-4 md:p-5 mb-3">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Selector de meta */}
-        <div className="flex items-end gap-3">
-          {loading ? (
-            <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
-          ) : (
-            <div className="h-10">
-              <GoalSelect 
-                goals={goalOptions} 
-                value={selectedGoal?.id || ""} 
-                onChange={onGoalChange} 
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Filtros de fecha */}
-        <div className="flex items-end gap-2">
-          <label className="block">
-            <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Desde</span>
-            <input
-              type="date"
-              className="w-full rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm h-10"
-              value={dateRange.start || ""}
-              onChange={(e) => handleDateChange('start', e.target.value)}
+        {loading ? (
+          <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+        ) : (
+          <div className="h-10">
+            <GoalSelect 
+              goals={goalOptions} 
+              value={selectedGoal?.id || ""} 
+              onChange={onGoalChange} 
             />
-          </label>
-          
-          <label className="block">
-            <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hasta</span>
-            <input
-              type="date"
-              className="w-full rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm h-10"
-              value={dateRange.end || ""}
-              onChange={(e) => handleDateChange('end', e.target.value)}
-            />
-          </label>
-        </div>
+          </div>
+        )}
 
         {/* Filtros de tipo de transacción */}
-        <div className="flex items-end gap-2">
-          <span className="text-xs text-gray-500 dark:text-gray-400 mb-2">Tipo:</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">Tipo:</span>
           <div className="flex gap-1">
             {['Fijo', 'Variable'].map((type) => {
               const active = transactionType.includes(type);
@@ -157,10 +132,10 @@ export default function TransactionsFilters({
                   key={type}
                   type="button"
                   onClick={() => toggleTransactionType(type)}
-                  className={`px-3 py-2 rounded-full text-sm ring-1 transition h-10
+                  className={`px-3 py-1.5 rounded-full text-sm ring-1 transition
                     ${active
                       ? "bg-primary-600 text-white ring-primary-600"
-                      : "text-gray-600 ring-gray-300 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/40"}`}
+                      : "text-gray-600 ring-gray-300 hover:bg-gray-100 dark:text-gray-300 dark:ring-gray-600 dark:hover:bg-gray-700/40"}`}
                 >
                   {type}
                 </button>
@@ -173,11 +148,34 @@ export default function TransactionsFilters({
         <button
           type="button"
           onClick={handleClear}
-          className="btn btn-primary cursor-pointer shadow-sm text-sm"
+          className="btn btn-primary cursor-pointer shadow-sm ml-auto"
           title="Limpiar filtros"
         >
           Limpiar
         </button>
+      </div>
+
+      {/* Filtros de fecha en segunda fila */}
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="block">
+          <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha inicio</span>
+          <input
+            type="date"
+            className="input-base"
+            value={dateRange.start || ""}
+            onChange={(e) => handleDateChange('start', e.target.value)}
+          />
+        </label>
+        
+        <label className="block">
+          <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha fin</span>
+          <input
+            type="date"
+            className="input-base"
+            value={dateRange.end || ""}
+            onChange={(e) => handleDateChange('end', e.target.value)}
+          />
+        </label>
       </div>
     </div>
   );

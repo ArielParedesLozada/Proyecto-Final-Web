@@ -5,6 +5,9 @@ export default function StatsFilters({
   onClear,
   onDownload,
 }) {
+  // Validar si las fechas están incompletas (solo inicio o solo fin)
+  const isDateRangeIncomplete = (start && !end) || (!start && end);
+  
   return (
     <div className="fin-card p-4">
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
@@ -44,9 +47,13 @@ export default function StatsFilters({
           <button
             type="button"
             onClick={onDownload}
-            className="px-3 py-2 rounded-md text-sm font-medium
-                       bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-            title="Descargar PDF"
+            disabled={isDateRangeIncomplete}
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
+              ${isDateRangeIncomplete
+                ? "bg-gray-400 text-gray-200 cursor-not-allowed opacity-60"
+                : "bg-gray-900 text-white hover:bg-gray-800 cursor-pointer"
+              }`}
+            title={isDateRangeIncomplete ? "Selecciona ambas fechas para descargar" : "Descargar PDF"}
           >
             Descargar PDF
           </button>
