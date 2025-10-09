@@ -236,6 +236,9 @@ function HistoryPageInner() {
                                 totalPages={lastPage}
                                 onPrev={() => setPage((p) => Math.max(1, p - 1))}
                                 onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
+                                onFirst={() => setPage(1)}
+                                onLast={() => setPage(lastPage)}
+                                alwaysShow={true}
                                 className="justify-center py-2"
                             />
                         </>

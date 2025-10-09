@@ -50,21 +50,23 @@ function GoalsPageInner() {
 
   const toast = useToast();
 
-  // Invalidar caché al montar el componente
-  useEffect(() => {
-    invalidateCache('goals-page');
-  }, [invalidateCache]);
-
-  // Función auxiliar para filtrar metas completadas
+  // Función auxiliar para filtrar metas completadas/vencidas
   const filterCompletedGoals = (goals) => {
     return goals.filter(goal => {
       const progress = Math.min(
         100,
         Math.round(((goal.currentAmount ?? 0) / Math.max(goal.targetAmount, 1)) * 100)
       );
+      // Mantener metas activas y vencidas, quitar solo las completadas
       return progress < 100;
     });
   };
+
+  // Invalidar caché al montar el componente
+  useEffect(() => {
+    invalidateCache('goals-page');
+  }, [invalidateCache]);
+
 
   // Carga con opción "silenciosa" (no muestra loader)
   async function load(p = page, { silent = false, forceRefresh = false } = {}) {
@@ -73,19 +75,27 @@ function GoalsPageInner() {
       const cacheKey = `goals-page-${p}`;
       const res = await fetchWithCache(
         cacheKey,
-        () => listGoals({ page: p, pageSize }),
+        () => listGoals({ 
+          page: p, 
+          pageSize,
+          filters: {
+            estados: ['Activa'] // Solo solicitar metas activas
+          }
+        }),
         { forceRefresh }
       );
       
       if (res) {
         const rows = (res.data ?? []).map(goalApiToUi);
         
-        // Filtrar metas completadas automáticamente
-        const activeGoals = filterCompletedGoals(rows);
+        // Aplicar filtrado local para quitar metas completadas en tiempo real
+        const filteredGoals = filterCompletedGoals(rows);
         
-        setGoals(activeGoals);
-        setTotal(activeGoals.length);
-        const lp = Math.max(1, Math.ceil(activeGoals.length / pageSize));
+        setGoals(filteredGoals);
+        setTotal(res.total ?? rows.length);
+        
+        // Usar la paginación del servidor (importante para mantener la navegación correcta)
+        const lp = res.last_page ?? Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
         setLastPage(lp);
       }
     } finally {
@@ -157,7 +167,7 @@ function GoalsPageInner() {
           }
           : g
       );
-      // Filtrar metas completadas automáticamente
+      // Filtrar metas completadas para quitar en tiempo real
       return filterCompletedGoals(updated);
     });
 
@@ -176,7 +186,7 @@ function GoalsPageInner() {
         const updated = goalApiToUi(detail.data);
         setGoals((arr) => {
           const updatedArr = arr.map((g) => (g.id === id ? updated : g));
-          // Filtrar metas completadas automáticamente
+          // Filtrar metas completadas para quitar en tiempo real
           return filterCompletedGoals(updatedArr);
         });
       } catch {
@@ -256,7 +266,7 @@ function GoalsPageInner() {
             }
             : g
         );
-        // Filtrar metas completadas automáticamente
+        // Filtrar metas completadas para quitar en tiempo real
         return filterCompletedGoals(updated);
       });
 
@@ -272,10 +282,10 @@ function GoalsPageInner() {
           const detail = await getGoal(goalId);
           const updated = goalApiToUi(detail.data);
           
-          // Actualizar la meta y filtrar automáticamente las completadas
+          // Actualizar la meta y filtrar completadas
           setGoals((arr) => {
             const updatedArr = arr.map((g) => (g.id === goalId ? updated : g));
-            // Filtrar metas completadas automáticamente
+            // Filtrar metas completadas para quitar en tiempo real
             return filterCompletedGoals(updatedArr);
           });
         } catch {
@@ -301,7 +311,7 @@ function GoalsPageInner() {
               }
               : g
           );
-          // Filtrar metas completadas automáticamente
+          // Filtrar metas completadas para quitar en tiempo real
           return filterCompletedGoals(reverted);
         });
         toast.push({
@@ -423,6 +433,10 @@ function GoalsPageInner() {
               totalPages={lastPage}
               onPrev={() => setPage((p) => Math.max(1, p - 1))}
               onNext={() => setPage((p) => Math.min(lastPage, p + 1))}
+              onFirst={() => setPage(1)}
+              onLast={() => setPage(lastPage)}
+              alwaysShow={true}
+              className="justify-center py-3"
             />
           </>
         )}
