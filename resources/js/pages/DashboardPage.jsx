@@ -18,7 +18,6 @@ function ymd(d) {
   return `${y}-${m}-${dd}`;
 }
 
-/** Íconos inline */
 const MoneyIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
@@ -51,20 +50,18 @@ export default function DashboardPage() {
   const { fetchWithCache, invalidateCache } = useCache();
   const [loading, setLoading] = useState(true);
 
-  // KPIs
   const [totalAhorrado, setTotalAhorrado] = useState(0);
   const [metaMensualSugerida, setMetaMensualSugerida] = useState(0);
   const [metasActivas, setMetasActivas] = useState(0);
   const [progresoMensual, setProgresoMensual] = useState(0);
 
-  // Listas
+
   const [goalsActive, setGoalsActive] = useState([]);
   const [goalsCompleted, setGoalsCompleted] = useState([]);
 
   async function load(forceRefresh = false) {
     setLoading(true);
     try {
-      // Usar caché para mejorar el rendimiento
       const response = await fetchWithCache(
         'dashboard-summary',
         () => getDashboardSummary(),
@@ -74,7 +71,6 @@ export default function DashboardPage() {
       if (response) {
         const data = response.data;
 
-        // Establecer todos los datos de una vez
         setTotalAhorrado(data.totalAhorrado);
         setMetaMensualSugerida(data.metaMensualSugerida);
         setProgresoMensual(data.progresoMensual);
@@ -87,13 +83,11 @@ export default function DashboardPage() {
     }
   }
 
-  // Función para refrescar datos (útil para actualizaciones después de cambios)
   const refreshData = () => {
     invalidateCache('dashboard-summary');
     load(true);
   };
 
-  // Invalidar caché al cargar la página para asegurar datos frescos
   useEffect(() => {
     invalidateCache('dashboard-summary');
   }, []);
@@ -158,9 +152,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Grid principal */}
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:min-h-0 xl:items-stretch">
-          {/* IZQ: metas activas */}
           <div className="min-h-0 xl:col-span-2 xl:h-full">
             <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
               <h2 className="text-sm font-semibold mb-3">Metas de Ahorro Activas</h2>
@@ -178,7 +170,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* DER: completadas */}
           <div className="min-h-0 xl:h-full">
             <div className="fin-card card-hover p-4 md:p-5 h-full flex flex-col">
               <h2 className="text-sm font-semibold mb-3">Metas Completadas</h2>

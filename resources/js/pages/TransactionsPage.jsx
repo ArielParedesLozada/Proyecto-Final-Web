@@ -1,4 +1,3 @@
-// src/pages/TransactionsByGoalPage.jsx
 import { useMemo, useState, useEffect } from "react";
 import AppLayout from "../layouts/AppLayout";
 import TransactionsKpis from "../components/transactions/TransactionsKpis";
@@ -8,20 +7,17 @@ import GoalSelect from "../components/goals/GoalSelect";
 import Empty from "../components/ui/Empty";
 import TransactionsFilters from "../components/transactions/TransactionsFilters";
 
-// Servicios
 import { listGoals } from "../services/goals";
 import { listTransactions } from "../services/transactions";
 import { goalApiToUi } from "../services/adapters";
 import useCache from "../hooks/useCache";
 
-// Toasts
 import { ToastProvider, useToast } from "../components/ui/ToastProvider";
 
 function TransactionsByGoalPageInner() {
   const { fetchWithCache, invalidateCache } = useCache();
   const toast = useToast();
   
-  // Estados
   const [goals, setGoals] = useState([]);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -29,47 +25,37 @@ function TransactionsByGoalPageInner() {
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [calculatedProgress, setCalculatedProgress] = useState(0);
   
-  // Filtros
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [transactionType, setTransactionType] = useState([]);
 
-  // Cargar metas al montar el componente
   useEffect(() => {
-    // Invalidar caché de metas al entrar a la página
     invalidateCache('transactions-goals-list');
     loadGoals();
   }, [invalidateCache]);
 
-  // Cargar transacciones cuando cambie la meta seleccionada
   useEffect(() => {
     if (selectedGoal) {
-      // Resetear progreso al cambiar de meta
       setCalculatedProgress(0);
-      // Invalidar caché de transacciones al cambiar de meta
       invalidateCache(`transactions-goal-${selectedGoal.id}`);
-      loadTransactions(selectedGoal.id, false); // Usar caché para mejor rendimiento
+      loadTransactions(selectedGoal.id, false);
     }
   }, [selectedGoal, invalidateCache]);
 
-  // Recargar transacciones cuando cambien los filtros
   useEffect(() => {
     if (selectedGoal) {
       loadTransactions(selectedGoal.id, true);
     }
   }, [dateRange, transactionType]);
 
-  // Escuchar cambios en las transacciones (cuando se agregan desde otras páginas)
   useEffect(() => {
     const handleTransactionUpdate = (event) => {
       if (selectedGoal) {
         console.log('Transaction update detected, reloading...', event.detail);
-        // Invalidar caché y recargar transacciones con forceRefresh
         invalidateCache(`transactions-goal-${selectedGoal.id}`);
-        loadTransactions(selectedGoal.id, true); // forceRefresh = true
+        loadTransactions(selectedGoal.id, true);
       }
     };
 
-    // Escuchar eventos personalizados de actualización de transacciones
     window.addEventListener('transactionAdded', handleTransactionUpdate);
     window.addEventListener('transactionDeleted', handleTransactionUpdate);
     window.addEventListener('goalUpdated', handleTransactionUpdate);
@@ -79,14 +65,12 @@ function TransactionsByGoalPageInner() {
       window.removeEventListener('transactionDeleted', handleTransactionUpdate);
       window.removeEventListener('goalUpdated', handleTransactionUpdate);
     };
-  }, [selectedGoal?.id, invalidateCache]); // Solo dependencia del ID, no del objeto completo
+  }, [selectedGoal?.id, invalidateCache]);
 
-  // Recargar datos cuando la página se vuelve visible (al regresar de otra página)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && selectedGoal) {
         console.log('Page became visible, refreshing data...');
-        // Invalidar todos los cachés y recargar
         invalidateCache('transactions-goals-list');
         invalidateCache(`transactions-goal-${selectedGoal.id}`);
         loadGoals();
@@ -108,9 +92,9 @@ function TransactionsByGoalPageInner() {
         cacheKey,
         () => listGoals({ 
           pageSize: 100,
-          estado: 'active,completed,expired' // Especificar todos los estados para obtener TODAS las metas
+          estado: 'active,completed,expired'
         }),
-        { forceRefresh: false } // Usar caché para mejor rendimiento
+        { forceRefresh: false }
       );
       
       console.log('Goals API response:', res);
@@ -122,7 +106,6 @@ function TransactionsByGoalPageInner() {
         console.log('Goals count after mapping:', goalsList.length);
         setGoals(goalsList);
         
-        // Seleccionar la primera meta por defecto
         if (goalsList.length > 0) {
           setSelectedGoal(goalsList[0]);
           console.log('Selected goal:', goalsList[0]);
@@ -144,7 +127,6 @@ function TransactionsByGoalPageInner() {
     }
   }
 
-  // Función para aplicar filtros
   const applyFilters = (newDateRange, newTransactionType) => {
     if (selectedGoal) {
       loadTransactions(selectedGoal.id, true, newDateRange, newTransactionType);
@@ -156,25 +138,20 @@ function TransactionsByGoalPageInner() {
       setTransactionsLoading(true);
       console.log('Loading transactions for goal ID:', goalId);
       
-      // Usar filtros personalizados o los del estado
       const currentDateRange = customDateRange || dateRange;
       const currentTransactionType = customTransactionType || transactionType;
       
-      // Construir parámetros de filtro
       const params = {};
       
-      // Filtros de fecha
       if (currentDateRange.start && currentDateRange.end) {
         params.start_date = currentDateRange.start;
         params.end_date = currentDateRange.end;
       }
       
-      // Filtros de tipo de transacción (exclusivo)
       if (currentTransactionType.length === 1) {
         params.is_fixed = currentTransactionType.includes('Fijo') ? true : false;
         console.log('Filtering by transaction type:', currentTransactionType, 'is_fixed:', params.is_fixed, 'type:', typeof params.is_fixed);
       }
-      // Si no hay tipo seleccionado, no se incluye el parámetro is_fixed
       
       console.log('Final params being sent to API:', params);
       const cacheKey = `transactions-goal-${goalId}-${JSON.stringify(params)}`;
@@ -202,7 +179,6 @@ function TransactionsByGoalPageInner() {
     }
   }
 
-  // Calcular progreso cuando cambien las transacciones
   useEffect(() => {
     if (transactions.length > 0) {
       const incomes = transactions.filter(t => t.type === 'income');
@@ -212,12 +188,10 @@ function TransactionsByGoalPageInner() {
       const newAccumulated = totalIncome - totalExpense;
       setCalculatedProgress(Math.max(0, newAccumulated));
     } else {
-      // Resetear a 0 cuando no hay transacciones
       setCalculatedProgress(0);
     }
   }, [transactions]);
 
-  // Filtrar transacciones por tipo
   const incomes = useMemo(() => 
     transactions.filter(t => t.type === 'income'), 
     [transactions]
@@ -228,18 +202,16 @@ function TransactionsByGoalPageInner() {
     [transactions]
   );
 
-  // KPIs de la meta seleccionada
   const totals = useMemo(() => {
     const income = incomes.reduce((a, b) => a + (Number(b.amount) || 0), 0);
     const expense = expenses.reduce((a, b) => a + (Number(b.amount) || 0), 0);
     return { income, expense, balance: income - expense };
   }, [incomes, expenses]);
 
-  // Opciones para el selector de metas
   const goalOptions = useMemo(() => 
     goals.map(goal => ({
       value: goal.id,
-      label: goal.name // Solo mostrar el nombre de la meta
+      label: goal.name
     })), 
     [goals]
   );
@@ -259,8 +231,6 @@ function TransactionsByGoalPageInner() {
   </div>
 );
 
-
-  // Mostrar estado de carga inicial
   if (loading) {
     return (
       <AppLayout header={header}>
@@ -277,7 +247,6 @@ function TransactionsByGoalPageInner() {
     );
   }
 
-  // Mostrar estado vacío si no hay metas
   if (goals.length === 0) {
     return (
       <AppLayout header={header}>

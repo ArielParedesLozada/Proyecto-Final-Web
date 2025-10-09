@@ -39,13 +39,11 @@ function HistoryPageInner() {
 
     const debouncedSearch = useDebouncedValue(filters.search, 300);
 
-    // modal detalle
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailGoal, setDetailGoal] = useState(null);
 
     const firstLoadRef = useRef(true);
 
-    /** Construye filtros efectivos para API (omite rango si está incompleto o inválido) */
     function buildEffectiveFilters() {
         const f = { ...filters, search: debouncedSearch };
 
@@ -53,9 +51,9 @@ function HistoryPageInner() {
         const hasEnd = !!f.venceHasta;
 
         if (hasStart && hasEnd) {
-            if (f.venceHasta >= f.creadaDesde) return f; // rango válido
+            if (f.venceHasta >= f.creadaDesde) return f; 
             const { creadaDesde, venceHasta, ...rest } = f;
-            return rest; // rango inválido → se omite
+            return rest; 
         }
 
         const { creadaDesde, venceHasta, ...rest } = f;
@@ -92,12 +90,10 @@ function HistoryPageInner() {
         }
     }
 
-    // persistir filtros
     useEffect(() => {
         localStorage.setItem(LS_KEY, JSON.stringify(filters));
     }, [filters]);
 
-    // primera carga y cambios de búsqueda (debounced)
     useEffect(() => {
         const silent = !firstLoadRef.current;
         load(page, { silent }).finally(() => {
@@ -125,7 +121,6 @@ function HistoryPageInner() {
         }
     }, [filters.creadaDesde, filters.venceHasta]);
 
-    // toasts informativos/errores por fechas
     const lastDateStateRef = useRef("init");
     useEffect(() => {
         const start = filters.creadaDesde;
@@ -246,7 +241,6 @@ function HistoryPageInner() {
                 </ScrollArea>
             </ResponsivePane>
 
-            {/* Modal de detalles */}
             <GoalDetailsModal
                 open={detailOpen}
                 goal={detailGoal}

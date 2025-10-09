@@ -1,6 +1,5 @@
 import StatPro from "../ui/StatPro";
 
-// Íconos lineales (sin fondo/relleno)
 const IconTrendUp = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <polyline
@@ -27,7 +26,6 @@ const IconTrendDown = () => (
 
 const IconBalance = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    {/* línea “zig-zag” de balance */}
     <path
       d="M3 17l4-4 3 3 5-6 6 6"
       className="stroke-current"
@@ -50,7 +48,7 @@ export default function TransactionsKpis({ totals }) {
         deltaLabel=""
         positive
         spark={[12, 13, 15, 16, 17, 18, 19, 20, 21]}
-        icon={<IconTrendUp />}   // ← solo línea, sin fondo
+        icon={<IconTrendUp />}   
       />
 
       <StatPro
@@ -59,7 +57,7 @@ export default function TransactionsKpis({ totals }) {
         delta="Este mes"
         deltaLabel=""
         spark={[5, 6, 7, 6, 8, 7, 9, 8, 7]}
-        icon={<IconTrendDown />} // ← solo línea, sin fondo
+        icon={<IconTrendDown />} 
       />
 
       <StatPro
@@ -69,7 +67,7 @@ export default function TransactionsKpis({ totals }) {
         deltaLabel=""
         positive={balance >= 0}
         spark={[2, 3, 4, 5, 6, 7, 8, 9, 10]}
-        icon={<IconBalance />}   // ← solo línea, sin fondo
+        icon={<IconBalance />}   
       />
     </section>
   );

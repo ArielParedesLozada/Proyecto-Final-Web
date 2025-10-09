@@ -17,9 +17,6 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
-    /**
-     * Register a new user
-     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -48,11 +45,9 @@ class AuthController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
-        // Enviar correo de bienvenida
         try {
             Mail::to($user->email)->send(new WelcomeEmail($user));
         } catch (\Exception $e) {
-            // Log el error pero no fallar el registro
             \Log::error('Error sending welcome email: ' . $e->getMessage());
         }
 
@@ -76,9 +71,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Login user
-     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -132,9 +124,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout user
-     */
     public function logout(Request $request)
     {
         try {
@@ -152,9 +141,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Get authenticated user profile
-     */
     public function profile(Request $request)
     {
         try {
@@ -190,9 +176,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Update user profile
-     */
     public function updateProfile(Request $request)
     {
         try {
@@ -257,9 +240,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Solicitar código de verificación para restablecer contraseña
-     */
     public function requestPasswordReset(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -309,9 +289,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Verificar código de restablecimiento
-     */
     public function verifyResetCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -348,9 +325,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Restablecer contraseña con código de verificación
-     */
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -383,7 +357,6 @@ class AuthController extends Controller
         $code = $request->code;
         $password = $request->password;
 
-        // Verificar el código
         if (!PasswordReset::verifyCode($email, $code)) {
             return response()->json([
                 'success' => false,
@@ -392,7 +365,6 @@ class AuthController extends Controller
         }
 
         try {
-            // Buscar el usuario
             $user = User::where('email', $email)->first();
 
             if (!$user) {
@@ -402,12 +374,10 @@ class AuthController extends Controller
                 ], 404);
             }
 
-            // Actualizar la contraseña
             $user->update([
                 'password_hash' => Hash::make($password)
             ]);
 
-            // Marcar el código como usado
             PasswordReset::markAsUsed($email, $code);
 
             return response()->json([
@@ -481,9 +451,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Obtener tiempo restante del código de verificación
-     */
     public function getCodeTimeRemaining(Request $request)
     {
         $validator = Validator::make($request->all(), [

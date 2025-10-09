@@ -9,10 +9,8 @@ import Pagination from "../components/ui/Pagination";
 import ResponsivePane from "../layouts/ResponsivePane";
 import Empty from "../components/ui/Empty";
 
-// Toasts
 import { ToastProvider, useToast } from "../components/ui/ToastProvider";
 
-// Servicios reales
 import {
   listGoals,
   createGoal,
@@ -29,20 +27,16 @@ function GoalsPageInner() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // modal crear/editar
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [editingGoal, setEditingGoal] = useState(null);
 
-  // confirm delete
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
 
-  // modal de transacción
   const [txOpen, setTxOpen] = useState(false);
   const [txGoal, setTxGoal] = useState(null);
 
-  // paginación (UI)
   const [page, setPage] = useState(1);
   const pageSize = 4;
   const [total, setTotal] = useState(0);
@@ -50,14 +44,12 @@ function GoalsPageInner() {
 
   const toast = useToast();
 
-  // Función auxiliar para filtrar metas completadas/vencidas
   const filterCompletedGoals = (goals) => {
     return goals.filter(goal => {
       const progress = Math.min(
         100,
         Math.round(((goal.currentAmount ?? 0) / Math.max(goal.targetAmount, 1)) * 100)
       );
-      // Mantener metas activas y vencidas, quitar solo las completadas
       return progress < 100;
     });
   };

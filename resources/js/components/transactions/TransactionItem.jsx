@@ -21,7 +21,6 @@ export default function TransactionItem({ item }) {
         </div>
       </div>
 
-      {/* 👇 en móvil mantiene derecha y no fuerza salto raro */}
       <div className={`ml-auto shrink-0 font-semibold text-sm sm:text-base ${color}`}>
         {item.type === "income" ? "+" : "-"}${item.amount.toLocaleString()}
       </div>

@@ -25,7 +25,6 @@ export default function GoalsFilters({ value, onChange, onClear }) {
     return (
         <div className="fin-card p-4 md:p-5 mb-3">
             <div className="flex flex-wrap items-center gap-3">
-                {/* Buscar por nombre */}
                 <input
                     className="input-base w-64"
                     placeholder="Buscar por nombre…"
@@ -33,7 +32,6 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                     onChange={(e) => onChange({ ...f, search: e.target.value })}
                 />
 
-                {/* Categoría (UI labels) */}
                 <select
                     className="input-base w-48"
                     value={f.categoria}
@@ -45,7 +43,6 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                     ))}
                 </select>
 
-                {/* Estados (chips multi con UI labels) */}
                 <div className="flex flex-wrap items-center gap-2">
                     {ESTADOS_UI.map((label) => {
                         const active = f.estados.includes(label);
@@ -65,7 +62,6 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                     })}
                 </div>
 
-                {/* Chip rápido: vence en ≤ 7 días (opcional) */}
                 <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 ml-auto">
                     <input
                         type="checkbox"
@@ -76,7 +72,6 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                     Vence en ≤ 7 días
                 </label>
 
-                {/* Limpiar */}
                 <button
                     type="button"
                     className="btn btn-primary cursor-pointer shadow-sm"
@@ -87,7 +82,6 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                 </button>
             </div>
 
-            {/* Solo dos fechas: Creada desde / Vence hasta */}
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="block">
                     <span className="block text-xs text-gray-500">Creada desde</span>

@@ -8,8 +8,6 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   const handleSuccess = (response) => {
-    // El token ya se guardó en el servicio de auth
-    // Ahora actualizamos el contexto con los datos del usuario
     if (response.data?.user) {
       login(response.data.user);
     }

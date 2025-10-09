@@ -9,7 +9,7 @@ export default function AvatarUploader({ url, name = "", onChange }) {
     const reader = new FileReader();
     reader.onload = () => {
       setPreview(reader.result);
-      onChange?.(reader.result); // en producción subirías el file
+      onChange?.(reader.result);
     };
     reader.readAsDataURL(file);
   };

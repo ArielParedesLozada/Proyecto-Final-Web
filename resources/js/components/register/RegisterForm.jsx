@@ -19,7 +19,6 @@ export default function RegisterForm({ onSuccess }) {
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Auto-dismiss messages after 5 seconds
   useEffect(() => {
     if (formError) {
       const timer = setTimeout(() => {
@@ -63,7 +62,6 @@ export default function RegisterForm({ onSuccess }) {
     return errors;
   };
 
-  // Función para verificar si el formulario está completo y válido
   const isFormValid = () => {
     return (
       values.first_name.trim() &&
@@ -82,8 +80,8 @@ export default function RegisterForm({ onSuccess }) {
   const onSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
-    setErrors({}); // Limpiar errores individuales
-    setFormError(""); // Limpiar mensaje de error anterior
+    setErrors({}); 
+    setFormError(""); 
     
     if (validationErrors.length > 0) {
       setFormError(validationErrors.join("; "));
@@ -94,31 +92,26 @@ export default function RegisterForm({ onSuccess }) {
     setFormError("");
 
     try {
-      console.log("Sending register data:", values); // Debug log
+      console.log("Sending register data:", values); 
       const response = await register(values);
       if (response && response.success) {
-        // Mostrar mensaje de éxito
         setSuccessMessage("¡Cuenta creada exitosamente! Te hemos enviado un correo de bienvenida. Redirigiendo al login...");
         setFormError("");
         
-        // Redirigir al login después de 3 segundos
         setTimeout(() => {
           navigate("/login");
         }, 3000);
         
-        // También llamar onSuccess si existe (para compatibilidad)
         onSuccess?.(response);
       } else {
         setFormError(response?.message || "No se pudo crear la cuenta. Intenta nuevamente.");
       }
     } catch (err) {
-      console.log("Register form error:", err); // Debug log
+      console.log("Register form error:", err); 
       
-      // Manejar errores específicos del backend
       if (err.message.includes("email") && err.message.includes("unique")) {
         setFormError("Ese correo ya está registrado.");
       } else if (err.message.includes("Validation errors:")) {
-        // Mostrar los errores específicos de validación
         const specificErrors = err.message.replace("Validation errors: ", "");
         setFormError(`Errores de validación: ${specificErrors}`);
       } else if (err.message.includes("validation")) {

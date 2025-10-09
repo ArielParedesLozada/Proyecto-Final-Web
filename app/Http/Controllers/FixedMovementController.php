@@ -88,7 +88,6 @@ class FixedMovementController extends Controller
         $fm = FixedMovement::where('user_id', $userId)->findOrFail($id);
 
         $data = $request->validate([
-            // NO permitimos cambiar goal_id ni type (política del negocio)
             'amount'    => ['nullable', 'numeric', 'min:0.01'],
             'frequency' => ['nullable', Rule::in(['daily', 'weekly', 'monthly'])],
             'interval'  => ['nullable', 'integer', 'min:1'],
@@ -158,7 +157,7 @@ class FixedMovementController extends Controller
         return match ($frequency) {
             'daily'   => $start,
             'weekly'  => $this->nextWeeklyDate($start, $weekdays),
-            'monthly' => $start, // primera corrida en start
+            'monthly' => $start, 
             default   => $start,
         };
     }

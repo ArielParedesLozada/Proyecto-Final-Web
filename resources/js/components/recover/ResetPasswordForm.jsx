@@ -6,7 +6,6 @@ function useQuery() {
   return useMemo(() => new URLSearchParams(window.location.search), []);
 }
 
-// Simulación local (luego reemplazas con services/auth.js)
 async function fakeResetPassword({ token, email, password }) {
   await new Promise(r => setTimeout(r, 800));
   if (!token) throw new Error("invalid_token");

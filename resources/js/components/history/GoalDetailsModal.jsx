@@ -80,9 +80,7 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
                     </button>
                 </div>
 
-                {/* Contenido con scroll propio */}
                 <ScrollArea className="px-5 pt-4 pb-5 space-y-5" maxHeight="75vh">
-                    {/* Resumen en 2 columnas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="fin-card p-4">
                             <h4 className="text-sm font-semibold mb-2">Información</h4>
@@ -139,7 +137,6 @@ export default function GoalDetailsModal({ open, onClose, goal }) {
                         </div>
                     </div>
 
-                    {/* Descripción (si existe) */}
                     {description ? (
                         <div className="fin-card p-4">
                             <h4 className="text-sm font-semibold mb-2">Descripción</h4>

@@ -3,11 +3,7 @@ import api, { BASE, TOKEN_KEY } from "./http";
 const getToken = () => localStorage.getItem(TOKEN_KEY);
 const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
 const removeToken = () => localStorage.removeItem(TOKEN_KEY);
-
-// Normaliza URL: si viene absoluta con BASE, la vuelve relativa para axios
 const normalizeUrl = (url) => (url.startsWith(BASE) ? url.slice(BASE.length) : url);
-
-// Wrapper sin auth 
 const rawFetch = async (url, options = {}) => {
   const method = (options.method || "GET").toUpperCase();
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -39,13 +35,9 @@ const rawFetch = async (url, options = {}) => {
   }
 };
 
-// Wrapper con auth (agrega Authorization si hay token)
 const authenticatedFetch = async (url, options = {}) => {
   const method = (options.method || "GET").toUpperCase();
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-
-  // axios ya agrega el token vía interceptor; este bloque es para
-  // mantener compatibilidad por si en algún lugar dependes de ese header aquí:
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -77,9 +69,6 @@ const authenticatedFetch = async (url, options = {}) => {
   }
 };
 
-/** ---------------------------
- * Auth endpoints (misma lógica)
- * --------------------------- */
 
 export async function login(email, password) {
   try {
@@ -95,16 +84,15 @@ export async function login(email, password) {
     }
 
     const data = await res.json();
-    console.log("Login response:", data); // Debug log
+    console.log("Login response:", data); 
 
-    // Mantengo tu misma estructura para guardar el token
     if (data && data.success && data.data && data.data.token) {
       setToken(data.data.token);
     }
 
     return data;
   } catch (error) {
-    console.error("Login error:", error); // Debug log
+    console.error("Login error:", error); 
     throw error;
   }
 }
@@ -119,7 +107,7 @@ export async function register(payload) {
 
     if (!res.ok) {
       const error = await res.json();
-      console.log("Register error response:", error); // Debug log
+      console.log("Register error response:", error); 
 
       if (error.errors) {
         const errorMessages = Object.values(error.errors).flat();
@@ -130,12 +118,11 @@ export async function register(payload) {
     }
 
     const data = await res.json();
-    console.log("Register response:", data); // Debug log
+    console.log("Register response:", data); 
 
-    // Mantengo tu UX: no guardar token automático
     return data;
   } catch (error) {
-    console.error("Register error:", error); // Debug log
+    console.error("Register error:", error); 
     throw error;
   }
 }
@@ -146,7 +133,6 @@ export async function logout() {
       method: "POST",
     });
 
-    // Remover el token independientemente de la respuesta del servidor
     removeToken();
 
     if (!res.ok) {
@@ -156,7 +142,6 @@ export async function logout() {
 
     return await res.json();
   } catch (error) {
-    // Aun así removemos el token localmente
     removeToken();
     throw error;
   }
@@ -192,12 +177,10 @@ export async function updateProfile(payload) {
   }
 }
 
-// Función para verificar si el usuario está autenticado
 export function isAuthenticated() {
   return !!getToken();
 }
 
-// Funciones para obtener/guardar/remover token (mismas exportaciones)
 export { getToken, setToken, removeToken };
 export async function requestPasswordReset(email) {
   try {

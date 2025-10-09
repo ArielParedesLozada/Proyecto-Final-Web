@@ -17,7 +17,6 @@ import {
 } from "../services/stats";
 import useCache from "../hooks/useCache";
 
-// Recharts
 import {
   ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
@@ -25,14 +24,13 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-// Paleta de colores moderna y profesional
 const COLORS = {
-  primary: "#6366F1",     // Indigo principal
-  success: "#10B981",     // Emerald
-  warning: "#F59E0B",     // Amber
-  danger: "#EF4444",      // Red
-  info: "#06B6D4",        // Cyan
-  purple: "#8B5CF6",      // Violet
+  primary: "#6366F1",     
+  success: "#10B981",    
+  warning: "#F59E0B",    
+  danger: "#EF4444",      
+  info: "#06B6D4",        
+  purple: "#8B5CF6",      
   gradient: {
     primary: ["#6366F1", "#4F46E5"],
     success: ["#10B981", "#059669"],
@@ -60,8 +58,7 @@ function StatsPageInner() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // datasets
-  // ⚠️ El backend devuelve array: [{status: 'Activa', value: 3}, ...]
+  
   const [statusData, setStatusData] = useState([]);
   const [realVsSuggested, setRealVsSuggested] = useState([]);
   const [monthlyCompletion, setMonthlyCompletion] = useState([]);
@@ -80,12 +77,11 @@ function StatsPageInner() {
     </div>
   );
 
-  // rango válido para enviar al backend
   const validRange = useMemo(() => {
     const { start, end } = range;
-    if (!start && !end) return {};            // sin rango → backend usa últimos 6 meses
+    if (!start && !end) return {};            
     if (start && end && end >= start) return { start, end };
-    return {};                                // incompleto o inválido → no enviamos nada
+    return {};                                
   }, [range]);
 
   async function loadAll(forceRefresh = false) {
@@ -94,7 +90,6 @@ function StatsPageInner() {
       const params = { ...validRange };
       const cacheKey = `stats-${JSON.stringify(params)}`;
       
-      // Usar caché para mejorar el rendimiento
       const [st, rvs, comp, cat, incExp, top] = await Promise.all([
         fetchWithCache(`${cacheKey}-status`, () => getGoalsStatusDistribution(params), { forceRefresh }),
         fetchWithCache(`${cacheKey}-rvs`, () => getMonthlyRealVsSuggested(params), { forceRefresh }),
@@ -117,13 +112,10 @@ function StatsPageInner() {
     }
   }
 
-  // primera carga (backend trae últimos 6 meses por defecto)
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // validación suave de fechas + auto-aplicar cuando el rango es válido
   const lastDateStateRef = useRef("init");
   useEffect(() => {
     const { start, end } = range;
@@ -163,7 +155,6 @@ function StatsPageInner() {
     }
 
     if (state === "ok" || state === "none") {
-      // Invalidar caché cuando cambien los filtros
       invalidateCache('stats-');
       loadAll(true);
     }
@@ -220,7 +211,6 @@ function StatsPageInner() {
 
         <ScrollArea className="">
           <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* 1) Estados de las metas (donut) */}
             <div className="fin-card p-6 card-hover">
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -281,7 +271,6 @@ function StatsPageInner() {
               )}
             </div>
 
-            {/* 2) Real vs Sugerido mensual */}
             <div className="fin-card p-6 card-hover">
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -362,7 +351,6 @@ function StatsPageInner() {
               )}
             </div>
 
-            {/* 3) Cumplimiento mensual */}
             <div className="fin-card p-6 card-hover">
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -431,7 +419,6 @@ function StatsPageInner() {
               )}
             </div>
 
-            {/* 4) Categorías de metas */}
             <div className="fin-card p-6 card-hover">
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -492,7 +479,6 @@ function StatsPageInner() {
               )}
             </div>
 
-            {/* 5) Ingresos vs Gastos mensual */}
             <div className="fin-card p-6 card-hover">
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -601,7 +587,6 @@ function StatsPageInner() {
               )}
             </div>
 
-            {/* 6) Top 5 metas por avance */}
             <div className="fin-card p-6 card-hover">
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2">

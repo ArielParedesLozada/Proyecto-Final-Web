@@ -10,7 +10,6 @@ class StatsPdfController extends Controller
 {
     public function download(Request $request)
     {
-        // Reusa tus métodos existentes para armar los datos
         $stats = app(StatsController::class);
 
         $params = $request->only(['start', 'end']);

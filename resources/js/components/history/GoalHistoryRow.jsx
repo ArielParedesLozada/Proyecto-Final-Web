@@ -45,9 +45,7 @@ export default function GoalHistoryRow({ goal, onOpen }) {
             className="fin-card p-4 hover:shadow-lg/40 transition-shadow w-full"
             role="group"
         >
-            {/* Grid 3 columnas en md+, apilado en móvil */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center">
-                {/* IZQUIERDA */}
                 <div className="md:col-span-4 min-w-0">
                     <div className="flex items-center gap-2">
                         <h3 className="font-semibold truncate" title={name}>
@@ -67,7 +65,6 @@ export default function GoalHistoryRow({ goal, onOpen }) {
                     </p>
                 </div>
 
-                {/* CENTRO */}
                 <div className="md:col-span-6">
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                         <span>${Number(currentAmount).toLocaleString()}</span>
@@ -84,7 +81,6 @@ export default function GoalHistoryRow({ goal, onOpen }) {
                     </div>
                 </div>
 
-                {/* DERECHA */}
                 <div className="md:col-span-2 flex md:justify-end">
                     <button
                         type="button"

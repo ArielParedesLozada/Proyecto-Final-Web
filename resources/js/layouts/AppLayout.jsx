@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import UserAvatar from "../components/ui/UserAvatar";
 import { useAuth } from "../contexts/AuthContext";
+import ConfirmModal from "../components/common/ConfirmModal";
 
 const NavItem = ({ to, icon, label, active, collapsed }) => {
   const base =
@@ -34,6 +35,7 @@ export default function AppLayout({ children, header }) {
   useEffect(() => localStorage.setItem("fs_sidebar_collapsed", String(collapsed)), [collapsed]);
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const items = useMemo(
     () => [
@@ -47,9 +49,14 @@ export default function AppLayout({ children, header }) {
     []
   );
 
-  const handleLogout = async () => {
+  const handleLogoutClick = () => {
+    setLogoutConfirmOpen(true);
+  };
+
+  const handleLogoutConfirm = async () => {
     try {
       await logout();
+      setLogoutConfirmOpen(false);
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -66,7 +73,7 @@ export default function AppLayout({ children, header }) {
       <div className="mt-2">
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
           className={[
             "w-full rounded-lg text-sm transition select-none cursor-pointer",
             "text-red-500/90 hover:text-red-400 hover:bg-red-500/10",
@@ -226,6 +233,17 @@ export default function AppLayout({ children, header }) {
           </div>
         </div>
       </main>
+
+      {/* Modal de confirmación para cerrar sesión */}
+      <ConfirmModal
+        open={logoutConfirmOpen}
+        title="Cerrar sesión"
+        message="¿Estás seguro de que deseas cerrar sesión?"
+        confirmText="Sí, cerrar sesión"
+        cancelText="Cancelar"
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
     </div>
   );
 }

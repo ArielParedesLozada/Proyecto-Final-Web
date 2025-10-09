@@ -14,36 +14,27 @@ use GuzzleHttp\Client;
 
 class GoogleAuthController extends Controller
 {
-    /**
-     * Redirigir a Google OAuth
-     */
+
     public function redirectToGoogle()
     {
         return Socialite::driver('google')->stateless()->redirect();
     }
 
-    /**
-     * Manejar callback de Google OAuth
-     */
+
     public function handleGoogleCallback()
     {
         try {
-            // Configurar SSL para desarrollo
             $this->configureSSLForDevelopment();
             
-            // Usar método alternativo si Socialite falla
             $googleUser = $this->getGoogleUserAlternative();
             
-            // Buscar usuario existente por email (prioridad) o google_id
             $user = User::where('email', $googleUser->email)->first();
             
             if (!$user) {
-                // Si no existe por email, buscar por google_id
                 $user = User::where('google_id', $googleUser->id)->first();
             }
 
             if ($user) {
-                // Usuario existente - actualizar información de Google si es necesario
                 $updateData = [];
                 
                 if (!$user->google_id) {
@@ -58,12 +49,10 @@ class GoogleAuthController extends Controller
                     $updateData['profile_image_url'] = $googleUser->avatar;
                 }
                 
-                // Actualizar solo si hay cambios
                 if (!empty($updateData)) {
                     $user->update($updateData);
                 }
             } else {
-                // Nuevo usuario - crear cuenta
                 $nameParts = explode(' ', $googleUser->name, 2);
                 $firstName = $nameParts[0];
                 $lastName = isset($nameParts[1]) ? $nameParts[1] : '';
@@ -75,15 +64,13 @@ class GoogleAuthController extends Controller
                     'google_id' => $googleUser->id,
                     'provider' => 'google',
                     'profile_image_url' => $googleUser->avatar,
-                    'email_verified_at' => now(), // Google ya verificó el email
-                    'password_hash' => null, // No hay contraseña para usuarios de Google
+                    'email_verified_at' => now(), 
+                    'password_hash' => null, 
                 ]);
             }
 
-            // Generar token JWT
             $token = JWTAuth::fromUser($user);
 
-            // Redirigir al frontend con el token
             return redirect()->away(
                 'http://localhost:8000/auth/google/callback?token=' . $token . '&user=' . urlencode(json_encode([
                     'id' => $user->id,
@@ -103,9 +90,6 @@ class GoogleAuthController extends Controller
         }
     }
 
-    /**
-     * Obtener URL de redirección de Google (para el frontend)
-     */
     public function getGoogleUrl()
     {
         try {
@@ -125,16 +109,11 @@ class GoogleAuthController extends Controller
         }
     }
 
-    /**
-     * Configurar SSL para desarrollo
-     */
     private function configureSSLForDevelopment()
     {
-        // Solución directa: configurar SSL a nivel global
         putenv('CURL_SSL_VERIFYPEER=false');
         putenv('CURL_SSL_VERIFYHOST=false');
         
-        // Configurar opciones de cURL
         curl_setopt_array(curl_init(), [
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
@@ -143,7 +122,6 @@ class GoogleAuthController extends Controller
             CURLOPT_RETURNTRANSFER => true,
         ]);
         
-        // Configurar contexto HTTP/HTTPS
         if (function_exists('stream_context_set_default')) {
             stream_context_set_default([
                 'http' => [
@@ -159,19 +137,13 @@ class GoogleAuthController extends Controller
             ]);
         }
         
-        // Guzzle se configurará individualmente en cada cliente
     }
 
-    /**
-     * Método alternativo para obtener usuario de Google usando Guzzle
-     */
     private function getGoogleUserAlternative()
     {
         try {
-            // Primero intentar con Socialite
             return Socialite::driver('google')->stateless()->user();
         } catch (\Exception $e) {
-            // Si falla, usar método manual con Guzzle
             $code = request()->get('code');
             $state = request()->get('state');
             
@@ -179,13 +151,11 @@ class GoogleAuthController extends Controller
                 throw new \Exception('Código de autorización no encontrado');
             }
 
-            // Configurar cliente Guzzle sin SSL
             $client = new Client([
                 'verify' => false,
                 'timeout' => 30,
             ]);
 
-            // Intercambiar código por token
             $tokenResponse = $client->post('https://oauth2.googleapis.com/token', [
                 'form_params' => [
                     'client_id' => config('services.google.client_id'),
@@ -199,7 +169,6 @@ class GoogleAuthController extends Controller
             $tokenData = json_decode($tokenResponse->getBody(), true);
             $accessToken = $tokenData['access_token'];
 
-            // Obtener información del usuario
             $userResponse = $client->get('https://www.googleapis.com/oauth2/v2/userinfo', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
@@ -208,7 +177,6 @@ class GoogleAuthController extends Controller
 
             $userData = json_decode($userResponse->getBody(), true);
 
-            // Crear objeto similar al de Socialite
             return (object) [
                 'id' => $userData['id'],
                 'email' => $userData['email'],

@@ -2,11 +2,8 @@ import { useState } from "react";
 import Input from "../common/Input";
 import FormError from "../common/FormError";
 
-// Simulación local (luego reemplazas con services/auth.js)
 async function fakeRequestReset(email) {
   await new Promise(r => setTimeout(r, 800));
-  // si quieres simular un error:
-  // throw new Error("email_not_found");
   return { ok: true };
 }
 
@@ -34,7 +31,6 @@ export default function ForgotPasswordForm() {
       await fakeRequestReset(email);
       setOk("Si el correo existe, te enviaremos un enlace para restablecer tu contraseña.");
     } catch (err) {
-      // por seguridad, el mensaje público es neutro
       setOk("Si el correo existe, te enviaremos un enlace para restablecer tu contraseña.");
     } finally {
       setLoading(false);

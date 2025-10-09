@@ -16,9 +16,7 @@ export default function TransactionsFilters({
 }) {
   const toast = useToast();
 
-  // Validar y aplicar filtros
   const validateAndFetch = (newDateRange = dateRange, newTransactionType = transactionType) => {
-    // Validar fechas
     if (newDateRange.start && !newDateRange.end) {
       toast.push({
         title: "Filtro de fechas incompleto",
@@ -37,7 +35,6 @@ export default function TransactionsFilters({
       return false;
     }
 
-    // Validar rango de fechas
     if (newDateRange.start && newDateRange.end) {
       const startDate = new Date(newDateRange.start);
       const endDate = new Date(newDateRange.end);
@@ -52,40 +49,32 @@ export default function TransactionsFilters({
       }
     }
 
-    // Aplicar filtros si son válidos
     if (onApplyFilters) {
       onApplyFilters(newDateRange, newTransactionType);
     }
     return true;
   };
 
-  // Manejar cambio de fecha
   const handleDateChange = (field, value) => {
     const newDateRange = { ...dateRange, [field]: value };
     onDateRangeChange(newDateRange);
     
-    // Aplicar automáticamente (con validación)
     validateAndFetch(newDateRange, transactionType);
   };
 
-  // Manejar cambio de tipo de transacción (exclusivo)
   const toggleTransactionType = (type) => {
     let newTransactionType;
     
     if (transactionType.includes(type)) {
-      // Si está activo, desactivarlo (quedar sin tipo)
       newTransactionType = [];
     } else {
-      // Si no está activo, activarlo y desactivar el otro
       newTransactionType = [type];
     }
     
     onTransactionTypeChange(newTransactionType);
-    // Aplicar automáticamente (con validación)
     validateAndFetch(dateRange, newTransactionType);
   };
 
-  // Limpiar filtros
   const handleClear = () => {
     onDateRangeClear();
     onTransactionTypeClear();
@@ -94,12 +83,10 @@ export default function TransactionsFilters({
       message: "Se han restablecido todos los filtros",
       tone: "info"
     });
-    // Aplicar automáticamente después de limpiar
     validateAndFetch({ start: "", end: "" }, []);
   };
 
 
-  // Preparar opciones para el GoalSelect
   const goalOptions = goals.map(goal => ({
     value: goal.id,
     label: goal.name
@@ -108,7 +95,6 @@ export default function TransactionsFilters({
   return (
     <div className="fin-card p-4 md:p-5 mb-3">
       <div className="flex flex-wrap items-center gap-3">
-        {/* Selector de meta */}
         {loading ? (
           <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
         ) : (
@@ -121,7 +107,6 @@ export default function TransactionsFilters({
           </div>
         )}
 
-        {/* Filtros de tipo de transacción */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-700 dark:text-gray-300">Tipo:</span>
           <div className="flex gap-1">
@@ -144,7 +129,6 @@ export default function TransactionsFilters({
           </div>
         </div>
 
-        {/* Botón limpiar */}
         <button
           type="button"
           onClick={handleClear}
@@ -155,7 +139,6 @@ export default function TransactionsFilters({
         </button>
       </div>
 
-      {/* Filtros de fecha en segunda fila */}
       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="block">
           <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha inicio</span>

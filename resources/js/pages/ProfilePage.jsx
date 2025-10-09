@@ -7,7 +7,6 @@ import { getProfile, updateProfile, changePassword } from "../services/profile";
 import PasswordInput from "../components/login/PasswordInput";
 import useCache from "../hooks/useCache";
 
-/* --- Subcomponentes pequeños para mantener orden --- */
 function SectionHeader({ title, subtitle, right }) {
   return (
     <div className="flex items-start justify-between gap-3">
@@ -49,24 +48,20 @@ function AvatarReadOnly({ nameFull = "Usuario", initials = "U" }) {
   );
 }
 
-/* --- Página (inner) --- */
 function ProfilePageInner() {
   const { user, setUser } = useAuth();
   const toast = useToast();
   const { updateUser } = useAuth();
   const { fetchWithCache, invalidateCache } = useCache();
 
-  // Estado datos de la cuenta
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   
-  // Valores originales para comparar cambios
   const [originalFirstName, setOriginalFirstName] = useState("");
   const [originalLastName, setOriginalLastName] = useState("");
   const [originalEmail, setOriginalEmail] = useState("");
 
-  // Cambio de contraseña
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
@@ -76,12 +71,10 @@ function ProfilePageInner() {
     password_confirmation: ""
   });
 
-  // Flags
   const [saving, setSaving] = useState(false);
   const [changing, setChanging] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Cargar perfil
   useEffect(() => {
     (async () => {
       try {
@@ -91,7 +84,6 @@ function ProfilePageInner() {
           setLastName(p.last_name || "");
           setEmail(p.email || "");
           
-          // Guardar valores originales
           setOriginalFirstName(p.first_name || "");
           setOriginalLastName(p.last_name || "");
           setOriginalEmail(p.email || "");
@@ -108,7 +100,6 @@ function ProfilePageInner() {
         setLoaded(true);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initials = useMemo(() => {
@@ -117,7 +108,6 @@ function ProfilePageInner() {
     return (a + b).toUpperCase() || "U";
   }, [firstName, lastName]);
 
-  // Función para verificar si hay cambios en los datos de la cuenta
   const hasAccountChanges = useMemo(() => {
     return (
       firstName.trim() !== originalFirstName ||
@@ -126,24 +116,19 @@ function ProfilePageInner() {
     );
   }, [firstName, lastName, email, originalFirstName, originalLastName, originalEmail]);
 
-  // Función para verificar si se puede cambiar la contraseña
   const canChangePassword = useMemo(() => {
-    // Verificar que todos los campos estén llenos
     if (!currentPwd.trim() || !newPwd.trim() || !confirmPwd.trim()) {
       return false;
     }
     
-    // Verificar que las contraseñas coincidan
     if (newPwd !== confirmPwd) {
       return false;
     }
     
-    // Verificar que la nueva contraseña sea diferente a la actual
     if (currentPwd === newPwd) {
       return false;
     }
     
-    // Verificar que la nueva contraseña cumpla los requisitos
     if (newPwd.length < 8) {
       return false;
     }
@@ -155,7 +140,6 @@ function ProfilePageInner() {
     return true;
   }, [currentPwd, newPwd, confirmPwd]);
 
-  // Validación en tiempo real de contraseñas
   const validatePassword = (field, value) => {
     const errors = { ...passwordErrors };
     
@@ -187,7 +171,6 @@ function ProfilePageInner() {
       }
     }
     
-    // Si cambia la contraseña actual, revalidar la nueva
     if (field === 'current_password' && newPwd) {
       if (newPwd === value) {
         errors.password = "La nueva contraseña debe ser diferente a la actual";
@@ -208,7 +191,6 @@ function ProfilePageInner() {
     </div>
   );
 
-  // Guardar datos de la cuenta
   async function handleSaveAccount(e) {
     e.preventDefault();
     setSaving(true);
@@ -232,33 +214,26 @@ function ProfilePageInner() {
         full_name: `${nextFirst} ${nextLast}`.trim(),
       });
 
-      // Actualizar valores originales
       setOriginalFirstName(nextFirst);
       setOriginalLastName(nextLast);
       setOriginalEmail(nextEmail);
-
-      // Invalidar caché del perfil
       invalidateCache('user-profile');
 
       toast.push({ tone: "success", title: "Cambios guardados" });
     } catch (err) {
       console.error("Profile save error:", err);
       
-      // Manejar errores específicos
       let errorMessage = "No se pudo guardar.";
       
       if (err.response?.data?.errors) {
-        // Errores de validación del backend
         const errorMessages = [];
         for (const field in err.response.data.errors) {
           errorMessages.push(err.response.data.errors[field].join(", "));
         }
         errorMessage = errorMessages.join("; ");
       } else if (err.response?.data?.message) {
-        // Mensaje directo del backend
         errorMessage = err.response.data.message;
       } else if (err.message) {
-        // Mensaje del error de JavaScript
         errorMessage = err.message;
       }
       
@@ -268,7 +243,6 @@ function ProfilePageInner() {
     }
   }
 
-  // Cambiar contraseña
   async function handleChangePassword(e) {
     e.preventDefault();
     
@@ -286,9 +260,7 @@ function ProfilePageInner() {
     } catch (err) {
       console.error("Change password error:", err);
       
-      // Mostrar errores como notificaciones
       if (err.message && err.message.includes(";")) {
-        // Múltiples errores - mostrar el primero como notificación
         const errorMessages = err.message.split("; ");
         toast.push({ tone: "error", title: "Error de validación", message: errorMessages[0] });
       } else if (err.message && (
@@ -298,10 +270,8 @@ function ProfilePageInner() {
         err.message.includes("mínimo 8 caracteres") ||
         err.message.includes("incorrecta")
       )) {
-        // Error de validación específico - mostrar como notificación
         toast.push({ tone: "error", title: "Error de validación", message: err.message });
       } else {
-        // Error general
         toast.push({ tone: "error", title: "Error", message: err.message });
       }
     } finally {
@@ -325,7 +295,6 @@ function ProfilePageInner() {
     <AppLayout header={header}>
       <ResponsivePane toolbar={null}>
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-          {/* Columna izquierda */}
           <aside className="xl:col-span-1">
             <section className="fin-card p-5 md:p-6">
               <SectionHeader title="Identidad" />
@@ -338,9 +307,7 @@ function ProfilePageInner() {
             </section>
           </aside>
 
-          {/* Columna derecha */}
           <main className="xl:col-span-2 space-y-5">
-            {/* Datos de la cuenta */}
             <form onSubmit={handleSaveAccount} className="fin-card p-5 md:p-6">
               <SectionHeader
                 title="Datos de la cuenta"
@@ -390,7 +357,6 @@ function ProfilePageInner() {
               </div>
             </form>
 
-            {/* Seguridad */}
             <form onSubmit={handleChangePassword} className="fin-card p-5 md:p-6">
               <SectionHeader
                 title="Seguridad"

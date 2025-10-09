@@ -6,7 +6,7 @@ import { verifyResetCode, resetPassword, getCodeTimeRemaining, requestPasswordRe
 
 export default function ResetPasswordForm({ email, onBack }) {
   const navigate = useNavigate();
-  const [step, setStep] = useState("verify"); // "verify" o "reset"
+  const [step, setStep] = useState("verify"); 
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -18,7 +18,6 @@ export default function ResetPasswordForm({ email, onBack }) {
   const [canResend, setCanResend] = useState(false);
   const [resending, setResending] = useState(false);
 
-  // Auto-dismiss messages after 5 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -37,7 +36,6 @@ export default function ResetPasswordForm({ email, onBack }) {
     }
   }, [success]);
 
-  // Auto-dismiss codeVerified message after 5 seconds
   useEffect(() => {
     if (codeVerified) {
       const timer = setTimeout(() => {
@@ -47,7 +45,6 @@ export default function ResetPasswordForm({ email, onBack }) {
     }
   }, [codeVerified]);
 
-  // Contador de tiempo restante
   useEffect(() => {
     const fetchTimeRemaining = async () => {
       try {
@@ -73,10 +70,8 @@ export default function ResetPasswordForm({ email, onBack }) {
       }
     };
 
-    // Obtener tiempo inicial del servidor
     fetchTimeRemaining();
 
-    // Actualizar cada segundo
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
@@ -90,14 +85,12 @@ export default function ResetPasswordForm({ email, onBack }) {
     return () => clearInterval(interval);
   }, [email]);
 
-  // Función para formatear el tiempo
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Función para reenviar código
   const handleResendCode = async () => {
     setResending(true);
     setError("");
@@ -108,7 +101,6 @@ export default function ResetPasswordForm({ email, onBack }) {
       if (response.success) {
         setSuccess("Código reenviado exitosamente");
         
-        // Obtener el tiempo real del servidor después de reenviar
         try {
           const timeResponse = await getCodeTimeRemaining(email);
           if (timeResponse.success) {
@@ -117,7 +109,7 @@ export default function ResetPasswordForm({ email, onBack }) {
           }
         } catch (timeErr) {
           console.error("Error getting time after resend:", timeErr);
-          setTimeRemaining(180); // Fallback a 3 minutos
+          setTimeRemaining(180); 
           setCanResend(false);
         }
       } else {
@@ -173,7 +165,7 @@ export default function ResetPasswordForm({ email, onBack }) {
       const response = await resetPassword(email, code, password, passwordConfirmation);
       if (response.success) {
         setSuccess("Contraseña restablecida exitosamente. Redirigiendo al login...");
-        setLoading(false); // Importante: detener el loading aquí
+        setLoading(false); 
         setTimeout(() => {
           navigate("/login");
         }, 2000);
@@ -208,7 +200,6 @@ export default function ResetPasswordForm({ email, onBack }) {
           required
         />
 
-        {/* Contador de tiempo */}
         <div className="mb-4 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Tiempo restante: <span className="font-semibold text-indigo-600">{formatTime(timeRemaining)}</span>
@@ -223,7 +214,6 @@ export default function ResetPasswordForm({ email, onBack }) {
           {loading ? "Verificando..." : "Verificar código"}
         </button>
 
-        {/* Botón de reenviar código */}
         {canResend && (
           <button
             type="button"

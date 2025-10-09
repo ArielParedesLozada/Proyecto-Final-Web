@@ -7,7 +7,7 @@ export default function NewGoalModal({
   open,
   onClose,
   onSubmit,
-  mode = "create", // "create" | "edit"
+  mode = "create", 
   initialGoal = null,
 }) {
   const dialogRef = useRef(null);
@@ -54,7 +54,6 @@ export default function NewGoalModal({
     }
 
     setErrors({});
-    // focus primer input
     setTimeout(() => dialogRef.current?.querySelector("input")?.focus(), 30);
   }, [open, mode, initialGoal]);
 
@@ -72,7 +71,6 @@ export default function NewGoalModal({
     return e;
   }
 
-  // Función para verificar si el formulario está completo (para crear)
   const isFormComplete = () => {
     return (
       form.name.trim() &&
@@ -84,7 +82,6 @@ export default function NewGoalModal({
     );
   };
 
-  // Función para verificar si hay cambios (para editar)
   const hasChanges = () => {
     return (
       form.name.trim() !== originalForm.name ||
@@ -95,7 +92,6 @@ export default function NewGoalModal({
     );
   };
 
-  // Función para determinar si el botón debe estar habilitado
   const isButtonEnabled = () => {
     if (mode === "create") {
       return isFormComplete();
@@ -112,10 +108,10 @@ export default function NewGoalModal({
 
     const base = {
       name: form.name.trim(),
-      category: form.category, // etiqueta ES; el adaptador la convertirá a enum API
+      category: form.category, 
       description: form.description.trim() || null,
       targetAmount: Number(form.targetAmount),
-      deadline: form.deadline, // YYYY-MM-DD
+      deadline: form.deadline, 
     };
 
     const payload =
@@ -132,7 +128,6 @@ export default function NewGoalModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center p-4 md:p-8">
-      {/* backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       <div
@@ -140,7 +135,6 @@ export default function NewGoalModal({
         role="dialog"
         aria-modal="true"
       >
-        {/* Header sticky */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur border-b border-gray-200/60 dark:border-gray-700/50">
           <h3 className="text-base md:text-lg font-semibold">
             {isEdit ? "Editar Meta de Ahorro" : "Nueva Meta de Ahorro"}
@@ -156,7 +150,6 @@ export default function NewGoalModal({
           </button>
         </div>
 
-        {/* Body con ScrollArea */}
         <ScrollArea maxHeight="85vh" className="px-5 pt-3 pb-5">
           <div ref={dialogRef}>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -164,7 +157,6 @@ export default function NewGoalModal({
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Nombre */}
               <div>
                 <label className="text-sm font-medium">Nombre de la Meta</label>
                 <input
@@ -176,7 +168,6 @@ export default function NewGoalModal({
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
               </div>
 
-              {/* Categoría */}
               <div>
                 <label className="text-sm font-medium">Categoría</label>
                 <select
@@ -196,7 +187,6 @@ export default function NewGoalModal({
                 {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
               </div>
 
-              {/* Descripción */}
               <div>
                 <label className="text-sm font-medium">Descripción (Opcional)</label>
                 <textarea
@@ -208,7 +198,6 @@ export default function NewGoalModal({
                 />
               </div>
 
-              {/* Monto Objetivo */}
               <div>
                 <label className="text-sm font-medium">Monto Objetivo ($)</label>
                 <input
@@ -224,7 +213,6 @@ export default function NewGoalModal({
                 )}
               </div>
 
-              {/* Fecha límite */}
               <div>
                 <label className="text-sm font-medium">Fecha Límite</label>
                 <input
@@ -237,7 +225,6 @@ export default function NewGoalModal({
                 {errors.deadline && <p className="text-xs text-red-500 mt-1">{errors.deadline}</p>}
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button 
                   type="submit" 

@@ -9,7 +9,6 @@ export default function GoogleAuthButton({ onSuccess, onError, disabled = false 
     try {
       const response = await getGoogleAuthUrl();
       if (response.success && response.url) {
-        // Redirigir a Google OAuth
         window.location.href = response.url;
       } else {
         onError?.("No se pudo obtener la URL de Google");

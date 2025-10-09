@@ -8,7 +8,6 @@ export default function RequestResetCode({ onSuccess }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Auto-dismiss messages after 5 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {

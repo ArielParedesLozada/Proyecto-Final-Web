@@ -5,7 +5,6 @@ export default function StatsFilters({
   onClear,
   onDownload,
 }) {
-  // Validar si las fechas están incompletas (solo inicio o solo fin)
   const isDateRangeIncomplete = (start && !end) || (!start && end);
   
   return (

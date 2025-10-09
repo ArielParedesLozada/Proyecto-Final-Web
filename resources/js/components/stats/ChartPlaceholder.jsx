@@ -1,5 +1,5 @@
 export default function ChartPlaceholder({
-  variant = "line", // "line" | "bar" | "pie"
+  variant = "line",
   height = 220,
 }) {
   const base = "animate-pulse rounded-xl bg-gradient-to-br from-gray-100/80 to-gray-50/60 dark:from-gray-800/60 dark:to-gray-900/40 border border-gray-200/50 dark:border-gray-700/50";
@@ -8,10 +8,8 @@ export default function ChartPlaceholder({
     <div className="relative overflow-hidden">
       <div className={`${base}`} style={{ height }} />
       
-      {/* Overlay con shimmer effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
 
-      {/* Decorativos mejorados según tipo */}
       {variant === "line" && (
         <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 200" preserveAspectRatio="none">
           <defs>

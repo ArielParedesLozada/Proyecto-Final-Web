@@ -16,36 +16,30 @@ const FREQUENCIES = [
 export default function AddTxModal({
     open,
     onClose,
-    goal,       // { id, name, targetAmount, currentAmount, ... }
-    onSubmit,   // (payload) => void | Promise<void>
+    goal,
+    onSubmit,
 }) {
     const dialogRef = useRef(null);
 
-    const [type, setType] = useState("");           // "income" | "expense"
-    const [kind, setKind] = useState("");           // "Fijo" | "Variable"
+    const [type, setType] = useState("");
+    const [kind, setKind] = useState("");
     const [frequency, setFrequency] = useState("monthly");
     const [amount, setAmount] = useState("");
     const [errors, setErrors] = useState({});
 
-    // Regla existente -> bloqueo
     const [lockedFixed, setLockedFixed] = useState(false);
-    const [lockedInfo, setLockedInfo] = useState(null); // { id, frequency, amount, type }
+    const [lockedInfo, setLockedInfo] = useState(null);
 
-    // UI edición/eliminación de la regla fija
     const [editRuleOpen, setEditRuleOpen] = useState(false);
     const [editRuleAmount, setEditRuleAmount] = useState("");
     const [editRuleFreq, setEditRuleFreq] = useState("monthly");
     const [savingRule, setSavingRule] = useState(false);
 
-    // Confirmación eliminar
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deletingRule, setDeletingRule] = useState(false);
 
-    // Saldos
     const target = Number(goal?.targetAmount ?? 0);
     const current = Math.max(0, Number(goal?.currentAmount ?? 0));
-
-    // Reset al abrir
     useEffect(() => {
         if (!open) return;
         setType("");
@@ -62,7 +56,6 @@ export default function AddTxModal({
         setTimeout(() => dialogRef.current?.querySelector("button[data-kind=income]")?.focus(), 30);
     }, [open]);
 
-    // Elegir Ingreso/Gasto y verificar regla fija existente
     async function setTypeAndDefaultKind(nextType) {
         setType(nextType);
         if (!kind) setKind("Variable");
@@ -78,14 +71,12 @@ export default function AddTxModal({
                 const freq = rule.frequency || "monthly";
                 setLockedInfo({ id: rule.id, frequency: freq, amount: amt, type: rule.type });
 
-                // Forzar UI a Fijo + precargar campos
                 setKind("Fijo");
                 setFrequency(freq);
-                setAmount(String(amt));               // monto visible pero read-only
+                setAmount(String(amt));
                 setEditRuleAmount(String(amt));
                 setEditRuleFreq(freq);
             } else {
-                // No hay regla -> libre
                 setLockedFixed(false);
                 setLockedInfo(null);
                 setEditRuleOpen(false);
@@ -336,7 +327,7 @@ export default function AddTxModal({
                                         onClick={() => setKind("Variable")}
                                         className={`px-3 py-1.5 flex-1 cursor-pointer ${kind === "Variable" ? "bg-gray-100 dark:bg-gray-700/50 font-medium" : "bg-transparent"}`}
                                     >
-                                        Variable (por defecto)
+                                        Variable 
                                     </button>
                                     <button
                                         type="button"
@@ -344,7 +335,7 @@ export default function AddTxModal({
                                         onClick={() => setKind("Fijo")}
                                         className={`px-3 py-1.5 flex-1 cursor-pointer ${kind === "Fijo" ? "bg-gray-100 dark:bg-gray-700/50 font-medium" : "bg-transparent"}`}
                                     >
-                                        Fijo (crea regla)
+                                        Fijo 
                                     </button>
                                 </div>
                             )}

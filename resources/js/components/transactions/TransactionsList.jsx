@@ -1,4 +1,3 @@
-// src/components/transactions/TransactionsList.jsx
 import { useEffect, useMemo, useState } from "react";
 import ScrollArea from "../ui/ScrollArea";
 import TransactionItem from "./TransactionItem";
@@ -45,12 +44,11 @@ export default function TransactionsList({ items = [], pageSize = 6, className =
 
   return (
     <div className={["fin-card overflow-hidden p-4 md:p-5", className].join(" ")}>
-      {/* Header sticky 100% transparente (sin fondo ni blur) */}
       <div
         className={[
           "sticky top-0 z-10",
           "px-0 pt-1 pb-3",
-          "bg-transparent",      // ← antes: bg-white/90 dark:bg-gray-800/70 backdrop-blur
+          "bg-transparent",      
         ].join(" ")}
       >
         <div className="grid items-center gap-2 md:grid-cols-[1fr,auto] px-0">

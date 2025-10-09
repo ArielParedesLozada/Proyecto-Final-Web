@@ -1,4 +1,3 @@
-// src/components/goals/GoalSelect.jsx
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import ScrollArea from "../ui/ScrollArea";
@@ -11,18 +10,15 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
   const buttonRef = useRef(null);
   const searchRef = useRef(null);
 
-  // Filtrar metas basado en búsqueda
   const filteredGoals = goals.filter(goal => {
     const label = goal.label || goal.name || goal;
     return label.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Obtener la meta seleccionada
   const selectedGoal = goals.find(goal => 
     (goal.value || goal.id || goal) === value
   );
 
-  // Calcular posición del dropdown
   const updateDropdownPosition = () => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -34,7 +30,6 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
     }
   };
 
-  // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
@@ -48,14 +43,12 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Enfocar el input de búsqueda cuando se abre
   useEffect(() => {
     if (isOpen && searchRef.current) {
       searchRef.current.focus();
     }
   }, [isOpen]);
 
-  // Actualizar posición cuando se abre el dropdown
   useEffect(() => {
     if (isOpen) {
       updateDropdownPosition();
@@ -98,7 +91,6 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
           {selectedGoal ? (selectedGoal.label || selectedGoal.name || selectedGoal) : "Seleccionar meta..."}
         </button>
 
-        {/* Chevron */}
         <svg
           width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"
           className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
@@ -115,7 +107,6 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
           />
         </svg>
 
-        {/* Portal para el dropdown */}
         {isOpen && createPortal(
           <div 
             ref={dropdownRef}
@@ -127,7 +118,6 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
               maxHeight: '300px'
             }}
           >
-            {/* Search Input */}
             <div className="p-2 border-b border-gray-200 dark:border-gray-600">
               <input
                 ref={searchRef}
@@ -139,7 +129,6 @@ export default function GoalSelect({ goals = [], value, onChange, className = ""
               />
             </div>
 
-            {/* Options List - Altura limitada con ScrollArea */}
             <ScrollArea maxHeight="192px" className="max-h-48">
               {filteredGoals.length > 0 ? (
                 filteredGoals.map((goal) => {

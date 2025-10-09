@@ -24,15 +24,11 @@ class GoalController extends Controller
             }], 'amount')
             ->firstOrFail();
 
-        // ingresos - gastos (como float)
         $goal->accumulated = (float) (($goal->income_sum ?? 0) - ($goal->expense_sum ?? 0));
 
         return $goal;
     }
 
-    /**
-     * Listar metas del usuario autenticado (con filtros)
-     */
     public function index(Request $request)
     {
         $userId = Auth::id();
@@ -40,7 +36,6 @@ class GoalController extends Controller
         $perPage = (int) ($request->get('per_page', $request->get('pageSize', 6)));
         $perPage = min(max($perPage, 1), 50);
 
-        // filtros
         $search       = trim((string) $request->get('search', ''));
         $categoria    = $request->get('categoria');         
         $estadoCsv    = (string) $request->get('estado', ''); 
@@ -59,7 +54,6 @@ class GoalController extends Controller
             ->when(!empty($estados), function ($q) use ($estados) {
                 $q->whereIn('status', $estados);
             }, function ($q) {
-                // Por defecto, solo mostrar metas activas si no se especifica estado
                 $q->where('status', 'active');
             })
             ->when($creadaDesde, function ($q) use ($creadaDesde) {
@@ -108,9 +102,6 @@ class GoalController extends Controller
         ]);
     }
 
-    /**
-     * Listar historial de metas (todas las metas sin filtro por defecto)
-     */
     public function history(Request $request)
     {
         $userId = Auth::id();
@@ -118,7 +109,6 @@ class GoalController extends Controller
         $perPage = (int) ($request->get('per_page', $request->get('pageSize', 6)));
         $perPage = min(max($perPage, 1), 50);
 
-        // filtros
         $search       = trim((string) $request->get('search', ''));
         $categoria    = $request->get('categoria');         
         $estadoCsv    = (string) $request->get('estado', ''); 
@@ -183,9 +173,6 @@ class GoalController extends Controller
         ]);
     }
 
-    /**
-     * Mostrar detalle de una meta
-     */
     public function show($id)
     {
         $goal = $this->loadGoalWithSums((int) $id);
@@ -196,9 +183,6 @@ class GoalController extends Controller
         ]);
     }
 
-    /**
-     * Crear una meta nueva
-     */
     public function store(StoreGoalRequest $request)
     {
         $goal = Goal::create([
@@ -211,7 +195,6 @@ class GoalController extends Controller
             'status'        => 'active',
         ]);
 
-        // Devolver enriquecida (con accumulated)
         $goal = $this->loadGoalWithSums($goal->id);
 
         return response()->json([
@@ -220,9 +203,6 @@ class GoalController extends Controller
         ], 201);
     }
 
-    /**
-     * Actualizar una meta
-     */
     public function update(Request $request, $id)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
@@ -236,7 +216,6 @@ class GoalController extends Controller
             'status'
         ]));
 
-        // Devolver enriquecida (con accumulated)
         $goal = $this->loadGoalWithSums($goal->id);
 
         return response()->json([
@@ -245,9 +224,7 @@ class GoalController extends Controller
         ]);
     }
 
-    /**
-     * Eliminar una meta 
-     */
+
     public function destroy($id)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
@@ -258,9 +235,6 @@ class GoalController extends Controller
         ]);
     }
 
-    /**
-     * Agregar Ingreso/Gasto
-     */
     public function addTransaction(StoreTransactionRequest $request, $goalId)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($goalId);
@@ -274,7 +248,6 @@ class GoalController extends Controller
             'occurred_on' => now()->toDateString(),
         ]);
 
-        // Recalcular progreso (ingresos - gastos)
         $totals = Transaction::selectRaw("
             SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) as inc,
             SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as exp
@@ -283,7 +256,6 @@ class GoalController extends Controller
         $accumulated = (float) (($totals->inc ?? 0) - ($totals->exp ?? 0));
         $progressPct = min(100, (int) round(($accumulated / max($goal->target_amount, 1)) * 100));
 
-        // Si llegó a 100% antes o en la fecha, completa (considera target_date null)
         if (
             $progressPct >= 100
             && (is_null($goal->target_date) || now()->toDateString() <= $goal->target_date)
@@ -293,7 +265,6 @@ class GoalController extends Controller
             $goal->save();
         }
 
-        // Devolver meta enriquecida para que el front no rebote
         $goal = $this->loadGoalWithSums($goal->id);
 
         return response()->json([
@@ -305,16 +276,12 @@ class GoalController extends Controller
         ], 201);
     }
 
-    /**
-     * Listar movimientos de una meta
-     */
     public function listTransactions($goalId, Request $request)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($goalId);
 
         $query = Transaction::where('goal_id', $goal->id);
 
-        // Filtro por fechas
         if ($request->has('start_date') && $request->has('end_date')) {
             $query->whereBetween('occurred_on', [
                 $request->start_date,
@@ -322,10 +289,8 @@ class GoalController extends Controller
             ]);
         }
 
-        // Filtro por tipo de transacción (fijo/variable)
         if ($request->has('is_fixed')) {
             $isFixedValue = $request->is_fixed;
-            // Convertir a boolean para asegurar compatibilidad
             $isFixedBool = filter_var($isFixedValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             
             \Illuminate\Support\Facades\Log::info('Filtering by is_fixed:', [
@@ -342,7 +307,6 @@ class GoalController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        // Debug: Log all transactions for this goal
         $allTransactions = Transaction::where('goal_id', $goal->id)->get(['id', 'type', 'is_fixed', 'amount', 'occurred_on']);
         \Illuminate\Support\Facades\Log::info('All transactions for goal ' . $goalId . ':', $allTransactions->toArray());
         \Illuminate\Support\Facades\Log::info('Filtered transactions:', $items->toArray());
@@ -353,9 +317,6 @@ class GoalController extends Controller
         ]);
     }
 
-    /**
-     * Eliminar movimiento y recalcular
-     */
     public function deleteTransaction($id)
     {
         $tx = Transaction::where('user_id', Auth::id())->findOrFail($id);
@@ -370,13 +331,11 @@ class GoalController extends Controller
         $accumulated = (float) (($totals->inc ?? 0) - ($totals->exp ?? 0));
         $progressPct = min(100, (int) round(($accumulated / max($goal->target_amount, 1)) * 100));
 
-        // Si estaba completed y bajó de 100, vuelve a active
         if ($goal->status === 'completed' && $progressPct < 100) {
             $goal->status = 'active';
             $goal->save();
         }
 
-        // Devolver meta enriquecida para actualizar UI
         $goal = $this->loadGoalWithSums($goal->id);
 
         return response()->json([

@@ -10,7 +10,6 @@ export default function GoogleCallbackPage() {
   const hasProcessed = useRef(false);
 
   useEffect(() => {
-    // Evitar procesamiento múltiple
     if (hasProcessed.current) return;
     
     const token = searchParams.get("token");
@@ -20,24 +19,19 @@ export default function GoogleCallbackPage() {
     hasProcessed.current = true;
 
     if (error) {
-      // Hay un error, redirigir al login con el mensaje de error
       navigate("/login?error=" + encodeURIComponent(error));
       return;
     }
 
     if (token && userParam) {
       try {
-        // Parsear datos del usuario
         const userData = JSON.parse(decodeURIComponent(userParam));
         
-        // Guardar token y datos del usuario (usar la misma clave que el interceptor)
         localStorage.setItem("jwt_token", token);
         localStorage.setItem("user", JSON.stringify(userData));
         
-        // Actualizar contexto de autenticación
         login(userData);
         
-        // Redirigir al dashboard después de un delay más largo para mostrar la pantalla
         setTimeout(() => {
           navigate("/dashboard");
         }, 1500); // 2.5 segundos

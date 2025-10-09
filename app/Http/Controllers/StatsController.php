@@ -90,7 +90,6 @@ class StatsController extends Controller
         $q = Goal::selectRaw('status, COUNT(*) as c')
             ->where('user_id', $userId);
 
-        // Opcional: si envías rango, filtra por fecha de creación
         if ($start && $end) {
             $q->whereBetween('created_at', [$start, $end]);
         }
@@ -324,14 +323,10 @@ class StatsController extends Controller
         return response()->json(['data' => $data]);
     }
 
-    /**
-     * Endpoint optimizado para el dashboard que combina múltiples estadísticas
-     */
     public function dashboardSummary(Request $request)
     {
         $userId = Auth::id();
         
-        // Últimos 12 meses para estadísticas
         $end = Carbon::now();
         $start = (clone $end)->subMonths(11)->startOfMonth();
         $params12m = [
@@ -339,7 +334,6 @@ class StatsController extends Controller
             'end' => $end->toDateString(),
         ];
 
-        // Cargar datos en paralelo usando consultas optimizadas
         $goals = Goal::where('user_id', $userId)
             ->withSum(['transactions as income_sum' => function ($q) {
                 $q->where('type', 'income');
@@ -349,7 +343,6 @@ class StatsController extends Controller
             }], 'amount')
             ->get();
 
-        // Calcular total ahorrado de los últimos 12 meses
         $totalAhorrado = Transaction::where('user_id', $userId)
             ->whereBetween('occurred_on', [$start->toDateString(), $end->toDateString()])
             ->selectRaw("
@@ -358,7 +351,6 @@ class StatsController extends Controller
             ")
             ->value('total') ?? 0;
 
-        // Metas activas con progreso calculado (todas las metas activas)
         $goalsActive = $goals->where('status', 'active')->map(function ($goal) {
             $accumulated = (float) (($goal->income_sum ?? 0) - ($goal->expense_sum ?? 0));
             return [
@@ -370,7 +362,6 @@ class StatsController extends Controller
             ];
         })->sortBy('name')->values();
 
-        // Metas completadas
         $goalsCompleted = $goals->where('status', 'completed')
             ->map(function ($goal) {
                 return [
@@ -385,11 +376,9 @@ class StatsController extends Controller
             ->take(20)
             ->values();
 
-        // Calcular meta mensual sugerida y progreso
         $currentMonth = Carbon::now()->format('Y-m');
         $monthlyData = $this->calculateMonthlySuggested($goals, $currentMonth);
         
-        // Distribución de metas
         $statusDistribution = $goals->groupBy('status')->map->count();
         $metasActivas = $statusDistribution->get('active', 0);
 
@@ -416,7 +405,6 @@ class StatsController extends Controller
             $createdMonth = Carbon::parse($goal->created_at)->format('Y-m');
             $targetMonth = Carbon::parse($goal->target_date)->format('Y-m');
 
-            // Si la meta está activa en el mes actual
             if ($currentMonth >= $createdMonth && $currentMonth <= $targetMonth) {
                 $monthsCount = Carbon::parse($goal->created_at)->diffInMonths(Carbon::parse($goal->target_date)) + 1;
                 if ($monthsCount > 0) {
@@ -424,7 +412,6 @@ class StatsController extends Controller
                 }
             }
 
-            // Calcular real del mes actual
             $monthStart = Carbon::parse($currentMonth . '-01')->startOfMonth();
             $monthEnd = Carbon::parse($currentMonth . '-01')->endOfMonth();
             

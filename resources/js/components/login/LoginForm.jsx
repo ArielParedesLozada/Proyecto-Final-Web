@@ -52,7 +52,6 @@ export default function LoginForm({ onSuccess }) {
     <form onSubmit={handleSubmit} noValidate>
       <FormError message={formError} />
 
-      {/* Campos */}
       <Input
         id="email"
         name="email"
@@ -77,21 +76,18 @@ export default function LoginForm({ onSuccess }) {
         {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
       </label>
 
-      {/* Ayudas sobre el password */}
       <div className="mb-4 flex justify-end">
         <a href="/forgot-password" className="text-sm text-indigo-600 hover:underline">
           ¿Olvidaste tu contraseña?
         </a>
       </div>
 
-      {/* ACCIÓN PRINCIPAL */}
       <div className="mt-4">
         <Button type="submit" className="btn btn-primary w-full" loading={loading}>
           Ingresar
         </Button>
       </div>
 
-      {/* Separador visual */}
       <div className="my-6 relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-200 dark:border-gray-700" />
@@ -101,7 +97,6 @@ export default function LoginForm({ onSuccess }) {
         </div>
       </div>
 
-      {/* Botón de Google OAuth */}
       <div className="mb-4">
         <GoogleAuthButton
           onSuccess={onSuccess}
@@ -110,7 +105,6 @@ export default function LoginForm({ onSuccess }) {
         />
       </div>
 
-      {/* Registro */}
       <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
         ¿No tienes cuenta?{" "}
         <a href="/register" className="text-primary-600 hover:underline">Crear cuenta</a>
