@@ -5,6 +5,7 @@ import {
     deleteRecurringRule,
 } from "../../services/transactions";
 import ConfirmModal from "../common/ConfirmModal";
+import ScrollArea from "../ui/ScrollArea";
 
 const FREQUENCIES = [
     { value: "monthly", label: "Mensual" },
@@ -226,7 +227,8 @@ export default function AddTxModal({
                 </div>
 
                 {/* Body */}
-                <div ref={dialogRef} className="px-5 pt-4 pb-5 max-h-[80vh] overflow-y-auto">
+                <ScrollArea className="max-h-[80vh]">
+                    <div ref={dialogRef} className="px-5 pt-4 pb-5">
                     {goal?.name && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 truncate whitespace-nowrap overflow-hidden">
                             Meta: <span className="font-medium text-gray-700 dark:text-gray-200" title={goal.name}>{goal.name}</span>
@@ -267,6 +269,7 @@ export default function AddTxModal({
 
                             {lockedFixed ? (
                                 <>
+                                <br />
                                     <div className="mt-1 inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-300 ring-1 ring-rose-500/20">
                                         Ya existe una regla fija para este {type === "income" ? "ingreso" : "gasto"} • {frequencyLabel} • Monto: ${Number(lockedInfo?.amount || 0).toLocaleString()}
                                     </div>
@@ -355,13 +358,17 @@ export default function AddTxModal({
                             )}
                         </div>
 
-                        {/* Frecuencia (si Fijo) */}
-                        {(kind === "Fijo" || lockedFixed) && (
+                        {/* Frecuencia (si Fijo) - Solo mostrar si NO se está editando una regla fija */}
+                        {(kind === "Fijo" || lockedFixed) && !editRuleOpen && (
                             <div>
                                 <label className="text-sm font-medium">Frecuencia</label>
                                 <select
                                     disabled={disabledInputs || lockedFixed}
-                                    className={`input-base mt-1 ${errors.frequency ? "input-error" : ""} ${disabledCls}`}
+                                    className={`input-base mt-1 ${errors.frequency ? "input-error" : ""} ${
+                                        (disabledInputs || lockedFixed) 
+                                            ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400" 
+                                            : ""
+                                    }`}
                                     value={lockedFixed ? (lockedInfo?.frequency || frequency) : frequency}
                                     onChange={(e) => setFrequency(e.target.value)}
                                 >
@@ -373,27 +380,33 @@ export default function AddTxModal({
                             </div>
                         )}
 
-                        {/* Monto (si hay regla fija: SOLO LECTURA y precargado) */}
-                        <div>
-                            <label className="text-sm font-medium">
-                                Monto {isIncome ? "(+)" : isExpense ? "(-)" : ""}
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                disabled={disabledInputs || lockedFixed}
-                                className={`input-base mt-1 ${errors.amount ? "input-error" : ""} ${disabledCls}`}
-                                placeholder="0.00"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                            />
-                            {(errors.amount || expenseTooHigh) && !lockedFixed && (
-                                <p className="text-xs text-red-500 mt-1">
-                                    {errors.amount || `El gasto excede tu saldo disponible ($${current.toLocaleString()}).`}
-                                </p>
-                            )}
-                        </div>
+                        {/* Monto - Solo mostrar si NO se está editando una regla fija */}
+                        {!editRuleOpen && (
+                            <div>
+                                <label className="text-sm font-medium">
+                                    Monto {isIncome ? "(+)" : isExpense ? "(-)" : ""}
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={disabledInputs || lockedFixed}
+                                    className={`input-base mt-1 ${errors.amount ? "input-error" : ""} ${
+                                        (disabledInputs || lockedFixed) 
+                                            ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400" 
+                                            : ""
+                                    }`}
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                />
+                                {(errors.amount || expenseTooHigh) && !lockedFixed && (
+                                    <p className="text-xs text-red-500 mt-1">
+                                        {errors.amount || `El gasto excede tu saldo disponible ($${current.toLocaleString()}).`}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Botón Guardar: se oculta completamente cuando hay regla fija */}
                         {!lockedFixed && (
@@ -408,7 +421,8 @@ export default function AddTxModal({
                             </div>
                         )}
                     </form>
-                </div>
+                    </div>
+                </ScrollArea>
             </div>
 
             {/* Confirmación elegante para eliminar regla */}
