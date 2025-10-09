@@ -16,8 +16,8 @@ export default function ConfirmModal({
         <h3 className="text-base md:text-lg font-semibold">{title}</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{message}</p>
         <div className="flex items-center justify-end gap-2 mt-5">
-          <button className="btn btn-ghost" onClick={onCancel}>{cancelText}</button>
-          <button className="btn btn-primary" onClick={onConfirm}>{confirmText}</button>
+          <button className="btn btn-ghost cursor-pointer" onClick={onCancel}>{cancelText}</button>
+          <button className="btn btn-primary cursor-pointer" onClick={onConfirm}>{confirmText}</button>
         </div>
       </div>
     </div>

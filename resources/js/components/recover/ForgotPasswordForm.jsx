@@ -60,7 +60,7 @@ export default function ForgotPasswordForm() {
         type="submit"
         disabled={loading}
         className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600
-                   hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg"
+                   hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Enviando..." : "Enviar enlace"}
       </button>

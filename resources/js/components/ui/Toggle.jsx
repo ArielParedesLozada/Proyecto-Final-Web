@@ -4,7 +4,7 @@ export default function Toggle({ checked, onChange }) {
       type="button"
       onClick={() => onChange?.(!checked)}
       className={[
-        "relative h-6 w-11 rounded-full transition",
+        "relative h-6 w-11 rounded-full transition cursor-pointer",
         checked ? "bg-primary-600" : "bg-gray-500/40",
       ].join(" ")}
       aria-pressed={checked}

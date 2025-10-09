@@ -1,6 +1,6 @@
 export default function Button({ children, loading, variant = "primary", ...props }) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:opacity-60 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed";
 
   const variants = {
     primary:

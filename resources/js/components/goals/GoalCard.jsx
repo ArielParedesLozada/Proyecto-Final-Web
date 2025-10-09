@@ -71,7 +71,7 @@ export default function GoalCard({
             {visualStatus}
           </span>
           <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 cursor-pointer"
             onClick={() => onEdit?.(goal)}
             title="Editar"
           >
@@ -80,7 +80,7 @@ export default function GoalCard({
             </svg>
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 cursor-pointer"
             onClick={() => onDelete?.(id)}
             title="Eliminar"
           >
@@ -117,7 +117,7 @@ export default function GoalCard({
       </div>
 
       <div className="pt-2">
-        <button className="btn btn-ghost" onClick={() => onAddTx?.(goal)}>
+        <button className="btn btn-ghost cursor-pointer" onClick={() => onAddTx?.(goal)}>
           Agregar Ingreso/Gasto
         </button>
       </div>

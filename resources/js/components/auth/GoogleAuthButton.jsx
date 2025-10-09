@@ -25,7 +25,7 @@ export default function GoogleAuthButton({ onSuccess, onError, disabled = false 
       type="button"
       onClick={handleGoogleAuth}
       disabled={disabled || loading}
-      className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 active:bg-gray-100 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 active:bg-gray-100 transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? (
         <>

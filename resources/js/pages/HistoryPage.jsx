@@ -204,7 +204,7 @@ function HistoryPageInner() {
                             subtitle="No encontramos metas con los filtros aplicados."
                             actions={
                                 <button
-                                    className="btn btn-ghost"
+                                    className="btn btn-ghost cursor-pointer"
                                     onClick={() => {
                                         setFilters(DEFAULT_FILTERS);
                                         toast.push({

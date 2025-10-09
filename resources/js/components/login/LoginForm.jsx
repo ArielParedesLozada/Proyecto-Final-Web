@@ -83,7 +83,7 @@ export default function LoginForm({ onSuccess }) {
       </div>
 
       <div className="mt-4">
-        <Button type="submit" className="btn btn-primary w-full" loading={loading}>
+        <Button type="submit" className="btn btn-primary w-full cursor-pointer" loading={loading}>
           Ingresar
         </Button>
       </div>

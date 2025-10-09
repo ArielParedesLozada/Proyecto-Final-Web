@@ -15,7 +15,7 @@ function Pill({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       className={[
-        "text-xs px-3 py-1.5 rounded-lg transition",
+        "text-xs px-3 py-1.5 rounded-lg transition cursor-pointer",
         active
           ? "bg-primary-600 text-white"
           : "bg-white dark:bg-gray-800 ring-1 ring-gray-200/70 dark:ring-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-700/60",

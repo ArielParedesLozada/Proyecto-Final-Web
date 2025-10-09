@@ -209,7 +209,7 @@ export default function ResetPasswordForm({ email, onBack }) {
         <button
           type="submit"
           disabled={loading || code.length !== 6}
-          className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Verificando..." : "Verificar código"}
         </button>
@@ -219,7 +219,7 @@ export default function ResetPasswordForm({ email, onBack }) {
             type="button"
             onClick={handleResendCode}
             disabled={resending}
-            className="w-full mt-3 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-3 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resending ? "Reenviando..." : "Reenviar código"}
           </button>
@@ -228,7 +228,7 @@ export default function ResetPasswordForm({ email, onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="w-full mt-3 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+          className="w-full mt-3 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
         >
           Volver
         </button>
@@ -287,7 +287,7 @@ export default function ResetPasswordForm({ email, onBack }) {
       <button
         type="submit"
         disabled={loading || success || !password || !passwordConfirmation || password !== passwordConfirmation}
-        className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Restableciendo..." : success ? "Redirigiendo..." : "Restablecer contraseña"}
       </button>

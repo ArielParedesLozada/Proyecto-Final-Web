@@ -17,7 +17,7 @@ export default function Switch({ checked, onChange, label, hint }) {
         aria-checked={checked}
         onClick={() => onChange?.(!checked)}
         className={[
-          "relative inline-flex shrink-0 items-center",
+          "relative inline-flex shrink-0 items-center cursor-pointer",
           "h-7 w-12 rounded-full transition-colors",
           checked ? "bg-primary-600" : "bg-gray-500/40",
           "ring-1 ring-inset",

@@ -25,7 +25,7 @@ export default function AvatarUploader({ url, name = "", onChange }) {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="absolute -bottom-1 -right-1 h-8 w-8 grid place-items-center rounded-full bg-primary-600 text-white ring-1 ring-white/10"
+          className="absolute -bottom-1 -right-1 h-8 w-8 grid place-items-center rounded-full bg-primary-600 text-white ring-1 ring-white/10 cursor-pointer"
           title="Cambiar foto"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

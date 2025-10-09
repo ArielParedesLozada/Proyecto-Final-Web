@@ -54,13 +54,11 @@ function GoalsPageInner() {
     });
   };
 
-  // Invalidar caché al montar el componente
   useEffect(() => {
     invalidateCache('goals-page');
   }, [invalidateCache]);
 
 
-  // Carga con opción "silenciosa" (no muestra loader)
   async function load(p = page, { silent = false, forceRefresh = false } = {}) {
     if (!silent) setLoading(true);
     try {
@@ -71,7 +69,7 @@ function GoalsPageInner() {
           page: p, 
           pageSize,
           filters: {
-            estados: ['Activa'] // Solo solicitar metas activas
+            estados: ['Activa'] 
           }
         }),
         { forceRefresh }
@@ -80,13 +78,11 @@ function GoalsPageInner() {
       if (res) {
         const rows = (res.data ?? []).map(goalApiToUi);
         
-        // Aplicar filtrado local para quitar metas completadas en tiempo real
         const filteredGoals = filterCompletedGoals(rows);
         
         setGoals(filteredGoals);
         setTotal(res.total ?? rows.length);
         
-        // Usar la paginación del servidor (importante para mantener la navegación correcta)
         const lp = res.last_page ?? Math.max(1, Math.ceil((res.total ?? rows.length) / (res.per_page ?? pageSize)));
         setLastPage(lp);
       }
@@ -96,17 +92,13 @@ function GoalsPageInner() {
   }
 
   useEffect(() => {
-    // Cargar datos con caché para mejor rendimiento
     load(page, { silent: false, forceRefresh: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Recargar datos cuando la página se vuelve visible (al regresar de otra página)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         console.log('Goals page became visible, refreshing data...');
-        // Invalidar TODOS los cachés de metas y recargar con datos frescos
         invalidateCache('goals-page');
         invalidateCache(`goals-page-${page}`);
         load(page, { silent: false, forceRefresh: true });
@@ -120,14 +112,12 @@ function GoalsPageInner() {
     };
   }, [page, invalidateCache]);
 
-  // Crear (optimista + refresh silencioso)
   async function handleCreateGoal(payload) {
     try {
       const resp = await createGoal(goalUiToApi(payload));
       toast.push({ tone: "success", title: "Meta creada" });
       setModalOpen(false);
 
-      // Invalidar caché y refrescar
       invalidateCache('goals-page');
       setPage(1);
       await load(1, { silent: true, forceRefresh: true });
@@ -136,7 +126,6 @@ function GoalsPageInner() {
     }
   }
 
-  // Editar (optimista + refresh silencioso)
   function handleEditGoal(goal) {
     setEditingGoal(goal);
     setModalMode("edit");
@@ -159,7 +148,6 @@ function GoalsPageInner() {
           }
           : g
       );
-      // Filtrar metas completadas para quitar en tiempo real
       return filterCompletedGoals(updated);
     });
 
@@ -167,27 +155,22 @@ function GoalsPageInner() {
       await updateGoal(id, goalUiToApi(rest));
       toast.push({ tone: "success", title: "Cambios guardados" });
 
-      // Disparar evento para notificar a otras páginas
       window.dispatchEvent(new CustomEvent('goalUpdated', { 
         detail: { goalId: id } 
       }));
 
-      // Traer versión canónica del back 
       try {
         const detail = await getGoal(id);
         const updated = goalApiToUi(detail.data);
         setGoals((arr) => {
           const updatedArr = arr.map((g) => (g.id === id ? updated : g));
-          // Filtrar metas completadas para quitar en tiempo real
           return filterCompletedGoals(updatedArr);
         });
       } catch {
-        // si falla el detalle, recargamos la página de forma silenciosa
         await load(page, { silent: true });
       }
     } catch (e) {
       toast.push({ tone: "error", title: "Error al actualizar", message: e?.message || "No se pudo actualizar la meta." });
-      // Podríamos revertir, pero la previa recarga silenciosa al fallar ya "corrige" el estado:
       invalidateCache('goals-page');
       await load(page, { silent: true, forceRefresh: true });
     } finally {
@@ -196,7 +179,6 @@ function GoalsPageInner() {
     }
   }
 
-  // Eliminar (optimista + refresh silencioso)
   function askDelete(id) {
     setToDeleteId(id);
     setConfirmOpen(true);
@@ -205,7 +187,6 @@ function GoalsPageInner() {
   async function confirmDelete() {
     if (toDeleteId == null) return;
 
-    // Optimista: eliminamos de la lista al instante
     setGoals((prev) => prev.filter((g) => g.id !== toDeleteId));
     setConfirmOpen(false);
 
@@ -213,19 +194,16 @@ function GoalsPageInner() {
       await deleteGoal(toDeleteId);
       toast.push({ tone: "success", title: "Meta eliminada" });
 
-      // Invalidar caché
       invalidateCache('goals-page');
 
-      // Si quedó la página vacía, traer contenido de la previa; siempre en silencio
       const afterDeleteCount = goals.length - 1;
       const pageNowEmpty = afterDeleteCount === 0 && page > 1;
       const nextPage = pageNowEmpty ? page - 1 : page;
 
-      setPage(nextPage); // actualiza el pager
+      setPage(nextPage); 
       await load(nextPage, { silent: true, forceRefresh: true });
     } catch (e) {
       toast.push({ tone: "error", title: "Error al eliminar", message: e?.message || "No se pudo eliminar la meta." });
-      // Recuperar estado real desde el back sin loader
       invalidateCache('goals-page');
       await load(page, { silent: true, forceRefresh: true });
     } finally {
@@ -233,7 +211,6 @@ function GoalsPageInner() {
     }
   }
 
-  // Ingreso / Gasto (optimista + refresh silencioso)
   function handleAddTx(goal) {
     setTxGoal(goal);
     setTxOpen(true);
@@ -245,7 +222,6 @@ function GoalsPageInner() {
     if (kind === "Variable") {
       const delta = type === "income" ? amt : -amt;
 
-      // Optimista y filtrar metas completadas
       setGoals((prev) => {
         const updated = prev.map((g) =>
           g.id === goalId
@@ -258,14 +234,11 @@ function GoalsPageInner() {
             }
             : g
         );
-        // Filtrar metas completadas para quitar en tiempo real
         return filterCompletedGoals(updated);
       });
 
       try {
         await addTransaction(goalId, { type, amount: amt });
-
-        // Disparar evento para notificar a otras páginas
         window.dispatchEvent(new CustomEvent('transactionAdded', { 
           detail: { goalId, type, amount: amt } 
         }));
@@ -274,10 +247,8 @@ function GoalsPageInner() {
           const detail = await getGoal(goalId);
           const updated = goalApiToUi(detail.data);
           
-          // Actualizar la meta y filtrar completadas
           setGoals((arr) => {
             const updatedArr = arr.map((g) => (g.id === goalId ? updated : g));
-            // Filtrar metas completadas para quitar en tiempo real
             return filterCompletedGoals(updatedArr);
           });
         } catch {
@@ -290,7 +261,6 @@ function GoalsPageInner() {
           message: `${type === "income" ? "+" : "-"}$${amt.toLocaleString()}`,
         });
       } catch (e) {
-        // Revertir optimista y filtrar metas completadas
         setGoals((prev) => {
           const reverted = prev.map((g) =>
             g.id === goalId
@@ -303,7 +273,6 @@ function GoalsPageInner() {
               }
               : g
           );
-          // Filtrar metas completadas para quitar en tiempo real
           return filterCompletedGoals(reverted);
         });
         toast.push({

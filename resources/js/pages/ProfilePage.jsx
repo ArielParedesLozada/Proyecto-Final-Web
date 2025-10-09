@@ -315,7 +315,7 @@ function ProfilePageInner() {
                 right={
                   <button
                     type="submit"
-                    className="btn btn-primary disabled:opacity-60"
+                    className="btn btn-primary cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     disabled={saving || !hasAccountChanges}
                   >
                     {saving ? "Guardando…" : "Guardar cambios"}
@@ -401,7 +401,7 @@ function ProfilePageInner() {
               <div className="mt-6 pt-4 border-t border-black/5 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  className="btn btn-ghost"
+                  className="btn btn-ghost cursor-pointer"
                   onClick={() => {
                     setCurrentPwd("");
                     setNewPwd("");
@@ -417,7 +417,7 @@ function ProfilePageInner() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary disabled:opacity-60"
+                  className="btn btn-primary cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={changing || !canChangePassword}
                 >
                   {changing ? "Actualizando…" : "Actualizar contraseña"}
