@@ -34,7 +34,7 @@ export default function StatPro({
   return (
     <div
       className={[
-        "fin-card p-4 md:p-5 h-full flex flex-col justify-between relative overflow-hidden",
+        "fin-card p-3 md:p-4 h-full flex flex-col justify-between relative overflow-hidden",
         "ring-1 ring-white/5", 
         t.cardRing,           
       ].join(" ")}
@@ -60,7 +60,7 @@ export default function StatPro({
           {loading ? (
             <div className="mt-2 h-8 w-28 rounded-md bg-gray-300/30 dark:bg-gray-700/40 animate-pulse" />
           ) : (
-            <p className="text-3xl font-semibold tracking-tight mt-1">
+            <p className="text-2xl font-semibold tracking-tight mt-1">
               {value}
             </p>
           )}

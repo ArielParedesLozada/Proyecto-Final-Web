@@ -20,19 +20,21 @@ export default function Pagination({
 
   return (
     <div className={clsx("w-full", className)}>
-      {/* Texto informativo */}
-      <div className="text-center mb-3">
-        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-          Página {page} de {Math.max(1, totalPages)}
-        </span>
-      </div>
+      {/* Layout horizontal: texto a la izquierda, botones a la derecha */}
+      <div className="flex items-center justify-between">
+        {/* Texto informativo a la izquierda */}
+        <div>
+          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            Página {page} de {Math.max(1, totalPages)}
+          </span>
+        </div>
 
-      {/* Controles de paginación */}
-      <div
-        role="navigation"
-        aria-label="Paginación"
-        className="flex items-center justify-center gap-1"
-      >
+        {/* Controles de paginación a la derecha */}
+        <div
+          role="navigation"
+          aria-label="Paginación"
+          className="flex items-center gap-1"
+        >
         {/* Botón Primera página */}
         <button
           className={clsx(
@@ -115,6 +117,7 @@ export default function Pagination({
         >
           »
         </button>
+        </div>
       </div>
     </div>
   );

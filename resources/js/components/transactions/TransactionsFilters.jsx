@@ -93,7 +93,7 @@ export default function TransactionsFilters({
   }));
 
   return (
-    <div className="fin-card p-4 md:p-5 mb-3">
+    <div className="fin-card p-4 md:p-5 mb-2">
       <div className="flex flex-wrap items-center gap-3">
         {loading ? (
           <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
@@ -129,6 +129,28 @@ export default function TransactionsFilters({
           </div>
         </div>
 
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">Desde:</span>
+          <input
+            type="date"
+            className="input-base w-36"
+            value={dateRange.start || ""}
+            onChange={(e) => handleDateChange('start', e.target.value)}
+            title="Fecha inicio"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">Hasta:</span>
+          <input
+            type="date"
+            className="input-base w-36"
+            value={dateRange.end || ""}
+            onChange={(e) => handleDateChange('end', e.target.value)}
+            title="Fecha fin"
+          />
+        </div>
+
         <button
           type="button"
           onClick={handleClear}
@@ -137,28 +159,6 @@ export default function TransactionsFilters({
         >
           Limpiar
         </button>
-      </div>
-
-      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label className="block">
-          <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha inicio</span>
-          <input
-            type="date"
-            className="input-base"
-            value={dateRange.start || ""}
-            onChange={(e) => handleDateChange('start', e.target.value)}
-          />
-        </label>
-        
-        <label className="block">
-          <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha fin</span>
-          <input
-            type="date"
-            className="input-base"
-            value={dateRange.end || ""}
-            onChange={(e) => handleDateChange('end', e.target.value)}
-          />
-        </label>
       </div>
     </div>
   );

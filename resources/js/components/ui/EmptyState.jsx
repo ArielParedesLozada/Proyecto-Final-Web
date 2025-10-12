@@ -155,15 +155,13 @@ export default function EmptyState({
         <div className="text-center space-y-1">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             {variant === 'goals' ? 'Tu viaje financiero comienza aquí' :
-             variant === 'transactions' ? 'Organiza tus finanzas paso a paso' :
              variant === 'history' ? 'Construye tu historial financiero' :
              'Comienza tu experiencia'}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500">
             {variant === 'goals' ? 'Cada meta es un paso hacia la libertad financiera' :
-             variant === 'transactions' ? 'El control financiero comienza con el primer registro' :
              variant === 'history' ? 'Tu progreso financiero se construye día a día' :
-             'Cada acción cuenta en tu camino hacia el éxito'}
+             ''}
           </p>
         </div>
       </div>

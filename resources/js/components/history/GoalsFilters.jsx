@@ -24,16 +24,17 @@ export default function GoalsFilters({ value, onChange, onClear }) {
 
     return (
         <div className="fin-card p-4 md:p-5 mb-3">
-            <div className="flex flex-wrap items-center gap-3">
+            {/* Primera fila: Búsqueda y Categorías */}
+            <div className="flex items-center gap-3 mb-3">
                 <input
-                    className="input-base w-64"
+                    className="input-base w-52"
                     placeholder="Buscar por nombre…"
                     value={f.search}
                     onChange={(e) => onChange({ ...f, search: e.target.value })}
                 />
 
                 <select
-                    className="input-base w-48"
+                    className="input-base w-44"
                     value={f.categoria}
                     onChange={(e) => onChange({ ...f, categoria: e.target.value })}
                 >
@@ -42,8 +43,12 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                         <option key={c} value={c}>{c}</option>
                     ))}
                 </select>
+            </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+            {/* Segunda fila: Estados, Fechas, Checkbox y Botón */}
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Tipo:</span>
                     {ESTADOS_UI.map((label) => {
                         const active = f.estados.includes(label);
                         return (
@@ -51,10 +56,10 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                                 key={label}
                                 type="button"
                                 onClick={() => toggleEstado(label)}
-                                className={`px-3 py-1.5 rounded-full text-sm ring-1 transition
+                                className={`px-3 py-1.5 rounded-full text-sm border transition
                   ${active
-                                        ? "bg-primary-600 text-white ring-primary-600"
-                                        : "text-gray-600 ring-gray-300 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/40"}`}
+                                        ? "bg-primary-600 text-white border-primary-600"
+                                        : "text-gray-600 border-gray-300 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700/40"}`}
                             >
                                 {label}
                             </button>
@@ -62,7 +67,29 @@ export default function GoalsFilters({ value, onChange, onClear }) {
                     })}
                 </div>
 
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 ml-auto">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Desde:</span>
+                    <input
+                        type="date"
+                        className="input-base w-36"
+                        value={f.creadaDesde}
+                        onChange={(e) => onChange({ ...f, creadaDesde: e.target.value })}
+                        title="Creada desde"
+                    />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Hasta:</span>
+                    <input
+                        type="date"
+                        className="input-base w-36"
+                        value={f.venceHasta}
+                        onChange={(e) => onChange({ ...f, venceHasta: e.target.value })}
+                        title="Vence hasta"
+                    />
+                </div>
+
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <input
                         type="checkbox"
                         checked={f.vence7dias}
@@ -74,36 +101,12 @@ export default function GoalsFilters({ value, onChange, onClear }) {
 
                 <button
                     type="button"
-                    className="btn btn-primary cursor-pointer shadow-sm"
+                    className="btn btn-primary cursor-pointer shadow-sm ml-auto"
                     onClick={onClear}
                     title="Limpiar filtros"
                 >
                     Limpiar
                 </button>
-            </div>
-
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className="block">
-                    <span className="block text-xs text-gray-500">Creada desde</span>
-                    <input
-                        type="date"
-                        className="input-base"
-                        value={f.creadaDesde}
-                        onChange={(e) => onChange({ ...f, creadaDesde: e.target.value })}
-                        placeholder="dd/mm/aaaa"
-                    />
-                </label>
-
-                <label className="block">
-                    <span className="block text-xs text-gray-500">Vence hasta</span>
-                    <input
-                        type="date"
-                        className="input-base"
-                        value={f.venceHasta}
-                        onChange={(e) => onChange({ ...f, venceHasta: e.target.value })}
-                        placeholder="dd/mm/aaaa"
-                    />
-                </label>
             </div>
         </div>
     );

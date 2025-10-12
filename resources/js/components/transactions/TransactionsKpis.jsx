@@ -40,7 +40,7 @@ export default function TransactionsKpis({ totals }) {
   const { income = 0, expense = 0, balance = 0 } = totals ?? {};
 
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 auto-rows-fr">
+    <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 auto-rows-fr">
       <StatPro
         title="Total Ingresos"
         value={`$${income.toLocaleString()}`}
