@@ -251,8 +251,10 @@ function TransactionsByGoalPageInner() {
     return (
       <AppLayout header={header}>
         <Empty
+          variant="goals"
           title="No hay metas disponibles"
-          subtitle="Crea una meta para poder ver sus transacciones"
+          subtitle="Crea una meta para poder ver sus transacciones y movimientos financieros."
+          description="Necesitas tener al menos una meta de ahorro activa para poder registrar y visualizar tus ingresos y gastos."
         />
       </AppLayout>
     );
@@ -347,14 +349,13 @@ function TransactionsByGoalPageInner() {
                   />
                 ))
               ) : (
-                <div className="text-center py-12">
-                  <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Sin ingresos registrados</p>
-                </div>
+                <Empty
+                  variant="transactions"
+                  title="Sin ingresos registrados"
+                  subtitle="Aún no tienes ingresos registrados para esta meta."
+                  description="Los ingresos pueden ser variables (como salarios ocasionales) o fijos (como rentas recurrentes)."
+                  size="small"
+                />
                 )}
               </ScrollArea>
               </div>
@@ -402,14 +403,13 @@ function TransactionsByGoalPageInner() {
                   />
                 ))
               ) : (
-                <div className="text-center py-12">
-                  <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Sin gastos registrados</p>
-                </div>
+                <Empty
+                  variant="transactions"
+                  title="Sin gastos registrados"
+                  subtitle="Aún no tienes gastos registrados para esta meta."
+                  description="Los gastos pueden ser variables (como compras puntuales) o fijos (como suscripciones mensuales)."
+                  size="small"
+                />
                 )}
               </ScrollArea>
             </div>

@@ -164,7 +164,12 @@ export default function DashboardPage() {
                     <GoalItem key={g.id} name={g.name} current={g.current} target={g.target} />
                   ))
                 ) : (
-                  <Empty title="Sin metas activas" subtitle="Crea tu primera meta para empezar." />
+                  <Empty 
+                    variant="goals"
+                    title="Sin metas activas" 
+                    subtitle="Crea tu primera meta para empezar tu viaje hacia el ahorro."
+                    description="Las metas te ayudan a organizar tus finanzas y alcanzar tus objetivos financieros de manera estructurada."
+                  />
                 )}
               </ScrollArea>
             </div>
@@ -186,7 +191,12 @@ export default function DashboardPage() {
                     }))}
                   />
                 ) : (
-                  <Empty title="Nada completado aún" subtitle="Aquí verás tus logros recientes." />
+                  <Empty 
+                    variant="completed"
+                    title="Nada completado aún" 
+                    subtitle="Aquí verás tus logros recientes cuando completes tus metas."
+                    description="Cada meta completada representa un paso importante hacia tus objetivos financieros."
+                  />
                 )}
               </ScrollArea>
             </div>

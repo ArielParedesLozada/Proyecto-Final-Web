@@ -382,8 +382,10 @@ function GoalsPageInner() {
           <GoalGridSkeleton />
         ) : goals.length === 0 ? (
           <Empty
+            variant="goals"
             title="Aún no tienes metas de ahorro"
             subtitle="Crea tu primera meta para comenzar a registrar tu progreso financiero."
+            description="Las metas de ahorro te ayudan a organizar tus finanzas, establecer objetivos claros y hacer un seguimiento de tu progreso hacia la independencia financiera."
           />
         ) : (
           <>

@@ -200,23 +200,10 @@ function HistoryPageInner() {
                         </div>
                     ) : items.length === 0 ? (
                         <Empty
+                            variant="history"
                             title="Sin resultados"
                             subtitle="No encontramos metas con los filtros aplicados."
-                            actions={
-                                <button
-                                    className="btn btn-ghost cursor-pointer"
-                                    onClick={() => {
-                                        setFilters(DEFAULT_FILTERS);
-                                        toast.push({
-                                            tone: "success",
-                                            title: "Filtros limpiados",
-                                            message: "Se restablecieron todos los filtros.",
-                                        });
-                                    }}
-                                >
-                                    Limpiar filtros
-                                </button>
-                            }
+                            description="Intenta ajustar los filtros de búsqueda o crear nuevas metas para ver más resultados en tu historial."
                         />
                     ) : (
                         <>
