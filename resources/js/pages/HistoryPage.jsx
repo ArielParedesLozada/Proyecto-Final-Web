@@ -178,8 +178,8 @@ function HistoryPageInner() {
 
     return (
         <AppLayout header={header}>
-            <ResponsivePane>
-                {/* Filtros */}
+            <div className="flex flex-col min-h-0 xl:h-full gap-4">
+                {/* Filtros - Siempre visibles */}
                 <GoalsFilters
                     value={filters}
                     onChange={(v) => setFilters(v)}
@@ -193,7 +193,8 @@ function HistoryPageInner() {
                     }}
                 />
 
-                <ScrollArea className="space-y-3">
+                <ResponsivePane>
+                    <ScrollArea className="space-y-3">
                     {loading ? (
                         <div className="fin-card p-6 text-sm text-gray-500 dark:text-gray-400">
                             Cargando…
@@ -225,8 +226,9 @@ function HistoryPageInner() {
                             />
                         </>
                     )}
-                </ScrollArea>
-            </ResponsivePane>
+                    </ScrollArea>
+                </ResponsivePane>
+            </div>
 
             <GoalDetailsModal
                 open={detailOpen}
