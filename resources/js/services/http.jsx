@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// .env del front: VITE_API_URL = http://localhost:8000/api
 export const BASE = import.meta.env?.VITE_API_URL ?? "http://localhost:8000/api";
 
 export const TOKEN_KEY = "jwt_token";

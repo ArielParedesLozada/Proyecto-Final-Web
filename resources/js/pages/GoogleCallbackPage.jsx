@@ -40,10 +40,9 @@ export default function GoogleCallbackPage() {
         navigate("/login?error=" + encodeURIComponent("Error al procesar la autenticación"));
       }
     } else {
-      // No hay token, redirigir al login
       navigate("/login");
     }
-  }, []); // Dependencias vacías para evitar re-renders
+  }, []); 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
