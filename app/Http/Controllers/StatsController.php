@@ -188,7 +188,9 @@ class StatsController extends Controller
         $userId = Auth::id();
 
         $months = $this->getMonthsRange($start, $end);
-        if (empty($months)) return response()->json(['data' => []]);
+        if (empty($months)) {
+            return response()->json(['data' => []]);
+        }
 
         $monthEnds = $this->mapMonthEndCarbon($months);
         $goals = Goal::where('user_id', $userId)->get(['id', 'target_amount']);
@@ -200,29 +202,39 @@ class StatsController extends Controller
             ->where('user_id', $userId)
             ->whereBetween('occurred_on', [$firstMonthStart->toDateString(), $lastMonthEnd->toDateString()])
             ->orderBy('occurred_on')
-            ->get();
+            ->get()
+            ->values();
 
-        $cumByGoal = [];
+        $cumByGoal = [];   
         $monthData = [];
+
+        $i = 0;                      
+        $n = $tx->count();
 
         foreach ($months as $ym) {
             $monthEnd = $monthEnds[$ym];
 
-            foreach ($tx as $row) {
-                if (Carbon::parse($row->occurred_on)->gt($monthEnd)) break;
-                $g = (int)$row->goal_id;
-                if (!isset($cumByGoal[$g])) $cumByGoal[$g] = 0.0;
-                $cumByGoal[$g] += ($row->type === 'income' ? (float)$row->amount : -(float)$row->amount);
+            while ($i < $n && Carbon::parse($tx[$i]->occurred_on)->lte($monthEnd)) {
+                $row = $tx[$i];
+                $gId = (int)$row->goal_id;
+                if (!isset($cumByGoal[$gId])) {
+                    $cumByGoal[$gId] = 0.0;
+                }
+                $cumByGoal[$gId] += ($row->type === 'income' ? (float)$row->amount : -(float)$row->amount);
+                $i++;
             }
 
             $sumPct = 0.0;
-            $count = 0;
+            $count  = 0;
+
             foreach ($goals as $g) {
-                if ($g->target_amount <= 0) continue;
-                $acc = $cumByGoal[$g->id] ?? 0.0;
-                $pct = min(100, max(0, round(($acc / $g->target_amount) * 100)));
-                $sumPct += $pct;
-                $count++;
+                if ($g->target_amount > 0) {
+                    $acc = $cumByGoal[$g->id] ?? 0.0;
+                    $pct = ($acc / $g->target_amount) * 100.0;
+                    $pct = max(0, min(100, round($pct)));
+                    $sumPct += $pct;
+                    $count++;
+                }
             }
             $avg = $count > 0 ? round($sumPct / $count, 2) : 0.0;
             $monthData[] = ['month' => $ym, 'completion' => $avg];
