@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import {
   TextInput,
   Text,
@@ -9,8 +11,11 @@ import {
 } from 'react-native-paper';
 import { Button, PasswordInput } from '../components/ui';
 import { router } from 'expo-router';
-import { login } from '../services/auth';
+import { login, getGoogleAuthUrl, parseGoogleCallback, setToken } from '../services/auth';
 import { useAuth } from '../contexts/AuthContext';
+import GoogleAuthButton from '../components/ui/GoogleAuthButton';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const theme = useTheme();
@@ -19,6 +24,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -62,6 +68,47 @@ export default function LoginScreen() {
       setSnackbarVisible(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setSnackbarVisible(false);
+
+    try {
+      const redirectUri = Linking.createURL('/auth/google/callback');
+      const response = await getGoogleAuthUrl(redirectUri);
+
+      if (!response?.success || !response?.url) {
+        throw new Error('No se pudo obtener la URL de Google');
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(response.url, redirectUri);
+
+      if (result.type === 'success' && result.url) {
+        const { token, user, error } = parseGoogleCallback(result.url);
+
+        if (error) {
+          throw new Error(error);
+        }
+
+        if (!token || !user) {
+          throw new Error('Respuesta inválida del servicio de Google');
+        }
+
+        await setToken(token);
+        setUser(user);
+        router.replace('/(tabs)');
+      } else if (result.type === 'cancel') {
+        setSnackbarMessage('Inicio de sesión cancelado');
+        setSnackbarVisible(true);
+      }
+    } catch (error: any) {
+      const message = error.message || 'Error al autenticar con Google';
+      setSnackbarMessage(message);
+      setSnackbarVisible(true);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -189,6 +236,13 @@ export default function LoginScreen() {
                 }}
               />
             </View>
+
+            <GoogleAuthButton
+              onPress={handleGoogleLogin}
+              loading={googleLoading}
+              disabled={loading}
+              style={{ marginBottom: 16 }}
+            />
 
             <View style={{ alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' }}>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
