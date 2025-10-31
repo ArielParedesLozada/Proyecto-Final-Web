@@ -17,7 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt.auth' => \App\Http\Middleware\JWTMiddleware::class,
         ]);
 
-        $middleware->web(append: [
+        $middleware->appendToGroup('web', [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+
+        $middleware->appendToGroup('api', [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
     })
