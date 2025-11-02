@@ -5,9 +5,8 @@ import {
   Text,
   Card,
   useTheme,
-  Snackbar,
 } from 'react-native-paper';
-import { Button, PasswordInput } from '../ui';
+import { Button, PasswordInput, ImagePicker, Toast } from '../ui';
 import { router } from 'expo-router';
 import { register } from '../../services/auth';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +16,7 @@ export default function RegisterForm() {
   const { login: setUser } = useAuth();
 
   const [values, setValues] = useState({
+    profile_image_url: null as string | null,
     first_name: '',
     last_name: '',
     email: '',
@@ -25,6 +25,7 @@ export default function RegisterForm() {
   });
 
   const [errors, setErrors] = useState<{
+    profile_image_url?: string;
     first_name?: string;
     last_name?: string;
     email?: string;
@@ -33,12 +34,17 @@ export default function RegisterForm() {
   }>({});
 
   const [loading, setLoading] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarType, setSnackbarType] = useState<'error' | 'success'>('error');
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'error' | 'success' | 'info'>('info');
+  const [showPassword, setShowPassword] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
+
+    if (!values.profile_image_url) {
+      newErrors.profile_image_url = 'La imagen de perfil es obligatoria';
+    }
 
     if (!values.first_name.trim()) {
       newErrors.first_name = 'Los nombres son obligatorios';
@@ -75,6 +81,7 @@ export default function RegisterForm() {
 
   const isFormValid = (): boolean => {
     return (
+      !!values.profile_image_url &&
       values.first_name.trim() !== '' &&
       values.last_name.trim() !== '' &&
       values.email.trim() !== '' &&
@@ -94,6 +101,7 @@ export default function RegisterForm() {
 
     try {
       const response = await register({
+        profile_image_url: values.profile_image_url!,
         first_name: values.first_name.trim(),
         last_name: values.last_name.trim(),
         email: values.email.trim(),
@@ -106,19 +114,19 @@ export default function RegisterForm() {
           setUser(response.data.user);
         }
 
-        setSnackbarMessage(
+        setToastMessage(
           '¡Cuenta creada exitosamente! Te hemos enviado un correo de bienvenida. Redirigiendo...'
         );
-        setSnackbarType('success');
-        setSnackbarVisible(true);
+        setToastType('success');
+        setToastVisible(true);
 
         setTimeout(() => {
           router.replace('/login');
-        }, 2000);
+        }, 4000); // Aumentado a 4 segundos para que el usuario vea el mensaje
       } else {
-        setSnackbarMessage(response?.message || 'No se pudo crear la cuenta. Intenta nuevamente.');
-        setSnackbarType('error');
-        setSnackbarVisible(true);
+        setToastMessage(response?.message || 'No se pudo crear la cuenta. Intenta nuevamente.');
+        setToastType('error');
+        setToastVisible(true);
       }
     } catch (error: any) {
       let message = 'No se pudo crear la cuenta. Intenta nuevamente.';
@@ -134,9 +142,9 @@ export default function RegisterForm() {
         message = error.message || message;
       }
 
-      setSnackbarMessage(message);
-      setSnackbarType('error');
-      setSnackbarVisible(true);
+      setToastMessage(message);
+      setToastType('error');
+      setToastVisible(true);
     } finally {
       setLoading(false);
     }
@@ -146,6 +154,13 @@ export default function RegisterForm() {
     setValues((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const updateImage = (imageUri: string | null) => {
+    setValues((prev) => ({ ...prev, profile_image_url: imageUri }));
+    if (errors.profile_image_url) {
+      setErrors((prev) => ({ ...prev, profile_image_url: undefined }));
     }
   };
 
@@ -183,6 +198,15 @@ export default function RegisterForm() {
             >
               Regístrate para planificar tus metas, registrar ingresos y controlar tus gastos
             </Text>
+
+            {/* Imagen de perfil - Primer campo */}
+            <ImagePicker
+              label="Foto de perfil"
+              value={values.profile_image_url}
+              onChange={updateImage}
+              errorMessage={errors.profile_image_url}
+              required
+            />
 
             {/* Nombres y Apellidos en fila */}
             <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
@@ -258,6 +282,8 @@ export default function RegisterForm() {
               onChangeText={(text) => updateField('password', text)}
               errorMessage={errors.password}
               helperText="Mínimo 8 caracteres, incluye letras y números."
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
             />
 
             {/* Confirmar Contraseña */}
@@ -268,6 +294,8 @@ export default function RegisterForm() {
               onChangeText={(text) => updateField('password_confirmation', text)}
               errorMessage={errors.password_confirmation}
               leftIcon="lock-outline"
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
             />
 
             {/* Botón de registro */}
@@ -303,29 +331,14 @@ export default function RegisterForm() {
         </Card>
       </ScrollView>
 
-      {/* Snackbar para errores y mensajes de éxito */}
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={snackbarType === 'success' ? 2000 : 4000}
-        style={{
-          backgroundColor:
-            snackbarType === 'success'
-              ? theme.colors.tertiaryContainer
-              : theme.colors.errorContainer,
-        }}
-      >
-        <Text
-          style={{
-            color:
-              snackbarType === 'success'
-                ? theme.colors.onTertiaryContainer
-                : theme.colors.onErrorContainer,
-          }}
-        >
-          {snackbarMessage}
-        </Text>
-      </Snackbar>
+      {/* Toast para errores y mensajes de éxito */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        duration={toastType === 'success' ? 4000 : undefined}
+        onDismiss={() => setToastVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

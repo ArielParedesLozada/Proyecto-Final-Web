@@ -29,6 +29,12 @@ export default function Button({
   const theme = useTheme();
 
   const getButtonConfig = () => {
+    // Extraer borderColor del estilo si existe (puede ser objeto o array)
+    const styleObj = Array.isArray(style) 
+      ? style.find(s => s && typeof s === 'object' && 'borderColor' in s) || {}
+      : (style || {});
+    const borderColor = (styleObj as any)?.borderColor;
+
     switch (variant) {
       case 'primary':
         return {
@@ -48,7 +54,7 @@ export default function Button({
         return {
           mode: 'outlined' as const,
           buttonColor: 'transparent',
-          textColor: theme.colors.primary,
+          textColor: borderColor || theme.colors.primary,
           style: [styles.button, styles.outlined, fullWidth && styles.fullWidth, style],
         };
       case 'text':

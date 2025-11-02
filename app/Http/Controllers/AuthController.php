@@ -24,7 +24,7 @@ class AuthController extends Controller
             'last_name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'string', 'email', 'max:191', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'profile_image_url' => ['nullable', 'string', 'max:255', 'url'],
+            'profile_image_url' => ['required', 'string', 'max:1000000'], // Máximo 1MB
         ]);
 
         if ($validator->fails()) {
@@ -35,6 +35,7 @@ class AuthController extends Controller
             ], 422);
         }
 
+        try {
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -44,6 +45,15 @@ class AuthController extends Controller
         ]);
 
         $token = JWTAuth::fromUser($user);
+        } catch (\Exception $e) {
+            \Log::error('Register error: ' . $e->getMessage());
+            \Log::error('Register error trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el usuario: ' . $e->getMessage()
+            ], 500);
+        }
 
         try {
             Mail::to($user->email)->send(new WelcomeEmail($user));
@@ -192,7 +202,7 @@ class AuthController extends Controller
                 'first_name' => ['sometimes', 'required', 'string', 'max:60'],
                 'last_name' => ['sometimes', 'required', 'string', 'max:80'],
                 'email' => ['sometimes', 'required', 'string', 'email', 'max:191', 'unique:users,email,' . $user->id],
-                'profile_image_url' => ['nullable', 'string', 'max:255', 'url'],
+                'profile_image_url' => ['nullable', 'string', 'max:1000000'], // Máximo 1MB para imágenes base64
             ], [
                 'first_name.required' => 'Los nombres son obligatorios',
                 'first_name.max' => 'Los nombres no pueden tener más de 60 caracteres',
@@ -202,8 +212,7 @@ class AuthController extends Controller
                 'email.email' => 'El formato del correo no es válido',
                 'email.unique' => 'Este correo ya está registrado por otro usuario',
                 'email.max' => 'El correo no puede tener más de 191 caracteres',
-                'profile_image_url.url' => 'La URL de la imagen no es válida',
-                'profile_image_url.max' => 'La URL de la imagen no puede tener más de 255 caracteres'
+                'profile_image_url.max' => 'La imagen es demasiado grande. Por favor, selecciona una imagen más pequeña.'
             ]);
 
             if ($validator->fails()) {

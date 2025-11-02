@@ -8,6 +8,8 @@ export interface PasswordInputProps extends Omit<TextInputProps, 'secureTextEntr
   showPasswordIcon?: boolean;
   leftIcon?: string;
   containerStyle?: ViewStyle;
+  showPassword?: boolean;
+  onToggleShowPassword?: () => void;
 }
 
 /**
@@ -33,10 +35,23 @@ export default function PasswordInput({
   leftIcon = 'lock',
   containerStyle,
   style,
+  showPassword: externalShowPassword,
+  onToggleShowPassword,
   ...props
 }: PasswordInputProps) {
   const theme = useTheme();
-  const [showPassword, setShowPassword] = useState(false);
+  const [internalShowPassword, setInternalShowPassword] = useState(false);
+  
+  // Usar estado externo si se proporciona, sino usar estado interno
+  const showPassword = externalShowPassword !== undefined ? externalShowPassword : internalShowPassword;
+  
+  const handleTogglePassword = () => {
+    if (onToggleShowPassword) {
+      onToggleShowPassword();
+    } else {
+      setInternalShowPassword(!internalShowPassword);
+    }
+  };
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -61,7 +76,7 @@ export default function PasswordInput({
           showPasswordIcon ? (
             <TextInput.Icon
               icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(!showPassword)}
+              onPress={handleTogglePassword}
             />
           ) : undefined
         }

@@ -39,7 +39,14 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La aplicación necesita acceso a tus fotos para que puedas seleccionar una imagen de perfil.",
+          "cameraPermission": "La aplicación necesita acceso a tu cámara para que puedas tomar una foto de perfil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -47,7 +54,7 @@
     },
     "extra": {
       
-      "apiUrl": "http://10-79-9-75.nip.io:8000/api"
+      "apiUrl": "http://192-168-1-60.nip.io:8000/api"
     }
   }
 }

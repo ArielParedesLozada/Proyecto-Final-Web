@@ -2,14 +2,17 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider, useTheme } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { lightTheme as paperLightTheme, darkTheme as paperDarkTheme } from '@/constants/paper-theme';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
+import { GoalsProvider } from '@/contexts/GoalsContext';
+import { useColorScheme as useRNColorScheme } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,9 +22,9 @@ export const unstable_settings = {
 
 function ThemedNavigationProvider({ children }: { children: React.ReactNode }) {
   const paperTheme = useTheme();
-  const colorScheme = useColorScheme();
+  const { effectiveTheme } = useAppTheme();
   
-  const navigationTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = effectiveTheme === 'dark' ? DarkTheme : DefaultTheme;
 
   const customNavigationTheme = {
     ...navigationTheme,
@@ -43,9 +46,9 @@ function ThemedNavigationProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const paperTheme = colorScheme === 'dark' ? paperDarkTheme : paperLightTheme;
+function RootLayoutContent() {
+  const { effectiveTheme } = useAppTheme();
+  const paperTheme = effectiveTheme === 'dark' ? paperDarkTheme : paperLightTheme;
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -64,8 +67,10 @@ export default function RootLayout() {
   }
 
   return (
+    <SafeAreaProvider>
     <PaperProvider theme={paperTheme}>
       <AuthProvider>
+          <GoalsProvider>
         <ThemedNavigationProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
@@ -74,9 +79,20 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
         </ThemedNavigationProvider>
+          </GoalsProvider>
       </AuthProvider>
     </PaperProvider>
+    </SafeAreaProvider>
+  );
+}
+
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
   );
 }

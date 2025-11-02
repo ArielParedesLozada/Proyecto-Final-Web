@@ -30,6 +30,7 @@ export async function login(email: string, password: string) {
 
 // Registro
 export async function register(payload: {
+  profile_image_url: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -37,6 +38,10 @@ export async function register(payload: {
   password_confirmation: string;
 }) {
   try {
+    if (payload.profile_image_url && payload.profile_image_url.length > 1000000) { // 1MB
+      throw new Error('La imagen es demasiado grande. Por favor, selecciona una imagen más pequeña.');
+    }
+    
     const response = await api.post('/register', payload);
 
     if (response.data?.success && response.data?.data?.token) {
