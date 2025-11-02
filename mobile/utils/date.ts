@@ -93,3 +93,33 @@ export function calculateMonthsDifference(startDate: string, endDate: string): n
   return Math.max(1, Math.round(months * 100) / 100);
 }
 
+function splitYMD(ymd: string): { y: number; m: number; d: number } | null {
+  if (!ymd || typeof ymd !== 'string') return null;
+  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const y = +m[1];
+  const mm = +m[2];
+  const dd = +m[3];
+  if (!y || mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+  return { y, m: mm, d: dd };
+}
+
+const MONTHS_ES_SHORT = [
+  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+  'jul', 'ago', 'sept', 'oct', 'nov', 'dic'
+];
+
+export function formatYMDShort(ymd: string): string {
+  const p = splitYMD(ymd);
+  if (!p) return '';
+  const mon = MONTHS_ES_SHORT[p.m - 1] || '';
+  return `${p.d}-${mon}`;
+}
+
+export function formatYMDToShort(ymd: string): string {
+  const p = splitYMD(ymd);
+  if (!p) return '';
+  const mon = MONTHS_ES_SHORT[p.m - 1] || '';
+  return `${p.d} ${mon} ${p.y}`;
+}
+
