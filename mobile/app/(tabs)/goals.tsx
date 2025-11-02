@@ -20,6 +20,7 @@ import {
   AddTransactionPayload,
 } from '@/services/goals';
 import { calculateProgress } from '@/services/goals';
+import { notifySuggestedMonthlySavings } from '@/utils/notifications';
 
 export default function GoalsScreen() {
   const theme = useTheme();
@@ -112,6 +113,14 @@ export default function GoalsScreen() {
       // Notificar a Dashboard y otras pantallas que se creó una meta
       refreshDashboard();
       refreshGoals();
+      
+      // Enviar notificación local con el ahorro mensual sugerido
+      await notifySuggestedMonthlySavings(
+        payload.name,
+        payload.target_amount,
+        payload.target_date,
+        0 // Al crear una meta nueva, el monto acumulado es 0
+      );
     } catch (error: any) {
       console.error('Error al crear meta:', error);
       showToast(error.message || 'Error al crear la meta', 'error');
