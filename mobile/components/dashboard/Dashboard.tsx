@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, Card, ActivityIndicator } from 'react-native-paper';
 import { getDashboardSummary, DashboardSummary } from '@/services/stats';
 import { RefreshControl } from '@/components/ui';
+import { useGoalsContext } from '@/contexts/GoalsContext';
 import StatCard from './StatCard';
 import GoalItem from './GoalItem';
 import CompletedList from './CompletedList';
@@ -10,11 +11,15 @@ import EmptyState from './EmptyState';
 
 export default function Dashboard() {
   const theme = useTheme();
+  const { dashboardVersion } = useGoalsContext();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<DashboardSummary | null>(null);
 
   const loadData = async (forceRefresh = false) => {
+    if (!forceRefresh && !refreshing) {
+      setLoading(true);
+    }
     try {
       const response = await getDashboardSummary();
       setData(response);
@@ -30,6 +35,14 @@ export default function Dashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Recargar datos cuando cambie la versión del dashboard (se creó/actualizó/eliminó una meta)
+  useEffect(() => {
+    if (dashboardVersion > 0) {
+      loadData(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dashboardVersion]);
 
   const handleRefresh = () => {
     setRefreshing(true);

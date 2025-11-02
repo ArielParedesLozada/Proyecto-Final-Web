@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { lightTheme as paperLightTheme, darkTheme as paperDarkTheme } from '@/constants/paper-theme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
+import { GoalsProvider } from '@/contexts/GoalsContext';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
@@ -69,7 +70,8 @@ function RootLayoutContent() {
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
         <AuthProvider>
-          <ThemedNavigationProvider>
+          <GoalsProvider>
+            <ThemedNavigationProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="login" />
@@ -79,6 +81,7 @@ function RootLayoutContent() {
             </Stack>
             <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
           </ThemedNavigationProvider>
+          </GoalsProvider>
         </AuthProvider>
       </PaperProvider>
     </SafeAreaProvider>
