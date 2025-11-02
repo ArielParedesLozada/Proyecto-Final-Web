@@ -21,6 +21,7 @@ export interface AddTransactionModalProps {
   onDismiss: () => void;
   goal: Goal | null;
   onSubmit: (payload: AddTransactionPayload & { goalId: number }) => Promise<void>;
+  initialType?: 'income' | 'expense';
 }
 
 export default function AddTransactionModal({
@@ -28,6 +29,7 @@ export default function AddTransactionModal({
   onDismiss,
   goal,
   onSubmit,
+  initialType,
 }: AddTransactionModalProps) {
   const theme = useTheme();
 
@@ -62,8 +64,12 @@ export default function AddTransactionModal({
       setSavingRule(false);
       setConfirmDeleteOpen(false);
       setDeletingRule(false);
+    } else if (initialType && initialType !== type) {
+      // Si se pasa initialType, inicializar con ese tipo
+      handleTypeChange(initialType);
     }
-  }, [visible]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialType]);
 
   // Verificar reglas fijas cuando cambia el tipo
   const handleTypeChange = async (nextType: 'income' | 'expense') => {

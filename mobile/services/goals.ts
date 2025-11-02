@@ -109,6 +109,42 @@ export async function getGoal(id: number): Promise<{ message: string; data: Goal
   }
 }
 
+export interface Transaction {
+  id: number;
+  goal_id: number;
+  type: 'income' | 'expense';
+  amount: number;
+  is_fixed: boolean;
+  occurred_on: string;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ListTransactionsParams {
+  start_date?: string;
+  end_date?: string;
+  is_fixed?: boolean;
+}
+
+// Listar transacciones de una meta
+export async function listTransactions(
+  goalId: number,
+  params?: ListTransactionsParams
+): Promise<{ message: string; data: Transaction[] }> {
+  try {
+    const response = await api.get(`/goals/${goalId}/transactions`, { params });
+    return response.data;
+  } catch (error: any) {
+    console.error('Error al listar transacciones:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Error al cargar las transacciones'
+    );
+  }
+}
+
 // Crear meta
 export async function createGoal(payload: CreateGoalPayload): Promise<{ message: string; data: Goal }> {
   try {
