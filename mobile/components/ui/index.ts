@@ -22,3 +22,6 @@ export type { ToastProps } from './Toast';
 export { default as RefreshControl } from './RefreshControl';
 export type { RefreshControlComponentProps } from './RefreshControl';
 
+export { default as EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+

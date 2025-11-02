@@ -4,10 +4,9 @@ import { ActivityIndicator, useTheme } from 'react-native-paper';
 import {
   GoalCard,
   GoalsHeader,
-  EmptyGoalsState,
   NewGoalModal,
 } from '@/components/goals';
-import { Modal, Toast, RefreshControl } from '@/components/ui';
+import { Modal, Toast, RefreshControl, EmptyState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
 import {
   listGoals,
@@ -205,7 +204,13 @@ export default function GoalsScreen() {
           </View>
 
           {goals.length === 0 ? (
-            <EmptyGoalsState />
+            <EmptyState
+              variant="goals"
+              title="Aún no tienes metas de ahorro"
+              subtitle="Crea tu primera meta para comenzar a registrar tu progreso financiero."
+              description="Las metas de ahorro te ayudan a organizar tus finanzas, establecer objetivos claros y hacer un seguimiento de tu progreso hacia la independencia financiera."
+              containerStyle={styles.emptyStateContainer}
+            />
           ) : (
             <View style={styles.goalsList}>
               {goals.map((goal) => (
@@ -282,6 +287,10 @@ const styles = StyleSheet.create({
   },
   goalsList: {
     marginTop: 16,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    minHeight: 300,
   },
 });
 

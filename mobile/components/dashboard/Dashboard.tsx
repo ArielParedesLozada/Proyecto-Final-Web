@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, Card, ActivityIndicator } from 'react-native-paper';
 import { getDashboardSummary, DashboardSummary } from '@/services/stats';
-import { RefreshControl } from '@/components/ui';
+import { RefreshControl, EmptyState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
 import StatCard from './StatCard';
 import GoalItem from './GoalItem';
 import CompletedList from './CompletedList';
-import EmptyState from './EmptyState';
+
+const ITEM_HEIGHT = 80;
+const MAX_VISIBLE_ITEMS = 5;
+const MAX_HEIGHT = ITEM_HEIGHT * MAX_VISIBLE_ITEMS;
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -137,22 +140,42 @@ export default function Dashboard() {
                   </Text>
                 </View>
               ) : data?.goalsActive && data.goalsActive.length > 0 ? (
-                <View style={styles.goalsList}>
-                  {data.goalsActive.map((goal) => (
-                    <GoalItem
-                      key={goal.id}
-                      name={goal.name}
-                      current={goal.current}
-                      target={goal.target}
-                    />
-                  ))}
-                </View>
+                data.goalsActive.length >= MAX_VISIBLE_ITEMS ? (
+                  <ScrollView
+                    style={[styles.scrollableList, { maxHeight: MAX_HEIGHT }]}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                  >
+                    <View style={styles.goalsList}>
+                      {data.goalsActive.map((goal) => (
+                        <GoalItem
+                          key={goal.id}
+                          name={goal.name}
+                          current={goal.current}
+                          target={goal.target}
+                        />
+                      ))}
+                    </View>
+                  </ScrollView>
+                ) : (
+                  <View style={styles.goalsList}>
+                    {data.goalsActive.map((goal) => (
+                      <GoalItem
+                        key={goal.id}
+                        name={goal.name}
+                        current={goal.current}
+                        target={goal.target}
+                      />
+                    ))}
+                  </View>
+                )
               ) : (
                 <EmptyState
                   variant="goals"
                   title="Sin metas activas"
                   subtitle="Crea tu primera meta para empezar tu viaje hacia el ahorro."
                   description="Las metas te ayudan a organizar tus finanzas y alcanzar tus objetivos financieros de manera estructurada."
+                  iconWithContainer={true}
                 />
               )}
             </Card.Content>
@@ -180,20 +203,38 @@ export default function Dashboard() {
                   </Text>
                 </View>
               ) : data?.goalsCompleted && data.goalsCompleted.length > 0 ? (
-                <CompletedList
-                  items={data.goalsCompleted.map((g) => ({
-                    id: g.id,
-                    name: g.name,
-                    finishedAt: g.finishedAt,
-                    deadline: g.deadline,
-                  }))}
-                />
+                data.goalsCompleted.length >= MAX_VISIBLE_ITEMS ? (
+                  <ScrollView
+                    style={[styles.scrollableList, { maxHeight: MAX_HEIGHT }]}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                  >
+                    <CompletedList
+                      items={data.goalsCompleted.map((g) => ({
+                        id: g.id,
+                        name: g.name,
+                        finishedAt: g.finishedAt,
+                        deadline: g.deadline,
+                      }))}
+                    />
+                  </ScrollView>
+                ) : (
+                  <CompletedList
+                    items={data.goalsCompleted.map((g) => ({
+                      id: g.id,
+                      name: g.name,
+                      finishedAt: g.finishedAt,
+                      deadline: g.deadline,
+                    }))}
+                  />
+                )
               ) : (
                 <EmptyState
                   variant="completed"
                   title="Nada completado aún"
                   subtitle="Aquí verás tus logros recientes cuando completes tus metas."
                   description="Cada meta completada representa un paso importante hacia tus objetivos financieros."
+                  iconWithContainer={true}
                 />
               )}
             </Card.Content>
@@ -251,6 +292,9 @@ const styles = StyleSheet.create({
   },
   goalsList: {
     gap: 0,
+  },
+  scrollableList: {
+    maxHeight: MAX_HEIGHT,
   },
   loadingContainer: {
     alignItems: 'center',
