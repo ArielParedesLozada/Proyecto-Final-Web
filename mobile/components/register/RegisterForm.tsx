@@ -7,7 +7,7 @@ import {
   useTheme,
   Snackbar,
 } from 'react-native-paper';
-import { Button, PasswordInput } from '../ui';
+import { Button, PasswordInput, ImagePicker } from '../ui';
 import { router } from 'expo-router';
 import { register } from '../../services/auth';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ export default function RegisterForm() {
   const { login: setUser } = useAuth();
 
   const [values, setValues] = useState({
+    profile_image_url: null as string | null,
     first_name: '',
     last_name: '',
     email: '',
@@ -25,6 +26,7 @@ export default function RegisterForm() {
   });
 
   const [errors, setErrors] = useState<{
+    profile_image_url?: string;
     first_name?: string;
     last_name?: string;
     email?: string;
@@ -39,6 +41,10 @@ export default function RegisterForm() {
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
+
+    if (!values.profile_image_url) {
+      newErrors.profile_image_url = 'La imagen de perfil es obligatoria';
+    }
 
     if (!values.first_name.trim()) {
       newErrors.first_name = 'Los nombres son obligatorios';
@@ -75,6 +81,7 @@ export default function RegisterForm() {
 
   const isFormValid = (): boolean => {
     return (
+      !!values.profile_image_url &&
       values.first_name.trim() !== '' &&
       values.last_name.trim() !== '' &&
       values.email.trim() !== '' &&
@@ -94,6 +101,7 @@ export default function RegisterForm() {
 
     try {
       const response = await register({
+        profile_image_url: values.profile_image_url!,
         first_name: values.first_name.trim(),
         last_name: values.last_name.trim(),
         email: values.email.trim(),
@@ -149,6 +157,13 @@ export default function RegisterForm() {
     }
   };
 
+  const updateImage = (imageUri: string | null) => {
+    setValues((prev) => ({ ...prev, profile_image_url: imageUri }));
+    if (errors.profile_image_url) {
+      setErrors((prev) => ({ ...prev, profile_image_url: undefined }));
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -183,6 +198,15 @@ export default function RegisterForm() {
             >
               Regístrate para planificar tus metas, registrar ingresos y controlar tus gastos
             </Text>
+
+            {/* Imagen de perfil - Primer campo */}
+            <ImagePicker
+              label="Foto de perfil"
+              value={values.profile_image_url}
+              onChange={updateImage}
+              errorMessage={errors.profile_image_url}
+              required
+            />
 
             {/* Nombres y Apellidos en fila */}
             <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>

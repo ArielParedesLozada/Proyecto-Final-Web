@@ -11,3 +11,6 @@ export type { FloatingActionButtonProps } from './FloatingActionButton';
 export { default as PasswordInput } from './PasswordInput';
 export type { PasswordInputProps } from './PasswordInput';
 
+export { default as ImagePicker } from './ImagePicker';
+export type { ImagePickerProps } from './ImagePicker';
+

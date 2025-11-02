@@ -24,7 +24,7 @@ class AuthController extends Controller
             'last_name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'string', 'email', 'max:191', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'profile_image_url' => ['nullable', 'string', 'max:255', 'url'],
+            'profile_image_url' => ['required', 'string', 'max:1000000'], // Máximo 1MB
         ]);
 
         if ($validator->fails()) {
@@ -35,15 +35,25 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'password_hash' => Hash::make($request->password),
-            'profile_image_url' => $request->profile_image_url,
-        ]);
+        try {
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password_hash' => Hash::make($request->password),
+                'profile_image_url' => $request->profile_image_url,
+            ]);
 
-        $token = JWTAuth::fromUser($user);
+            $token = JWTAuth::fromUser($user);
+        } catch (\Exception $e) {
+            \Log::error('Register error: ' . $e->getMessage());
+            \Log::error('Register error trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el usuario: ' . $e->getMessage()
+            ], 500);
+        }
 
         try {
             Mail::to($user->email)->send(new WelcomeEmail($user));
