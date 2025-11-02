@@ -34,14 +34,18 @@ class Transaction extends Model
         static::created(function (Transaction $transaction) {
             if ($transaction->type === 'income') {
                 // Solo verificar para transacciones de ingreso (ahorro)
-                $transaction->goal->checkAndUpdateCompletion();
+                // Detectar si la petición viene del móvil para no enviar correo
+                $isMobile = request()->header('X-Client-Type') === 'mobile';
+                $transaction->goal->checkAndUpdateCompletion($isMobile);
             }
         });
 
         // Verificar si una meta se completa después de actualizar una transacción
         static::updated(function (Transaction $transaction) {
             if ($transaction->type === 'income') {
-                $transaction->goal->checkAndUpdateCompletion();
+                // Detectar si la petición viene del móvil para no enviar correo
+                $isMobile = request()->header('X-Client-Type') === 'mobile';
+                $transaction->goal->checkAndUpdateCompletion($isMobile);
             }
         });
     }

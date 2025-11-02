@@ -20,6 +20,7 @@ import {
   AddTransactionPayload,
 } from '@/services/goals';
 import { calculateProgress } from '@/services/goals';
+import { notifyGoalCompleted, notifySuggestedSavings } from '@/utils/notifications';
 
 export default function GoalsScreen() {
   const theme = useTheme();
@@ -111,8 +112,7 @@ export default function GoalsScreen() {
       refreshGoals();
       
       try {
-        const { notifySuggestedMonthlySavings } = await import('@/utils/notifications');
-        await notifySuggestedMonthlySavings(
+        await notifySuggestedSavings(
           payload.name,
           payload.target_amount,
           payload.target_date,
@@ -218,7 +218,16 @@ export default function GoalsScreen() {
           'success'
         );
       } else {
-        await addTransactionToGoal(payload.goalId, {
+        const goalBefore = goals.find((g) => g.id === payload.goalId);
+        const wasCompletedBefore = goalBefore?.status === 'completed';
+        const progressBefore = goalBefore 
+          ? calculateProgress(
+              goalBefore.accumulated || goalBefore.current_amount || 0,
+              goalBefore.target_amount
+            )
+          : 0;
+
+        const response = await addTransactionToGoal(payload.goalId, {
           type: payload.type,
           amount: payload.amount,
           is_fixed: false,
@@ -229,6 +238,28 @@ export default function GoalsScreen() {
           `${typeLabel} registrado: ${payload.type === 'income' ? '+' : '-'}$${payload.amount.toLocaleString()}`,
           'success'
         );
+
+        const responseData = response as any;
+        if (payload.type === 'income' && responseData.goal) {
+          const goal = responseData.goal;
+          const progressPct = responseData.progress_pct || calculateProgress(
+            goal.accumulated || goal.current_amount || 0,
+            goal.target_amount
+          );
+
+          if (
+            progressPct >= 100 && 
+            goal.status === 'completed' && 
+            !wasCompletedBefore &&
+            progressBefore < 100
+          ) {
+            try {
+              await notifyGoalCompleted(goal.name, goal.id);
+            } catch (error) {
+              console.warn('No se pudo enviar notificación de completado:', error);
+            }
+          }
+        }
       }
 
       await loadGoals(true);

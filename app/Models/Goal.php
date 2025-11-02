@@ -45,8 +45,9 @@ class Goal extends Model
 
     /**
      * Verificar si la meta se ha completado automáticamente
+     * @param bool $skipEmail Si es true, no envía el correo de notificación (útil para móvil)
      */
-    public function checkAndUpdateCompletion()
+    public function checkAndUpdateCompletion($skipEmail = false)
     {
         if ($this->status === 'completed') {
             return false; // Ya está completada
@@ -58,12 +59,14 @@ class Goal extends Model
             // Marcar como completada
             $this->update(['status' => 'completed']);
             
-            // Enviar email de notificación
-            try {
-                Mail::to($this->user->email)->send(new GoalCompletedEmail($this, $this->user));
-            } catch (\Exception $e) {
-                // Log el error pero no fallar la operación
-                Log::error('Error sending goal completion email: ' . $e->getMessage());
+            // Enviar email de notificación solo si no se debe omitir (p.ej. desde móvil)
+            if (!$skipEmail) {
+                try {
+                    Mail::to($this->user->email)->send(new GoalCompletedEmail($this, $this->user));
+                } catch (\Exception $e) {
+                    // Log el error pero no fallar la operación
+                    Log::error('Error sending goal completion email: ' . $e->getMessage());
+                }
             }
             
             return true; // Se completó automáticamente

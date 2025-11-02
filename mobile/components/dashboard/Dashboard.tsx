@@ -9,8 +9,10 @@ import GoalItem from './GoalItem';
 import CompletedList from './CompletedList';
 
 const ITEM_HEIGHT = 80;
+const COMPLETED_ITEM_HEIGHT = 60; 
 const MAX_VISIBLE_ITEMS = 5;
 const MAX_HEIGHT = ITEM_HEIGHT * MAX_VISIBLE_ITEMS;
+const MAX_COMPLETED_HEIGHT = COMPLETED_ITEM_HEIGHT * MAX_VISIBLE_ITEMS;
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -28,7 +30,6 @@ export default function Dashboard() {
       setData(response);
     } catch (error: any) {
       console.error('Error al cargar dashboard:', error);
-      // En producción, podrías mostrar un Toast aquí
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -39,12 +40,10 @@ export default function Dashboard() {
     loadData();
   }, []);
 
-  // Recargar datos cuando cambie la versión del dashboard (se creó/actualizó/eliminó una meta)
   useEffect(() => {
     if (dashboardVersion > 0) {
       loadData(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboardVersion]);
 
   const handleRefresh = () => {
@@ -205,7 +204,7 @@ export default function Dashboard() {
               ) : data?.goalsCompleted && data.goalsCompleted.length > 0 ? (
                 data.goalsCompleted.length >= MAX_VISIBLE_ITEMS ? (
                   <ScrollView
-                    style={[styles.scrollableList, { maxHeight: MAX_HEIGHT }]}
+                    style={[styles.scrollableList, { maxHeight: MAX_COMPLETED_HEIGHT }]}
                     nestedScrollEnabled={true}
                     showsVerticalScrollIndicator={true}
                   >
