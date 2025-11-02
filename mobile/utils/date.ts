@@ -69,3 +69,27 @@ export function formatDateShort(dateInput: string | Date): string {
   });
 }
 
+export function calculateDaysDifference(startDate: string, endDate: string): number {
+  const start = parseYMDToDate(startDate);
+  const end = parseYMDToDate(endDate);
+  
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return Math.max(1, diffDays);
+}
+
+export function calculateWeeksDifference(startDate: string, endDate: string): number {
+  const days = calculateDaysDifference(startDate, endDate);
+  const weeks = days / 7;
+  
+  return Math.max(1, Math.round(weeks * 100) / 100);
+}
+
+export function calculateMonthsDifference(startDate: string, endDate: string): number {
+  const days = calculateDaysDifference(startDate, endDate);
+  const months = days / 30.44;
+  
+  return Math.max(1, Math.round(months * 100) / 100);
+}
+
