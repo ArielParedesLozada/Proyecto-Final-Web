@@ -19,3 +19,6 @@ export type { ModalProps } from './Modal';
 export { default as Toast } from './Toast';
 export type { ToastProps } from './Toast';
 
+export { default as RefreshControl } from './RefreshControl';
+export type { RefreshControlComponentProps } from './RefreshControl';
+

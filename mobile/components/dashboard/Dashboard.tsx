@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, Card, ActivityIndicator } from 'react-native-paper';
 import { getDashboardSummary, DashboardSummary } from '@/services/stats';
+import { RefreshControl } from '@/components/ui';
 import StatCard from './StatCard';
 import GoalItem from './GoalItem';
 import CompletedList from './CompletedList';

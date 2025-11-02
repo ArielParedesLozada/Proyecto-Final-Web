@@ -4,7 +4,7 @@ import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, updateProfile, changePassword } from '@/services/profile';
-import { Toast } from '@/components/ui';
+import { Toast, RefreshControl } from '@/components/ui';
 import {
   ProfileHeader,
   IdentitySection,
@@ -18,6 +18,7 @@ export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [changing, setChanging] = useState(false);
 
@@ -44,9 +45,11 @@ export default function ProfileScreen() {
     loadProfile();
   }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = async (skipLoading = false) => {
     try {
-      setLoading(true);
+      if (!skipLoading) {
+        setLoading(true);
+      }
       const profile = await getProfile();
       
       setFirstName(profile.first_name || '');
@@ -62,7 +65,13 @@ export default function ProfileScreen() {
       showToast('Error al cargar el perfil', 'error');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadProfile(true);
   };
 
 
@@ -177,6 +186,9 @@ export default function ProfileScreen() {
       <ScrollView
         style={[styles.container, { backgroundColor: theme.colors.background }]}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         <ProfileHeader
           title="Perfil"
