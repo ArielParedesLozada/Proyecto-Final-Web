@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import { Text, TextInput, useTheme, TouchableRipple } from 'react-native-paper';
+import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Modal } from '../ui';
 import Button from '../ui/Button';
@@ -382,12 +383,11 @@ export default function NewGoalModal({
                     ? formatDateShort(form.deadline)
                     : 'Selecciona una fecha'}
                 </Text>
-                <Text
-                  variant="bodyMedium"
-                  style={[styles.selectIcon, { color: theme.colors.primary }]}
-                >
-                  📅
-                </Text>
+                <MaterialIcons
+                  name="calendar-today"
+                  size={20}
+                  color={theme.colors.primary}
+                />
               </View>
             </Pressable>
             {errors.deadline && (

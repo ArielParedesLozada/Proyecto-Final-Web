@@ -68,22 +68,22 @@ function RootLayoutContent() {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={paperTheme}>
-        <AuthProvider>
+    <PaperProvider theme={paperTheme}>
+      <AuthProvider>
           <GoalsProvider>
-            <ThemedNavigationProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="login" />
-              <Stack.Screen name="register" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-            </Stack>
+        <ThemedNavigationProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </Stack>
             <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
-          </ThemedNavigationProvider>
+        </ThemedNavigationProvider>
           </GoalsProvider>
-        </AuthProvider>
-      </PaperProvider>
+      </AuthProvider>
+    </PaperProvider>
     </SafeAreaProvider>
   );
 }

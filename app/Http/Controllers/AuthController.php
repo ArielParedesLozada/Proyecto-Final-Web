@@ -36,15 +36,15 @@ class AuthController extends Controller
         }
 
         try {
-            $user = User::create([
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'password_hash' => Hash::make($request->password),
-                'profile_image_url' => $request->profile_image_url,
-            ]);
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'password_hash' => Hash::make($request->password),
+            'profile_image_url' => $request->profile_image_url,
+        ]);
 
-            $token = JWTAuth::fromUser($user);
+        $token = JWTAuth::fromUser($user);
         } catch (\Exception $e) {
             \Log::error('Register error: ' . $e->getMessage());
             \Log::error('Register error trace: ' . $e->getTraceAsString());
