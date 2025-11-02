@@ -10,6 +10,7 @@ import {
   IdentitySection,
   AccountSection,
   SecuritySection,
+  PreferencesSection,
   LogoutSection,
 } from '@/components/profile';
 
@@ -228,6 +229,8 @@ export default function ProfileScreen() {
           canChange={canChangePassword}
           changing={changing}
         />
+
+        <PreferencesSection />
 
         <LogoutSection onLogout={handleLogout} />
       </ScrollView>
