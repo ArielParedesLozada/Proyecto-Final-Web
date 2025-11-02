@@ -13,3 +13,6 @@ export type { TransactionsFiltersProps } from './TransactionsFilters';
 export { default as TransactionsList } from './TransactionsList';
 export type { TransactionsListProps } from './TransactionsList';
 
+export { default as GoalSelect } from './GoalSelect';
+export { default as TransactionTypeToggle } from './TransactionTypeToggle';
+export { default as DateField } from './DateField';
