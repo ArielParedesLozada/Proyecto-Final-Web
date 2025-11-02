@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { Snackbar, Text, useTheme } from 'react-native-paper';
+import { StyleSheet, View, Platform } from 'react-native';
+import { Snackbar, Text, useTheme, Portal } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface ToastProps {
   visible: boolean;
@@ -10,18 +11,6 @@ export interface ToastProps {
   onDismiss: () => void;
 }
 
-/**
- * Componente Toast reutilizable para mostrar mensajes en toda la aplicación
- * Aparece desde la parte inferior de la pantalla
- * 
- * @example
- * <Toast
- *   visible={showToast}
- *   message="Operación exitosa"
- *   type="success"
- *   onDismiss={() => setShowToast(false)}
- * />
- */
 export default function Toast({
   visible,
   message,
@@ -30,11 +19,22 @@ export default function Toast({
   onDismiss,
 }: ToastProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
-  // Duración por defecto según el tipo
   const defaultDuration = duration ?? (type === 'success' ? 3000 : type === 'error' ? 4000 : 3000);
 
-  // Colores según el tipo
+  const getTopOffset = (): number => {
+    const safeTop = insets.top || 0;
+    
+    if (Platform.OS === 'ios') {
+      return Math.max(safeTop + 28, 85);
+    } else {
+      return Math.max(safeTop + 36, 90);
+    }
+  };
+
+  const topOffset = getTopOffset();
+
   const getColors = () => {
     switch (type) {
       case 'success':
@@ -59,27 +59,40 @@ export default function Toast({
   const colors = getColors();
 
   return (
-    <Snackbar
-      visible={visible}
-      onDismiss={onDismiss}
-      duration={defaultDuration}
-      style={[styles.snackbar, { backgroundColor: colors.backgroundColor }]}
-      action={{
-        label: 'Cerrar',
-        onPress: onDismiss,
-        textColor: colors.textColor,
-      }}
-    >
-      <Text style={[styles.message, { color: colors.textColor }]}>
-        {message}
-      </Text>
-    </Snackbar>
+    <Portal>
+      <View style={[styles.wrapper, { top: topOffset }]}>
+        <Snackbar
+          visible={visible}
+          onDismiss={onDismiss}
+          duration={defaultDuration}
+          style={[styles.snackbar, { backgroundColor: colors.backgroundColor }]}
+          action={{
+            label: 'Cerrar',
+            onPress: onDismiss,
+            textColor: colors.textColor,
+          }}
+          elevation={4}
+        >
+          <Text style={[styles.message, { color: colors.textColor }]}>
+            {message}
+          </Text>
+        </Snackbar>
+      </View>
+    </Portal>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    pointerEvents: 'box-none',
+  },
   snackbar: {
-    borderRadius: 8,
+    borderRadius: 12,
+    marginHorizontal: 16,
   },
   message: {
     fontSize: 16,
