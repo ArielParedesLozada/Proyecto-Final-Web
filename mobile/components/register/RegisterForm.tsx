@@ -5,9 +5,8 @@ import {
   Text,
   Card,
   useTheme,
-  Snackbar,
 } from 'react-native-paper';
-import { Button, PasswordInput, ImagePicker } from '../ui';
+import { Button, PasswordInput, ImagePicker, Toast } from '../ui';
 import { router } from 'expo-router';
 import { register } from '../../services/auth';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,9 +34,10 @@ export default function RegisterForm() {
   }>({});
 
   const [loading, setLoading] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarType, setSnackbarType] = useState<'error' | 'success'>('error');
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'error' | 'success' | 'info'>('info');
+  const [showPassword, setShowPassword] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
@@ -114,19 +114,19 @@ export default function RegisterForm() {
           setUser(response.data.user);
         }
 
-        setSnackbarMessage(
+        setToastMessage(
           '¡Cuenta creada exitosamente! Te hemos enviado un correo de bienvenida. Redirigiendo...'
         );
-        setSnackbarType('success');
-        setSnackbarVisible(true);
+        setToastType('success');
+        setToastVisible(true);
 
         setTimeout(() => {
           router.replace('/login');
-        }, 2000);
+        }, 4000); // Aumentado a 4 segundos para que el usuario vea el mensaje
       } else {
-        setSnackbarMessage(response?.message || 'No se pudo crear la cuenta. Intenta nuevamente.');
-        setSnackbarType('error');
-        setSnackbarVisible(true);
+        setToastMessage(response?.message || 'No se pudo crear la cuenta. Intenta nuevamente.');
+        setToastType('error');
+        setToastVisible(true);
       }
     } catch (error: any) {
       let message = 'No se pudo crear la cuenta. Intenta nuevamente.';
@@ -142,9 +142,9 @@ export default function RegisterForm() {
         message = error.message || message;
       }
 
-      setSnackbarMessage(message);
-      setSnackbarType('error');
-      setSnackbarVisible(true);
+      setToastMessage(message);
+      setToastType('error');
+      setToastVisible(true);
     } finally {
       setLoading(false);
     }
@@ -282,6 +282,8 @@ export default function RegisterForm() {
               onChangeText={(text) => updateField('password', text)}
               errorMessage={errors.password}
               helperText="Mínimo 8 caracteres, incluye letras y números."
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
             />
 
             {/* Confirmar Contraseña */}
@@ -292,6 +294,8 @@ export default function RegisterForm() {
               onChangeText={(text) => updateField('password_confirmation', text)}
               errorMessage={errors.password_confirmation}
               leftIcon="lock-outline"
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
             />
 
             {/* Botón de registro */}
@@ -327,29 +331,14 @@ export default function RegisterForm() {
         </Card>
       </ScrollView>
 
-      {/* Snackbar para errores y mensajes de éxito */}
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={snackbarType === 'success' ? 2000 : 4000}
-        style={{
-          backgroundColor:
-            snackbarType === 'success'
-              ? theme.colors.tertiaryContainer
-              : theme.colors.errorContainer,
-        }}
-      >
-        <Text
-          style={{
-            color:
-              snackbarType === 'success'
-                ? theme.colors.onTertiaryContainer
-                : theme.colors.onErrorContainer,
-          }}
-        >
-          {snackbarMessage}
-        </Text>
-      </Snackbar>
+      {/* Toast para errores y mensajes de éxito */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        duration={toastType === 'success' ? 4000 : undefined}
+        onDismiss={() => setToastVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

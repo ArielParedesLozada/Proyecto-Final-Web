@@ -7,9 +7,8 @@ import {
   Text,
   Card,
   useTheme,
-  Snackbar,
 } from 'react-native-paper';
-import { Button, PasswordInput } from '../components/ui';
+import { Button, PasswordInput, Toast } from '../components/ui';
 import { router } from 'expo-router';
 import { login, getGoogleAuthUrl, parseGoogleCallback, setToken } from '../services/auth';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,8 +25,9 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'error' | 'success' | 'info'>('error');
 
   const validate = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -59,13 +59,15 @@ export default function LoginScreen() {
         setUser(response.data.user);
         router.replace('/(tabs)');
       } else {
-        setSnackbarMessage(response?.message || 'Error al iniciar sesión');
-        setSnackbarVisible(true);
+        setToastMessage(response?.message || 'Error al iniciar sesión');
+        setToastType('error');
+        setToastVisible(true);
       }
     } catch (error: any) {
       const message = error.message || 'Credenciales inválidas. Inténtalo nuevamente.';
-      setSnackbarMessage(message);
-      setSnackbarVisible(true);
+      setToastMessage(message);
+      setToastType('error');
+      setToastVisible(true);
     } finally {
       setLoading(false);
     }
@@ -73,7 +75,7 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
-    setSnackbarVisible(false);
+    setToastVisible(false);
 
     try {
       const redirectUri = Linking.createURL('/auth/google/callback');
@@ -100,13 +102,15 @@ export default function LoginScreen() {
         setUser(user);
         router.replace('/(tabs)');
       } else if (result.type === 'cancel') {
-        setSnackbarMessage('Inicio de sesión cancelado');
-        setSnackbarVisible(true);
+        setToastMessage('Inicio de sesión cancelado');
+        setToastType('info');
+        setToastVisible(true);
       }
     } catch (error: any) {
       const message = error.message || 'Error al autenticar con Google';
-      setSnackbarMessage(message);
-      setSnackbarVisible(true);
+      setToastMessage(message);
+      setToastType('error');
+      setToastVisible(true);
     } finally {
       setGoogleLoading(false);
     }
@@ -264,14 +268,12 @@ export default function LoginScreen() {
         </Card>
       </ScrollView>
 
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={4000}
-        style={{ backgroundColor: theme.colors.errorContainer }}
-      >
-        <Text style={{ color: theme.colors.onErrorContainer }}>{snackbarMessage}</Text>
-      </Snackbar>
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onDismiss={() => setToastVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

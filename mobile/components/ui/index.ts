@@ -1,4 +1,3 @@
-// Exportar todos los componentes UI reutilizables
 export { default as Button } from './Button';
 export type { ButtonProps } from './Button';
 
@@ -13,4 +12,10 @@ export type { PasswordInputProps } from './PasswordInput';
 
 export { default as ImagePicker } from './ImagePicker';
 export type { ImagePickerProps } from './ImagePicker';
+
+export { default as Modal } from './Modal';
+export type { ModalProps } from './Modal';
+
+export { default as Toast } from './Toast';
+export type { ToastProps } from './Toast';
 

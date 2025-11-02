@@ -3,6 +3,8 @@ import { View, StyleSheet, Image, Pressable, Alert, Platform } from 'react-nativ
 import { Text, useTheme } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Modal from './Modal';
+import { Button } from './';
 
 export interface ImagePickerProps {
   value?: string | null; // base64 string or URI
@@ -12,18 +14,6 @@ export interface ImagePickerProps {
   required?: boolean;
 }
 
-/**
- * Componente reutilizable para seleccionar y mostrar imágenes
- * Convierte automáticamente la imagen seleccionada a base64
- * 
- * @example
- * <ImagePicker
- *   label="Foto de perfil"
- *   value={image}
- *   onChange={setImage}
- *   required
- * />
- */
 export default function ImagePickerComponent({
   value,
   onChange,
@@ -33,6 +23,8 @@ export default function ImagePickerComponent({
 }: ImagePickerProps) {
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
@@ -62,7 +54,7 @@ export default function ImagePickerComponent({
 
       if (source === 'camera') {
         result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           allowsEditing: true,
           aspect: [1, 1],
           quality: 0.3, // Reducir calidad para menor tamaño (0.3 = 30%)
@@ -71,10 +63,10 @@ export default function ImagePickerComponent({
         });
       } else {
         result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           allowsEditing: true,
           aspect: [1, 1],
-          quality: 0.3, // Reducir calidad para menor tamaño (0.3 = 30%)
+          quality: 0.3, 
           base64: true,
           allowsMultipleSelection: false,
         });
@@ -85,6 +77,7 @@ export default function ImagePickerComponent({
         
         // Validar tamaño del base64 (aproximadamente 500KB máximo)
         if (asset.base64 && asset.base64.length > 500000) {
+          // Para errores críticos, usamos Alert nativo
           Alert.alert(
             'Imagen muy grande',
             'La imagen seleccionada es muy grande. Por favor, selecciona una imagen más pequeña o de menor calidad.',
@@ -111,43 +104,16 @@ export default function ImagePickerComponent({
       return;
     }
 
-    Alert.alert(
-      'Seleccionar imagen',
-      'Elige una opción',
-      [
-        {
-          text: 'Cámara',
-          onPress: () => pickImage('camera'),
-        },
-        {
-          text: 'Galería',
-          onPress: () => pickImage('library'),
-        },
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-      ],
-      { cancelable: true }
-    );
+    setShowOptionsModal(true);
   };
 
-  const removeImage = () => {
-    Alert.alert(
-      'Eliminar imagen',
-      '¿Estás seguro de que deseas eliminar esta imagen?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => onChange?.(null),
-        },
-      ]
-    );
+  const handleRemoveImage = () => {
+    setShowRemoveModal(true);
+  };
+
+  const confirmRemoveImage = () => {
+    onChange?.(null);
+    setShowRemoveModal(false);
   };
 
   return (
@@ -172,7 +138,7 @@ export default function ImagePickerComponent({
             <Image source={{ uri: value }} style={styles.image} />
             <Pressable
               style={[styles.removeButton, { backgroundColor: theme.colors.errorContainer }]}
-              onPress={removeImage}
+              onPress={handleRemoveImage}
             >
               <MaterialIcons
                 name="close"
@@ -211,23 +177,15 @@ export default function ImagePickerComponent({
         )}
 
         {value && (
-          <Pressable
-            style={[styles.changeButton, { backgroundColor: theme.colors.primaryContainer }]}
+          <Button
+            variant="outlined"
             onPress={showImageOptions}
             disabled={loading}
+            style={styles.changeButton}
+            icon="pencil"
           >
-            <MaterialIcons
-              name="edit"
-              size={20}
-              color={theme.colors.onPrimaryContainer}
-            />
-            <Text
-              variant="bodySmall"
-              style={[styles.changeButtonText, { color: theme.colors.onPrimaryContainer }]}
-            >
-              Cambiar
-            </Text>
-          </Pressable>
+            Cambiar
+          </Button>
         )}
       </View>
 
@@ -239,6 +197,62 @@ export default function ImagePickerComponent({
           {errorMessage}
         </Text>
       )}
+
+      {/* Modal para eliminar imagen */}
+      <Modal
+        visible={showRemoveModal}
+        onDismiss={() => setShowRemoveModal(false)}
+        title="Eliminar imagen"
+        message="¿Estás seguro de que deseas eliminar esta imagen?"
+        primaryAction={{
+          label: 'Eliminar',
+          onPress: confirmRemoveImage,
+          variant: 'danger',
+        }}
+        secondaryAction={{
+          label: 'Cancelar',
+          onPress: () => setShowRemoveModal(false),
+        }}
+      />
+
+      {/* Modal para seleccionar fuente de imagen */}
+      <Modal
+        visible={showOptionsModal}
+        onDismiss={() => setShowOptionsModal(false)}
+        title="Seleccionar imagen"
+        message="Elige una opción para seleccionar tu imagen"
+        secondaryAction={{
+          label: 'Cancelar',
+          onPress: () => setShowOptionsModal(false),
+        }}
+      >
+        <View style={styles.modalActions}>
+          <Button
+            variant="outlined"
+            onPress={() => {
+              setShowOptionsModal(false);
+              pickImage('camera');
+            }}
+            style={styles.modalButton}
+            icon="camera"
+            fullWidth
+          >
+            Cámara
+          </Button>
+          <Button
+            variant="primary"
+            onPress={() => {
+              setShowOptionsModal(false);
+              pickImage('library');
+            }}
+            style={styles.modalButton}
+            icon="image"
+            fullWidth
+          >
+            Galería
+          </Button>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -286,19 +300,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   changeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  changeButtonText: {
-    fontWeight: '600',
+    marginTop: 8,
   },
   errorText: {
     marginTop: 4,
     textAlign: 'center',
+  },
+  modalActions: {
+    gap: 12,
+    marginTop: 8,
+    width: '100%',
+  },
+  modalButton: {
+    width: '100%',
   },
 });
 
