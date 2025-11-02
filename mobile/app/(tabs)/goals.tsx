@@ -20,7 +20,6 @@ import {
   AddTransactionPayload,
 } from '@/services/goals';
 import { calculateProgress } from '@/services/goals';
-import { notifySuggestedMonthlySavings } from '@/utils/notifications';
 
 export default function GoalsScreen() {
   const theme = useTheme();
@@ -78,12 +77,10 @@ export default function GoalsScreen() {
     loadGoals();
   }, [loadGoals]);
 
-  // Recargar metas cuando cambie la versión (se actualizó desde otra pantalla)
   useEffect(() => {
     if (goalsVersion > 0) {
       loadGoals(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goalsVersion]);
 
   const handleRefresh = useCallback(() => {
@@ -110,17 +107,20 @@ export default function GoalsScreen() {
       showToast('Meta creada correctamente', 'success');
       setModalOpen(false);
       await loadGoals(true);
-      // Notificar a Dashboard y otras pantallas que se creó una meta
       refreshDashboard();
       refreshGoals();
       
-      // Enviar notificación local con el ahorro mensual sugerido
-      await notifySuggestedMonthlySavings(
-        payload.name,
-        payload.target_amount,
-        payload.target_date,
-        0 // Al crear una meta nueva, el monto acumulado es 0
-      );
+      try {
+        const { notifySuggestedMonthlySavings } = await import('@/utils/notifications');
+        await notifySuggestedMonthlySavings(
+          payload.name,
+          payload.target_amount,
+          payload.target_date,
+          0 
+        );
+      } catch (error) {
+        console.warn('No se pudo enviar la notificación:', error);
+      }
     } catch (error: any) {
       console.error('Error al crear meta:', error);
       showToast(error.message || 'Error al crear la meta', 'error');
@@ -150,7 +150,6 @@ export default function GoalsScreen() {
       setModalOpen(false);
       setEditingGoal(null);
       await loadGoals(true);
-      // Notificar a Dashboard que se actualizó una meta
       refreshDashboard();
       refreshGoals();
     } catch (error: any) {
@@ -175,7 +174,6 @@ export default function GoalsScreen() {
       await deleteGoal(goalId);
       showToast('Meta eliminada', 'success');
       await loadGoals(true);
-      // Notificar a Dashboard que se eliminó una meta
       refreshDashboard();
       refreshGoals();
     } catch (error: any) {
@@ -196,7 +194,6 @@ export default function GoalsScreen() {
     payload: AddTransactionPayload & { goalId: number }
   ) => {
     try {
-      // Si es una regla fija (Fijo), crear la regla fija en lugar de una transacción simple
       if (payload.is_fixed && payload.frequency) {
         const { createFixedMovement } = await import('@/services/fixedMovements');
         
@@ -205,7 +202,7 @@ export default function GoalsScreen() {
           type: payload.type,
           amount: payload.amount,
           frequency: payload.frequency,
-          apply_now: true, // Aplicar la transacción inmediatamente
+          apply_now: true, 
         });
 
         const frequencyLabel =
@@ -221,7 +218,6 @@ export default function GoalsScreen() {
           'success'
         );
       } else {
-        // Transacción variable normal
         await addTransactionToGoal(payload.goalId, {
           type: payload.type,
           amount: payload.amount,
@@ -235,7 +231,6 @@ export default function GoalsScreen() {
         );
       }
 
-      // Recargar metas y actualizar dashboard
       await loadGoals(true);
       refreshDashboard();
       refreshGoals();

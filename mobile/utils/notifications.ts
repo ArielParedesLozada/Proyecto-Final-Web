@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import {
   calculateDaysDifference,
   calculateWeeksDifference,
@@ -6,17 +5,60 @@ import {
   getTodayYMD,
 } from './date';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let NotificationsModule: typeof import('expo-notifications') | null = null;
+let handlerInitialized = false;
+
+async function getNotifications() {
+  if (!NotificationsModule) {
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    
+    console.error = (...args: any[]) => {
+      const message = args[0]?.toString() || '';
+      if (message.includes('expo-notifications') && 
+          (message.includes('Push notifications') || message.includes('removed from Expo Go'))) {
+        return; 
+      }
+      originalError.apply(console, args);
+    };
+    
+    console.warn = (...args: any[]) => {
+      const message = args[0]?.toString() || '';
+      if (message.includes('expo-notifications') && 
+          (message.includes('not fully supported') || message.includes('development build'))) {
+        return; 
+      }
+      originalWarn.apply(console, args);
+    };
+    
+    try {
+      NotificationsModule = await import('expo-notifications');
+      
+      if (!handlerInitialized) {
+        try {
+          NotificationsModule.setNotificationHandler({
+            handleNotification: async () => ({
+              shouldShowBanner: true,
+              shouldShowList: true,
+              shouldPlaySound: true,
+              shouldSetBadge: true,
+            }),
+          });
+          handlerInitialized = true;
+        } catch (error) {
+        }
+      }
+    } finally {
+      console.error = originalError;
+      console.warn = originalWarn;
+    }
+  }
+  return NotificationsModule;
+}
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
+    const Notifications = await getNotifications();
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
@@ -27,7 +69,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
     return finalStatus === 'granted';
   } catch (error) {
-    console.error('Error al solicitar permisos de notificación:', error);
     return false;
   }
 }
@@ -38,10 +79,10 @@ export async function sendLocalNotification(
   data?: Record<string, any>
 ): Promise<void> {
   try {
+    const Notifications = await getNotifications();
     const hasPermission = await requestNotificationPermissions();
     
     if (!hasPermission) {
-      console.warn('No se tienen permisos para mostrar notificaciones');
       return;
     }
 
@@ -56,7 +97,6 @@ export async function sendLocalNotification(
       trigger: null,
     });
   } catch (error) {
-    console.error('Error al enviar notificación:', error);
   }
 }
 
