@@ -4,7 +4,7 @@ import { Text, useTheme } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Modal from './Modal';
-import { Button } from './';
+import Button from './Button';
 
 export interface ImagePickerProps {
   value?: string | null; // base64 string or URI
