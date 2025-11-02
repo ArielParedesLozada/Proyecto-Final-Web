@@ -10,3 +10,6 @@ export type { AccountSectionProps } from './AccountSection';
 export { default as SecuritySection } from './SecuritySection';
 export type { SecuritySectionProps } from './SecuritySection';
 
+export { default as LogoutSection } from './LogoutSection';
+export type { LogoutSectionProps } from './LogoutSection';
+

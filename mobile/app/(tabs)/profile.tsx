@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, updateProfile, changePassword } from '@/services/profile';
 import { Toast } from '@/components/ui';
@@ -9,11 +10,12 @@ import {
   IdentitySection,
   AccountSection,
   SecuritySection,
+  LogoutSection,
 } from '@/components/profile';
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -148,6 +150,15 @@ export default function ProfileScreen() {
     setConfirmPassword('');
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/login');
+    } catch (error: any) {
+      showToast('Error al cerrar sesión', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -205,6 +216,8 @@ export default function ProfileScreen() {
           canChange={canChangePassword}
           changing={changing}
         />
+
+        <LogoutSection onLogout={handleLogout} />
       </ScrollView>
 
       <Toast
