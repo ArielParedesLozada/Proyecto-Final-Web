@@ -4,30 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\GoogleProvider;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
 use GuzzleHttp\Client;
 
 class GoogleAuthController extends Controller
 {
 
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        $state = $this->makeStatePayload($request->query('redirect_to'));
+
+        $params = $this->extractGoogleParams($request);
+        $params['state'] = $state;
+
+        return $this->googleDriver()
+            ->stateless()
+            ->with($params)
+            ->redirect();
     }
 
 
-    public function handleGoogleCallback()
+    public function handleGoogleCallback(Request $request)
     {
         try {
             $this->configureSSLForDevelopment();
-            
+
             $googleUser = $this->getGoogleUserAlternative();
-            
+
             $user = User::where('email', $googleUser->email)->first();
             
             if (!$user) {
@@ -71,21 +79,30 @@ class GoogleAuthController extends Controller
 
             $token = JWTAuth::fromUser($user);
 
+            $redirectUrl = $this->resolveRedirectUrl($request);
+
             return redirect()->away(
-                'http://localhost:8000/auth/google/callback?token=' . $token . '&user=' . urlencode(json_encode([
-                    'id' => $user->id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'full_name' => $user->full_name,
-                    'email' => $user->email,
-                    'profile_image_url' => $user->profile_image_url,
-                    'provider' => $user->provider,
-                ]))
+                $this->appendQuery($redirectUrl, [
+                    'token' => $token,
+                    'user' => urlencode(json_encode([
+                        'id' => $user->id,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'full_name' => $user->full_name,
+                        'email' => $user->email,
+                        'profile_image_url' => $user->profile_image_url,
+                        'provider' => $user->provider,
+                    ])),
+                ])
             );
 
         } catch (\Exception $e) {
+            $redirectUrl = $this->resolveRedirectUrl($request);
+
             return redirect()->away(
-                'http://localhost:8000/login?error=' . urlencode('Error al autenticar con Google: ' . $e->getMessage())
+                $this->appendQuery($redirectUrl, [
+                    'error' => urlencode('Error al autenticar con Google: ' . $e->getMessage()),
+                ])
             );
         }
     }
@@ -93,8 +110,18 @@ class GoogleAuthController extends Controller
     public function getGoogleUrl()
     {
         try {
-            $url = Socialite::driver('google')->stateless()->redirect()->getTargetUrl();
-            
+            $request = request();
+            $state = $this->makeStatePayload($request->query('redirect_to'));
+
+            $params = $this->extractGoogleParams($request);
+            $params['state'] = $state;
+
+            $url = $this->googleDriver()
+                ->stateless()
+                ->with($params)
+                ->redirect()
+                ->getTargetUrl();
+
             return response()->json([
                 'success' => true,
                 'url' => $url
@@ -142,7 +169,7 @@ class GoogleAuthController extends Controller
     private function getGoogleUserAlternative()
     {
         try {
-            return Socialite::driver('google')->stateless()->user();
+            return $this->googleDriver()->stateless()->user();
         } catch (\Exception $e) {
             $code = request()->get('code');
             $state = request()->get('state');
@@ -185,5 +212,105 @@ class GoogleAuthController extends Controller
                 'picture' => $userData['picture'],
             ];
         }
+    }
+
+    private function makeStatePayload(?string $redirectTo): string
+    {
+        $payload = [
+            'redirect_to' => $this->sanitizeRedirect($redirectTo) ?? $this->defaultRedirectUrl(),
+            'ts' => now()->timestamp,
+        ];
+
+        return base64_encode(json_encode($payload));
+    }
+
+    private function resolveRedirectUrl(Request $request): string
+    {
+        $redirect = $this->sanitizeRedirect($request->query('redirect_to'));
+
+        if (!$redirect && $request->has('state')) {
+            $state = base64_decode($request->query('state'), true);
+            if ($state) {
+                $data = json_decode($state, true);
+                if (is_array($data)) {
+                    $redirect = $this->sanitizeRedirect($data['redirect_to'] ?? null);
+                }
+            }
+        }
+
+        return $redirect ?: $this->defaultRedirectUrl();
+    }
+
+    private function sanitizeRedirect(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        if (!$parts || empty($parts['scheme'])) {
+            return null;
+        }
+
+        $scheme = strtolower($parts['scheme']);
+
+        if (in_array($scheme, ['mobile', 'exp', 'expo'], true)) {
+            return $url;
+        }
+
+        if (in_array($scheme, ['http', 'https'], true)) {
+            $frontendBase = rtrim(Config::get('app.frontend_url', Config::get('app.url', 'http://localhost')), '/');
+            if (Str::startsWith($url, $frontendBase)) {
+                return $url;
+            }
+        }
+
+        return null;
+    }
+
+    private function defaultRedirectUrl(): string
+    {
+        $frontendBase = rtrim(Config::get('app.frontend_url', Config::get('app.url', 'http://localhost')), '/');
+
+        return $frontendBase . '/auth/google/callback';
+    }
+
+    private function appendQuery(string $url, array $params): string
+    {
+        $params = array_filter($params, fn ($value) => $value !== null && $value !== '');
+
+        if (empty($params)) {
+            return $url;
+        }
+
+        $separator = Str::contains($url, '?') ? '&' : '?';
+
+        $queryString = collect($params)
+            ->map(fn ($value, $key) => $key . '=' . $value)
+            ->implode('&');
+
+        return $url . $separator . $queryString;
+    }
+
+    private function googleDriver(): GoogleProvider
+    {
+        /** @var GoogleProvider $driver */
+        $driver = Socialite::driver('google');
+        return $driver;
+    }
+
+    private function extractGoogleParams(Request $request): array
+    {
+        $allowed = ['prompt', 'access_type', 'login_hint', 'include_granted_scopes', 'hd'];
+
+        $params = [];
+        foreach ($allowed as $key) {
+            $value = $request->query($key);
+            if (!is_null($value) && $value !== '') {
+                $params[$key] = $value;
+            }
+        }
+
+        return $params;
     }
 }

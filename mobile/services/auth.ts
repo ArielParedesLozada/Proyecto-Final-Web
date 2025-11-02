@@ -1,4 +1,5 @@
-import api, { BASE_URL } from './api';
+import * as Linking from 'expo-linking';
+import api from './api';
 import { storage, TOKEN_KEY } from './storage';
 
 // Funciones para manejar el token
@@ -203,4 +204,48 @@ export async function resetPassword(
 }
 
 export { getToken, setToken, removeToken };
+
+export async function getGoogleAuthUrl(redirectTo?: string) {
+  try {
+    const response = await api.get('/auth/google/url', {
+      params: {
+        ...(redirectTo ? { redirect_to: redirectTo } : {}),
+        prompt: 'select_account',
+        access_type: 'offline',
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error('Get Google auth URL error:', error);
+    throw new Error(
+      error.response?.data?.message || 'No se pudo obtener la URL de Google'
+    );
+  }
+}
+
+export function parseGoogleCallback(url: string) {
+  const parsed = Linking.parse(url);
+  const params = parsed.queryParams ?? {};
+
+  const token = typeof params.token === 'string' ? params.token : undefined;
+  const errorParam = typeof params.error === 'string' ? params.error : undefined;
+  const userParam = typeof params.user === 'string' ? params.user : undefined;
+
+  let user: any = null;
+
+  if (userParam) {
+    try {
+      user = JSON.parse(decodeURIComponent(userParam));
+    } catch (err) {
+      console.error('Error parsing Google user payload:', err);
+    }
+  }
+
+  return {
+    token,
+    user,
+    error: errorParam ? decodeURIComponent(errorParam) : undefined,
+  };
+}
 

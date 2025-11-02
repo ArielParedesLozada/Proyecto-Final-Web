@@ -46,7 +46,8 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://192.168.10.174:8000/api"
+      
+      "apiUrl": "http://10-79-9-75.nip.io:8000/api"
     }
   }
 }
