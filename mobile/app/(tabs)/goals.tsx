@@ -5,6 +5,7 @@ import {
   GoalCard,
   GoalsHeader,
   NewGoalModal,
+  AddTransactionModal,
 } from '@/components/goals';
 import { Modal, Toast, RefreshControl, EmptyState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
@@ -13,8 +14,10 @@ import {
   createGoal,
   updateGoal,
   deleteGoal,
+  addTransactionToGoal,
   Goal,
   CreateGoalPayload,
+  AddTransactionPayload,
 } from '@/services/goals';
 import { calculateProgress } from '@/services/goals';
 
@@ -31,6 +34,9 @@ export default function GoalsScreen() {
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [toDeleteId, setToDeleteId] = useState<number | null>(null);
+
+  const [txModalOpen, setTxModalOpen] = useState(false);
+  const [txGoal, setTxGoal] = useState<Goal | null>(null);
 
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -173,8 +179,62 @@ export default function GoalsScreen() {
   };
 
   const handleAddTransaction = (goal: Goal) => {
-    // TODO: Implementar modal de transacciones
-    showToast('Funcionalidad de transacciones próximamente', 'info');
+    setTxGoal(goal);
+    setTxModalOpen(true);
+  };
+
+  const handleSaveTransaction = async (
+    payload: AddTransactionPayload & { goalId: number }
+  ) => {
+    try {
+      // Si es una regla fija (Fijo), crear la regla fija en lugar de una transacción simple
+      if (payload.is_fixed && payload.frequency) {
+        const { createFixedMovement } = await import('@/services/fixedMovements');
+        
+        await createFixedMovement({
+          goal_id: payload.goalId,
+          type: payload.type,
+          amount: payload.amount,
+          frequency: payload.frequency,
+          apply_now: true, // Aplicar la transacción inmediatamente
+        });
+
+        const frequencyLabel =
+          payload.frequency === 'daily'
+            ? 'diaria'
+            : payload.frequency === 'weekly'
+            ? 'semanal'
+            : 'mensual';
+
+        const amountSign = payload.type === 'expense' ? '-$' : '$';
+        showToast(
+          `Regla fija creada: ${amountSign}${payload.amount.toLocaleString()} ${frequencyLabel}`,
+          'success'
+        );
+      } else {
+        // Transacción variable normal
+        await addTransactionToGoal(payload.goalId, {
+          type: payload.type,
+          amount: payload.amount,
+          is_fixed: false,
+        });
+
+        const typeLabel = payload.type === 'income' ? 'Ingreso' : 'Gasto';
+        showToast(
+          `${typeLabel} registrado: ${payload.type === 'income' ? '+' : '-'}$${payload.amount.toLocaleString()}`,
+          'success'
+        );
+      }
+
+      // Recargar metas y actualizar dashboard
+      await loadGoals(true);
+      refreshDashboard();
+      refreshGoals();
+    } catch (error: any) {
+      console.error('Error al guardar transacción:', error);
+      showToast(error.message || 'Error al guardar la transacción', 'error');
+      throw error;
+    }
   };
 
   if (loading && !refreshing) {
@@ -236,6 +296,16 @@ export default function GoalsScreen() {
         onSubmit={modalMode === 'edit' ? handleSubmitEdit : handleCreateGoal}
         mode={modalMode}
         initialGoal={editingGoal}
+      />
+
+      <AddTransactionModal
+        visible={txModalOpen}
+        onDismiss={() => {
+          setTxModalOpen(false);
+          setTxGoal(null);
+        }}
+        goal={txGoal}
+        onSubmit={handleSaveTransaction}
       />
 
       <Modal

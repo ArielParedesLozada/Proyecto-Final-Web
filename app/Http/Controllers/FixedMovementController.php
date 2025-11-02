@@ -22,6 +22,10 @@ class FixedMovementController extends Controller
             $q->where('goal_id', $request->query('goal_id'));
         }
 
+        if ($request->filled('type')) {
+            $q->where('type', $request->query('type'));
+        }
+
         return response()->json([
             'data' => $q->get(),
         ]);

@@ -7,3 +7,6 @@ export type { GoalsHeaderProps } from './GoalsHeader';
 export { default as NewGoalModal } from './NewGoalModal';
 export type { NewGoalModalProps } from './NewGoalModal';
 
+export { default as AddTransactionModal } from './AddTransactionModal';
+export type { AddTransactionModalProps } from './AddTransactionModal';
+
