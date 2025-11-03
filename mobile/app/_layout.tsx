@@ -18,6 +18,7 @@ import { lightTheme as paperLightTheme, darkTheme as paperDarkTheme } from '@/co
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import { GoalsProvider } from '@/contexts/GoalsContext';
+import FixedMovementNotificationChecker from '@/components/notifications/FixedMovementNotificationChecker';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
@@ -78,6 +79,7 @@ function RootLayoutContent() {
       <AuthProvider>
           <GoalsProvider>
         <ThemedNavigationProvider>
+          <FixedMovementNotificationChecker />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />

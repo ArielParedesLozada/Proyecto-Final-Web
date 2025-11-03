@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FixedMovementController;
+use App\Http\Controllers\FixedMovementNotificationController;
 use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -72,5 +73,11 @@ Route::middleware('jwt.auth')->group(function () {
         Route::delete('/{id}', [FixedMovementController::class, 'destroy']);     
         Route::post('/{id}/pause', [FixedMovementController::class, 'pause']);  
         Route::post('/{id}/resume', [FixedMovementController::class, 'resume']); 
+    });
+    
+    Route::prefix('notifications')->group(function () {
+        Route::get('/fixed-movements', [FixedMovementNotificationController::class, 'index']);
+        Route::post('/fixed-movements/mark-read', [FixedMovementNotificationController::class, 'markAsRead']);
+        Route::get('/fixed-movements/unread-count', [FixedMovementNotificationController::class, 'unreadCount']);
     });
 });

@@ -21,6 +21,7 @@ import {
 } from '@/services/goals';
 import { calculateProgress } from '@/services/goals';
 import { notifyGoalCompleted, notifySuggestedSavings } from '@/utils/notifications';
+import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
 
 export default function GoalsScreen() {
   const theme = useTheme();
@@ -52,6 +53,8 @@ export default function GoalsScreen() {
     });
   };
 
+  const { checkNotifications: checkFixedMovementNotifications } = useCheckFixedMovementNotifications();
+
   const loadGoals = useCallback(async (skipLoading = false) => {
     if (!skipLoading) setLoading(true);
     try {
@@ -65,6 +68,9 @@ export default function GoalsScreen() {
         const filtered = filterCompletedGoals(response.data);
         setGoals(filtered);
       }
+      
+      // Verificar notificaciones de movimientos fijos después de cargar metas
+      checkFixedMovementNotifications();
     } catch (error: any) {
       console.error('Error al cargar metas:', error);
       showToast('Error al cargar las metas', 'error');
@@ -72,7 +78,7 @@ export default function GoalsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [checkFixedMovementNotifications]);
 
   useEffect(() => {
     loadGoals();

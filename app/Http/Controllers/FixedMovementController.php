@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FixedMovement;
 use App\Models\Goal;
 use App\Models\Transaction;
+use App\Models\FixedMovementNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -72,13 +73,25 @@ class FixedMovementController extends Controller
         ]);
 
         if (!empty($data['apply_now'])) {
-            Transaction::create([
+            $transaction = Transaction::create([
                 'user_id'     => $userId,
                 'goal_id'     => $goal->id,
                 'type'        => $data['type'],    
                 'is_fixed'    => true,
                 'amount'      => $data['amount'],
                 'occurred_on' => Carbon::today()->toDateString(),
+            ]);
+            
+            // Crear notificación para el móvil cuando se aplica manualmente
+            FixedMovementNotification::create([
+                'user_id'           => $userId,
+                'transaction_id'    => $transaction->id,
+                'fixed_movement_id' => $fm->id,
+                'goal_id'           => $goal->id,
+                'type'              => $data['type'],
+                'amount'            => $data['amount'],
+                'frequency'         => $freq,
+                'goal_name'         => $goal->name,
             ]);
         }
 

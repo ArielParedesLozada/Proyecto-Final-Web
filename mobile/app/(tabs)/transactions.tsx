@@ -19,10 +19,12 @@ import { AddTransactionModal } from '@/components/goals';
 import { AddTransactionPayload } from '@/services/goals';
 import { addTransactionToGoal } from '@/services/goals';
 import { compareYMDDates } from '@/utils/date';
+import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
 
 export default function TransactionsScreen() {
   const theme = useTheme();
   const { refreshGoals, goalsVersion } = useGoalsContext();
+  const { checkNotifications: checkFixedMovementNotifications } = useCheckFixedMovementNotifications();
 
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -83,6 +85,9 @@ export default function TransactionsScreen() {
         setGoals([]);
         setSelectedGoal(null);
       }
+      
+      // Verificar notificaciones de movimientos fijos después de cargar metas
+      checkFixedMovementNotifications();
     } catch (error: any) {
       console.error('Error al cargar metas:', error);
       showToast('Error al cargar las metas', 'error');
@@ -119,6 +124,9 @@ export default function TransactionsScreen() {
 
       const response = await listTransactions(selectedGoal.id, params);
       setTransactions(response.data || []);
+      
+      // Verificar notificaciones de movimientos fijos después de cargar transacciones
+      checkFixedMovementNotifications();
     } catch (error: any) {
       console.error('Error al cargar transacciones:', error);
       showToast('Error al cargar las transacciones', 'error');

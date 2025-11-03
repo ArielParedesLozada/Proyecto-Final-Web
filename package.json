@@ -7,6 +7,10 @@
         "dev": "vite"
     },
     "devDependencies": {
+        "@babel/core": "^7.28.5",
+        "@babel/preset-env": "^7.28.5",
+        "@babel/preset-react": "^7.28.5",
+        "@babel/types": "^7.28.5",
         "@tailwindcss/postcss": "^4.1.13",
         "@tailwindcss/vite": "^4.0.0",
         "@vitejs/plugin-react": "^5.0.2",

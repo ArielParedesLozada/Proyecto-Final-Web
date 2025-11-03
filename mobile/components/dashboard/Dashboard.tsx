@@ -4,6 +4,7 @@ import { Text, useTheme, Card, ActivityIndicator } from 'react-native-paper';
 import { getDashboardSummary, DashboardSummary } from '@/services/stats';
 import { RefreshControl, EmptyState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
+import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
 import StatCard from './StatCard';
 import GoalItem from './GoalItem';
 import CompletedList from './CompletedList';
@@ -17,6 +18,7 @@ const MAX_COMPLETED_HEIGHT = COMPLETED_ITEM_HEIGHT * MAX_VISIBLE_ITEMS;
 export default function Dashboard() {
   const theme = useTheme();
   const { dashboardVersion } = useGoalsContext();
+  const { checkNotifications: checkFixedMovementNotifications } = useCheckFixedMovementNotifications();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<DashboardSummary | null>(null);
@@ -28,6 +30,9 @@ export default function Dashboard() {
     try {
       const response = await getDashboardSummary();
       setData(response);
+      
+      // Verificar notificaciones de movimientos fijos después de cargar dashboard
+      checkFixedMovementNotifications();
     } catch (error: any) {
       console.error('Error al cargar dashboard:', error);
     } finally {

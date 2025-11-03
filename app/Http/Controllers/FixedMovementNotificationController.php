@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\FixedMovementNotification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class FixedMovementNotificationController extends Controller
+{
+    /**
+     * Obtener notificaciones pendientes de movimientos fijos
+     */
+    public function index(Request $request)
+    {
+        $userId = Auth::id();
+        
+        $query = FixedMovementNotification::where('user_id', $userId)
+            ->where('read', false)
+            ->orderBy('created_at', 'desc');
+        
+        // Opcional: límite de notificaciones
+        $limit = $request->query('limit', 50);
+        if ($limit) {
+            $query->limit($limit);
+        }
+        
+        $notifications = $query->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $notifications,
+        ]);
+    }
+    
+    /**
+     * Marcar notificaciones como leídas
+     */
+    public function markAsRead(Request $request)
+    {
+        $userId = Auth::id();
+        
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer|exists:fixed_movement_notifications,id',
+        ]);
+        
+        FixedMovementNotification::where('user_id', $userId)
+            ->whereIn('id', $request->ids)
+            ->update([
+                'read' => true,
+                'read_at' => now(),
+            ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notificaciones marcadas como leídas',
+        ]);
+    }
+    
+    /**
+     * Obtener conteo de notificaciones no leídas
+     */
+    public function unreadCount()
+    {
+        $userId = Auth::id();
+        
+        $count = FixedMovementNotification::where('user_id', $userId)
+            ->where('read', false)
+            ->count();
+        
+        return response()->json([
+            'success' => true,
+            'count' => $count,
+        ]);
+    }
+}
+
