@@ -18,6 +18,7 @@ import {
 import { AddTransactionModal } from '@/components/goals';
 import { AddTransactionPayload } from '@/services/goals';
 import { addTransactionToGoal } from '@/services/goals';
+import { compareYMDDates } from '@/utils/date';
 
 export default function TransactionsScreen() {
   const theme = useTheme();
@@ -93,6 +94,15 @@ export default function TransactionsScreen() {
 
   const loadTransactions = async () => {
     if (!selectedGoal) return;
+
+    if (dateRange.start && dateRange.end) {
+      const comparison = compareYMDDates(dateRange.start, dateRange.end);
+      if (comparison > 0) {
+        showToast('Rango de fechas inválido', 'error');
+        setDateRange({ start: '', end: '' });
+        return;
+      }
+    }
 
     setTransactionsLoading(true);
     try {
