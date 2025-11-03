@@ -1,10 +1,13 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, Card, ActivityIndicator, FAB } from 'react-native-paper';
-import { MaterialIcons } from '@expo/vector-icons';
 import { Transaction } from '@/services/goals';
 import TransactionItem from './TransactionItem';
 import { EmptyState } from '@/components/ui';
+
+const ITEM_HEIGHT = 68;
+const MAX_VISIBLE_ITEMS = 5;
+const MAX_HEIGHT = ITEM_HEIGHT * MAX_VISIBLE_ITEMS;
 
 export interface TransactionsListProps {
   title: string;
@@ -57,15 +60,23 @@ export default function TransactionsList({
             <ActivityIndicator size="small" color={theme.colors.primary} />
           </View>
         ) : transactions.length > 0 ? (
-          <ScrollView
-            style={styles.scrollView}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={true}
-          >
-            {transactions.map((transaction) => (
-              <TransactionItem key={transaction.id} transaction={transaction} />
-            ))}
-          </ScrollView>
+          transactions.length >= MAX_VISIBLE_ITEMS ? (
+            <ScrollView
+              style={[styles.scrollView, { maxHeight: MAX_HEIGHT }]}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+            >
+              {transactions.map((transaction) => (
+                <TransactionItem key={transaction.id} transaction={transaction} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.transactionsList}>
+              {transactions.map((transaction) => (
+                <TransactionItem key={transaction.id} transaction={transaction} />
+              ))}
+            </View>
+          )
         ) : (
           <EmptyState
             variant="default"
@@ -105,7 +116,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   scrollView: {
-    flex: 1,
+    maxHeight: MAX_HEIGHT,
+  },
+  transactionsList: {
+    gap: 0,
   },
   loadingContainer: {
     flex: 1,

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { Transaction } from '@/services/goals';
-import { formatYMDToShort } from '@/utils/date';
+import { formatDateShort } from '@/utils/date';
 
 export interface TransactionItemProps {
   transaction: Transaction;
@@ -23,17 +23,16 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
         </Text>
       </View>
       
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={[styles.date, { color: theme.colors.onSurface }]}>
-            {formatYMDToShort(transaction.occurred_on)}
-          </Text>
-          <View style={[styles.badge, { backgroundColor: theme.colors.primaryContainer }]}>
-            <Text style={[styles.badgeText, { color: theme.colors.onPrimaryContainer }]}>
-              {transaction.is_fixed ? 'Fijo' : 'Variable'}
-            </Text>
-          </View>
-        </View>
+      <View style={[styles.badge, { backgroundColor: theme.colors.primaryContainer }]}>
+        <Text style={[styles.badgeText, { color: theme.colors.onPrimaryContainer }]}>
+          {transaction.is_fixed ? 'Fijo' : 'Variable'}
+        </Text>
+      </View>
+      
+      <View style={styles.dateContainer}>
+        <Text style={[styles.date, { color: theme.colors.onSurfaceVariant }]}>
+          {formatDateShort(transaction.occurred_on)}
+        </Text>
       </View>
       
       <Text style={[styles.amount, { color: amountColor }]}>
@@ -63,26 +62,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  content: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  date: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   badge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 6,
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  dateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  date: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   amount: {
     fontSize: 16,
