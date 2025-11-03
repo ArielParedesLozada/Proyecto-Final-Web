@@ -1,23 +1,37 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, ActivityIndicator, Chip } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { RefreshControl, EmptyState } from '@/components/ui';
-import { FixedMovementNotificationItem } from '@/components/notifications';
+import { FixedMovementNotificationItem, GoalNotificationItem } from '@/components/notifications';
 import {
   getFixedMovementNotifications,
   markNotificationsAsRead,
   getUnreadNotificationsCount,
   FixedMovementNotification,
+  getGoalNotifications,
+  markGoalNotificationsAsRead,
+  getGoalNotificationsUnreadCount,
+  GoalNotification,
 } from '@/services/notifications';
 
 type FilterType = 'all' | 'unread';
+
+type UnifiedNotification = {
+  id: string; // String para permitir prefijos (fm-123, goal-456)
+  type: 'fixed_movement' | 'goal';
+  fixedMovement?: FixedMovementNotification;
+  goal?: GoalNotification;
+  created_at: string;
+  read: boolean;
+};
 
 export default function NotificationsScreen() {
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [notifications, setNotifications] = useState<FixedMovementNotification[]>([]);
+  const [fixedMovementNotifications, setFixedMovementNotifications] = useState<FixedMovementNotification[]>([]);
+  const [goalNotifications, setGoalNotifications] = useState<GoalNotification[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentTime, setCurrentTime] = useState(Date.now()); 
@@ -26,18 +40,37 @@ export default function NotificationsScreen() {
   const loadNotifications = useCallback(async (skipLoading = false, merge = false) => {
     if (!skipLoading && !merge) setLoading(true);
     try {
-      const [allNotifications, count] = await Promise.all([
+      const [fixedMovements, fixedMovementsCount, goals, goalsCount] = await Promise.all([
         getFixedMovementNotifications(100, true),   
         getUnreadNotificationsCount(),
+        getGoalNotifications(100, true),
+        getGoalNotificationsUnreadCount(),
       ]);
 
       if (merge) {
-        setNotifications((prev) => {
+        // Merge para fixed movements
+        setFixedMovementNotifications((prev) => {
           const existingIds = new Set(prev.map((n) => n.id));
-          const newNotifications = allNotifications.filter((n) => !existingIds.has(n.id));
+          const newNotifications = fixedMovements.filter((n) => !existingIds.has(n.id));
           
           if (newNotifications.length === 0) {
-            const updatedMap = new Map(allNotifications.map((n) => [n.id, n]));
+            const updatedMap = new Map(fixedMovements.map((n) => [n.id, n]));
+            return prev.map((n) => updatedMap.get(n.id) || n);
+          }
+          
+          const combined = [...newNotifications, ...prev];
+          return combined.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        });
+
+        // Merge para goal notifications
+        setGoalNotifications((prev) => {
+          const existingIds = new Set(prev.map((n) => n.id));
+          const newNotifications = goals.filter((n) => !existingIds.has(n.id));
+          
+          if (newNotifications.length === 0) {
+            const updatedMap = new Map(goals.map((n) => [n.id, n]));
             return prev.map((n) => updatedMap.get(n.id) || n);
           }
           
@@ -47,13 +80,17 @@ export default function NotificationsScreen() {
           );
         });
       } else {
-        const sorted = [...allNotifications].sort((a, b) => 
+        const sortedFixed = [...fixedMovements].sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-        setNotifications(sorted);
+        const sortedGoals = [...goals].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setFixedMovementNotifications(sortedFixed);
+        setGoalNotifications(sortedGoals);
       }
       
-      setUnreadCount(count);
+      setUnreadCount(fixedMovementsCount + goalsCount);
     } catch (error: any) {
       console.error('Error al cargar notificaciones:', error);
     } finally {
@@ -102,11 +139,27 @@ export default function NotificationsScreen() {
     setCurrentTime(Date.now());
   }, [loadNotifications]);
 
-  const handleNotificationPress = async (notification: FixedMovementNotification) => {
+  const handleFixedMovementNotificationPress = async (notification: FixedMovementNotification) => {
     if (!notification.read) {
       try {
         await markNotificationsAsRead([notification.id]);
-        setNotifications((prev) =>
+        setFixedMovementNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, read: true, read_at: new Date().toISOString() } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error('Error al marcar notificación como leída:', error);
+      }
+    }
+  };
+
+  const handleGoalNotificationPress = async (notification: GoalNotification) => {
+    if (!notification.read) {
+      try {
+        await markGoalNotificationsAsRead([notification.id]);
+        setGoalNotifications((prev) =>
           prev.map((n) =>
             n.id === notification.id ? { ...n, read: true, read_at: new Date().toISOString() } : n
           )
@@ -119,13 +172,27 @@ export default function NotificationsScreen() {
   };
 
   const handleMarkAllAsRead = async () => {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
-    if (unreadIds.length === 0) return;
+    const unreadFixedIds = fixedMovementNotifications.filter((n) => !n.read).map((n) => n.id);
+    const unreadGoalIds = goalNotifications.filter((n) => !n.read).map((n) => n.id);
+    
+    if (unreadFixedIds.length === 0 && unreadGoalIds.length === 0) return;
 
     try {
-      await markNotificationsAsRead(unreadIds);
-      setNotifications((prev) =>
-        prev.map((n) => (unreadIds.includes(n.id) ? { ...n, read: true, read_at: new Date().toISOString() } : n))
+      const promises = [];
+      if (unreadFixedIds.length > 0) {
+        promises.push(markNotificationsAsRead(unreadFixedIds));
+      }
+      if (unreadGoalIds.length > 0) {
+        promises.push(markGoalNotificationsAsRead(unreadGoalIds));
+      }
+
+      await Promise.all(promises);
+
+      setFixedMovementNotifications((prev) =>
+        prev.map((n) => (unreadFixedIds.includes(n.id) ? { ...n, read: true, read_at: new Date().toISOString() } : n))
+      );
+      setGoalNotifications((prev) =>
+        prev.map((n) => (unreadGoalIds.includes(n.id) ? { ...n, read: true, read_at: new Date().toISOString() } : n))
       );
       setUnreadCount(0);
     } catch (error) {
@@ -133,7 +200,31 @@ export default function NotificationsScreen() {
     }
   };
 
-  const filteredNotifications = notifications.filter((n) => {
+  // Combinar y ordenar todas las notificaciones
+  const allNotifications = useMemo(() => {
+    const unified: UnifiedNotification[] = [
+      ...fixedMovementNotifications.map((n) => ({
+        id: `fm-${n.id}`, // Prefijo único para evitar conflictos de ID
+        type: 'fixed_movement' as const,
+        fixedMovement: n,
+        created_at: n.created_at,
+        read: n.read,
+      })),
+      ...goalNotifications.map((n) => ({
+        id: `goal-${n.id}`, // Prefijo único para evitar conflictos de ID
+        type: 'goal' as const,
+        goal: n,
+        created_at: n.created_at,
+        read: n.read,
+      })),
+    ];
+
+    return unified.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [fixedMovementNotifications, goalNotifications]);
+
+  const filteredNotifications = allNotifications.filter((n) => {
     if (filter === 'unread') return !n.read;
     return true;
   });
@@ -169,7 +260,7 @@ export default function NotificationsScreen() {
             style={styles.chip}
             selectedColor={theme.colors.primary}
           >
-            Todas ({notifications.length})
+            Todas ({allNotifications.length})
           </Chip>
           <Chip
             selected={filter === 'unread'}
@@ -198,20 +289,35 @@ export default function NotificationsScreen() {
               subtitle={
                 filter === 'unread'
                   ? 'Todas tus notificaciones han sido leídas'
-                  : 'Las notificaciones de tus movimientos fijos aparecerán aquí'
+                  : 'Las notificaciones de tus movimientos fijos y metas aparecerán aquí'
               }
             />
           </View>
         ) : (
           <View style={styles.notificationsList}>
-            {filteredNotifications.map((notification) => (
-              <FixedMovementNotificationItem
-                key={notification.id}
-                notification={notification}
-                currentTime={currentTime}
-                onPress={() => handleNotificationPress(notification)}
-              />
-            ))}
+            {filteredNotifications.map((notification) => {
+              if (notification.type === 'fixed_movement' && notification.fixedMovement) {
+                return (
+                  <FixedMovementNotificationItem
+                    key={`fm-${notification.id}`}
+                    notification={notification.fixedMovement}
+                    currentTime={currentTime}
+                    onPress={() => handleFixedMovementNotificationPress(notification.fixedMovement!)}
+                  />
+                );
+              }
+              if (notification.type === 'goal' && notification.goal) {
+                return (
+                  <GoalNotificationItem
+                    key={`goal-${notification.id}`}
+                    notification={notification.goal}
+                    currentTime={currentTime}
+                    onPress={() => handleGoalNotificationPress(notification.goal!)}
+                  />
+                );
+              }
+              return null;
+            })}
           </View>
         )}
       </ScrollView>
