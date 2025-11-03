@@ -9,15 +9,21 @@ use Illuminate\Support\Facades\Auth;
 class FixedMovementNotificationController extends Controller
 {
     /**
-     * Obtener notificaciones pendientes de movimientos fijos
+     * Obtener notificaciones de movimientos fijos
      */
     public function index(Request $request)
     {
         $userId = Auth::id();
         
-        $query = FixedMovementNotification::where('user_id', $userId)
-            ->where('read', false)
-            ->orderBy('created_at', 'desc');
+        $query = FixedMovementNotification::where('user_id', $userId);
+        
+        // Si se especifica 'all', obtener todas (leídas y no leídas), sino solo no leídas
+        $all = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
+        if (!$all) {
+            $query->where('read', false);
+        }
+        
+        $query->orderBy('created_at', 'desc');
         
         // Opcional: límite de notificaciones
         $limit = $request->query('limit', 50);

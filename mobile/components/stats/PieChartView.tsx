@@ -68,6 +68,7 @@ export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChart
       <View style={styles.legend}>
         {filteredData.map((item, index) => {
           const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
+          const count = item.value;
           return (
             <View key={index} style={styles.legendItem}>
               <View style={[styles.colorDot, { backgroundColor: colors[index % colors.length] }]} />
@@ -76,7 +77,7 @@ export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChart
                   {item.name}
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {percentage}%
+                  {percentage}% ({count})
                 </Text>
               </View>
             </View>

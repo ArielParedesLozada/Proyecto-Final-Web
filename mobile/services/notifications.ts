@@ -27,11 +27,12 @@ export interface UnreadCountResponse {
 }
 
 export async function getFixedMovementNotifications(
-  limit: number = 50
+  limit: number = 50,
+  all: boolean = false
 ): Promise<FixedMovementNotification[]> {
   try {
     const response = await api.get<NotificationsResponse>('/notifications/fixed-movements', {
-      params: { limit },
+      params: { limit, all },
     });
     return response.data.success ? response.data.data : [];
   } catch (error: any) {
