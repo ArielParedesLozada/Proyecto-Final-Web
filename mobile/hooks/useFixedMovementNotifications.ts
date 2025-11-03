@@ -37,12 +37,10 @@ export function useFixedMovementNotifications(
       );
 
       if (newNotifications.length > 0) {
+        // Marcar como procesadas localmente para evitar duplicados
         newNotifications.forEach((n) => {
           globalProcessedIds.add(n.id);
         });
-
-        const idsToMark = newNotifications.map((n) => n.id);
-        await markNotificationsAsRead(idsToMark);
 
         if (newNotifications.length === 1) {
           await notifyFixedMovement(newNotifications[0]);

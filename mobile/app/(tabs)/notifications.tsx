@@ -23,15 +23,36 @@ export default function NotificationsScreen() {
   const [currentTime, setCurrentTime] = useState(Date.now()); 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadNotifications = useCallback(async (skipLoading = false) => {
-    if (!skipLoading) setLoading(true);
+  const loadNotifications = useCallback(async (skipLoading = false, merge = false) => {
+    if (!skipLoading && !merge) setLoading(true);
     try {
       const [allNotifications, count] = await Promise.all([
         getFixedMovementNotifications(100, true),   
         getUnreadNotificationsCount(),
       ]);
 
-      setNotifications(allNotifications);
+      if (merge) {
+        setNotifications((prev) => {
+          const existingIds = new Set(prev.map((n) => n.id));
+          const newNotifications = allNotifications.filter((n) => !existingIds.has(n.id));
+          
+          if (newNotifications.length === 0) {
+            const updatedMap = new Map(allNotifications.map((n) => [n.id, n]));
+            return prev.map((n) => updatedMap.get(n.id) || n);
+          }
+          
+          const combined = [...newNotifications, ...prev];
+          return combined.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        });
+      } else {
+        const sorted = [...allNotifications].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setNotifications(sorted);
+      }
+      
       setUnreadCount(count);
     } catch (error: any) {
       console.error('Error al cargar notificaciones:', error);
@@ -46,7 +67,6 @@ export default function NotificationsScreen() {
   }, [loadNotifications]);
 
   useEffect(() => {
-    // Actualizar inmediatamente al montar
     setCurrentTime(Date.now());
     
     intervalRef.current = setInterval(() => {
@@ -63,7 +83,17 @@ export default function NotificationsScreen() {
   useFocusEffect(
     useCallback(() => {
       setCurrentTime(Date.now());
-    }, [])
+      
+      loadNotifications(true, true);
+      
+      const checkInterval = setInterval(() => {
+        loadNotifications(true, true);
+      }, 15000); 
+      
+      return () => {
+        clearInterval(checkInterval);
+      };
+    }, [loadNotifications])
   );
 
   const handleRefresh = useCallback(() => {
