@@ -28,19 +28,17 @@ export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChart
     return null;
   }
 
-  // Filtrar datos con valor 0
   const filteredData = data.filter((item) => item.value > 0);
   if (filteredData.length === 0) {
     return null;
   }
 
-  // Preparar datos para react-native-chart-kit
   const chartData = filteredData.map((item, index) => ({
-    name: item.name,
+    name: '', 
     population: item.value,
     color: colors[index % colors.length],
-    legendFontColor: theme.colors.onSurface,
-    legendFontSize: 12,
+    legendFontColor: 'transparent', 
+    legendFontSize: 0,
   }));
 
   const chartConfig = {
@@ -64,6 +62,7 @@ export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChart
           paddingLeft="15"
           center={[10, 10]}
           absolute
+          hasLegend={false}
         />
       </View>
       <View style={styles.legend}>
@@ -77,7 +76,7 @@ export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChart
                   {item.name}
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {item.value} ({percentage}%)
+                  {percentage}%
                 </Text>
               </View>
             </View>
@@ -93,20 +92,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
+    width: '100%',
   },
   chartWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+    width: '100%',
   },
   legend: {
-    gap: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
     width: '100%',
+    gap: 12,
+    paddingHorizontal: 8,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+    width: '48%', 
+    maxWidth: '48%',
   },
   colorDot: {
     width: 16,
