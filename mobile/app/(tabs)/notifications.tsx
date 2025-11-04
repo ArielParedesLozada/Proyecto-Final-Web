@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { router } from 'expo-router';
 import { RefreshControl, EmptyState } from '@/components/ui';
-import { NotificationsFilters, NotificationsList } from '@/components/notifications';
+import { NotificationsFilters, NotificationsList, NotificationDetailModal } from '@/components/notifications';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useTransactionsNavigation } from '@/contexts/TransactionsNavigationContext';
+import { FixedMovementNotification, GoalNotification } from '@/services/notifications';
 
 export default function NotificationsScreen() {
   const theme = useTheme();
+  const { navigateToTransactions } = useTransactionsNavigation();
   const {
     loading,
     refreshing,
@@ -21,6 +25,31 @@ export default function NotificationsScreen() {
     handleGoalNotificationPress,
     handleMarkAllAsRead,
   } = useNotifications();
+
+  const [selectedNotification, setSelectedNotification] = useState<{
+    notification: FixedMovementNotification | GoalNotification;
+    type: 'fixed_movement' | 'goal';
+  } | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleNotificationPress = useCallback((notification: FixedMovementNotification | GoalNotification, type: 'fixed_movement' | 'goal') => {
+    setSelectedNotification({ notification, type });
+    setModalVisible(true);
+    
+    // Marcar como leída si no está leída
+    if (!notification.read) {
+      if (type === 'fixed_movement') {
+        handleFixedMovementNotificationPress(notification as FixedMovementNotification);
+      } else {
+        handleGoalNotificationPress(notification as GoalNotification);
+      }
+    }
+  }, [handleFixedMovementNotificationPress, handleGoalNotificationPress]);
+
+  const handleViewTransactions = useCallback((goalId: number) => {
+    navigateToTransactions(goalId);
+    router.push('/(tabs)/transactions');
+  }, [navigateToTransactions]);
 
   if (loading && !refreshing) {
     return (
@@ -70,11 +99,21 @@ export default function NotificationsScreen() {
           <NotificationsList
             notifications={filteredNotifications}
             currentTime={currentTime}
-            onFixedMovementPress={handleFixedMovementNotificationPress}
-            onGoalPress={handleGoalNotificationPress}
+            onNotificationPress={handleNotificationPress}
           />
         )}
       </ScrollView>
+
+      <NotificationDetailModal
+        visible={modalVisible}
+        onDismiss={() => {
+          setModalVisible(false);
+          setSelectedNotification(null);
+        }}
+        notification={selectedNotification?.notification || null}
+        type={selectedNotification?.type || 'fixed_movement'}
+        onViewTransactions={handleViewTransactions}
+      />
     </View>
   );
 }

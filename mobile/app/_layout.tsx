@@ -18,6 +18,7 @@ import { lightTheme as paperLightTheme, darkTheme as paperDarkTheme } from '@/co
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import { GoalsProvider } from '@/contexts/GoalsContext';
+import { TransactionsNavigationProvider } from '@/contexts/TransactionsNavigationContext';
 import FixedMovementNotificationChecker from '@/components/notifications/FixedMovementNotificationChecker';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
@@ -78,6 +79,7 @@ function RootLayoutContent() {
     <PaperProvider theme={paperTheme}>
       <AuthProvider>
           <GoalsProvider>
+            <TransactionsNavigationProvider>
         <ThemedNavigationProvider>
           <FixedMovementNotificationChecker />
           <Stack screenOptions={{ headerShown: false }}>
@@ -89,6 +91,7 @@ function RootLayoutContent() {
           </Stack>
             <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
         </ThemedNavigationProvider>
+            </TransactionsNavigationProvider>
           </GoalsProvider>
       </AuthProvider>
     </PaperProvider>

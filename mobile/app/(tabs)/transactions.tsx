@@ -9,6 +9,7 @@ import {
 } from '@/components/transactions';
 import { RefreshControl, Toast, EmptyState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
+import { useTransactionsNavigation } from '@/contexts/TransactionsNavigationContext';
 import {
   listGoals,
   listTransactions,
@@ -24,6 +25,7 @@ import { useCheckFixedMovementNotifications } from '@/components/notifications/F
 export default function TransactionsScreen() {
   const theme = useTheme();
   const { refreshGoals, goalsVersion } = useGoalsContext();
+  const { selectedGoalId, setSelectedGoalId } = useTransactionsNavigation();
   const { checkNotifications: checkFixedMovementNotifications } = useCheckFixedMovementNotifications();
 
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -55,6 +57,17 @@ export default function TransactionsScreen() {
     }
   }, [goalsVersion]);
 
+  // Reaccionar cuando se selecciona una meta desde el contexto de navegación
+  useEffect(() => {
+    if (selectedGoalId && goals.length > 0) {
+      const goalToSelect = goals.find((g) => g.id === selectedGoalId);
+      if (goalToSelect && goalToSelect.id !== selectedGoal?.id) {
+        setSelectedGoal(goalToSelect);
+        setSelectedGoalId(null); // Limpiar después de usar
+      }
+    }
+  }, [selectedGoalId, goals]);
+
   useEffect(() => {
     if (selectedGoal) {
       loadTransactions();
@@ -72,7 +85,23 @@ export default function TransactionsScreen() {
 
       if (response.data && response.data.length > 0) {
         setGoals(response.data);
-        if (!selectedGoal) {
+        
+        // Si hay un goalId seleccionado desde el contexto (navegación desde notificaciones)
+        if (selectedGoalId) {
+          const goalFromContext = response.data.find((g) => g.id === selectedGoalId);
+          if (goalFromContext) {
+            setSelectedGoal(goalFromContext);
+            setSelectedGoalId(null); // Limpiar después de usar
+          } else if (!selectedGoal) {
+            setSelectedGoal(response.data[0]);
+          } else {
+            // Actualizar la meta seleccionada si existe
+            const updated = response.data.find((g) => g.id === selectedGoal.id);
+            if (updated) {
+              setSelectedGoal(updated);
+            }
+          }
+        } else if (!selectedGoal) {
           setSelectedGoal(response.data[0]);
         } else {
           // Actualizar la meta seleccionada si existe

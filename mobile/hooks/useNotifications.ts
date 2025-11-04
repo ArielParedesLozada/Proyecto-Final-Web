@@ -236,6 +236,7 @@ export function useNotifications() {
     });
   }, [allNotifications, filter]);
 
+
   return {
     loading,
     refreshing,

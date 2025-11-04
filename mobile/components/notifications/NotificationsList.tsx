@@ -8,15 +8,13 @@ import { FixedMovementNotification, GoalNotification } from '@/services/notifica
 export interface NotificationsListProps {
   notifications: UnifiedNotification[];
   currentTime: number;
-  onFixedMovementPress: (notification: FixedMovementNotification) => void;
-  onGoalPress: (notification: GoalNotification) => void;
+  onNotificationPress: (notification: FixedMovementNotification | GoalNotification, type: 'fixed_movement' | 'goal') => void;
 }
 
 export default function NotificationsList({
   notifications,
   currentTime,
-  onFixedMovementPress,
-  onGoalPress,
+  onNotificationPress,
 }: NotificationsListProps) {
   return (
     <View style={styles.container}>
@@ -27,7 +25,7 @@ export default function NotificationsList({
               key={notification.id}
               notification={notification.fixedMovement}
               currentTime={currentTime}
-              onPress={() => onFixedMovementPress(notification.fixedMovement!)}
+              onPress={() => onNotificationPress(notification.fixedMovement!, 'fixed_movement')}
             />
           );
         }
@@ -37,7 +35,7 @@ export default function NotificationsList({
               key={notification.id}
               notification={notification.goal}
               currentTime={currentTime}
-              onPress={() => onGoalPress(notification.goal!)}
+              onPress={() => onNotificationPress(notification.goal!, 'goal')}
             />
           );
         }
