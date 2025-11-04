@@ -22,6 +22,7 @@ import {
 import { calculateProgress } from '@/services/goals';
 import { notifyGoalCompleted, notifySuggestedSavings } from '@/utils/notifications';
 import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
+import { triggerRefresh } from '@/utils/notifications/countManager';
 
 export default function GoalsScreen() {
   const theme = useTheme();
@@ -116,6 +117,9 @@ export default function GoalsScreen() {
       await loadGoals(true);
       refreshDashboard();
       refreshGoals();
+      
+      // Actualizar badge de notificaciones inmediatamente
+      triggerRefresh();
       
       try {
         await notifySuggestedSavings(
@@ -246,6 +250,11 @@ export default function GoalsScreen() {
         );
 
         const responseData = response as any;
+        
+        if (payload.type === 'income' && responseData.goal?.status === 'completed') {
+          triggerRefresh();
+        }
+        
         if (payload.type === 'income' && responseData.goal) {
           const goal = responseData.goal;
           const progressPct = responseData.progress_pct || calculateProgress(

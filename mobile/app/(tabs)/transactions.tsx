@@ -21,6 +21,7 @@ import { AddTransactionPayload } from '@/services/goals';
 import { addTransactionToGoal } from '@/services/goals';
 import { compareYMDDates } from '@/utils/date';
 import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
+import { triggerRefresh } from '@/utils/notifications/countManager';
 
 export default function TransactionsScreen() {
   const theme = useTheme();
@@ -184,7 +185,7 @@ export default function TransactionsScreen() {
     payload: AddTransactionPayload & { goalId: number }
   ) => {
     try {
-      await addTransactionToGoal(payload.goalId, {
+      const response = await addTransactionToGoal(payload.goalId, {
         type: payload.type,
         amount: payload.amount,
         is_fixed: false,
@@ -195,6 +196,11 @@ export default function TransactionsScreen() {
         `${typeLabel} registrado: ${payload.type === 'income' ? '+' : '-'}$${payload.amount.toLocaleString()}`,
         'success'
       );
+
+      const responseData = response as any;
+      if (payload.type === 'income' && responseData.goal?.status === 'completed') {
+        triggerRefresh();
+      }
 
       setAddTxModalOpen(false);
       await loadTransactions();
