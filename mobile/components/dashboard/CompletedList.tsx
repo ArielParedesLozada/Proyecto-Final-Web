@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import { formatYMDToShort } from '@/utils/date';
 
 export interface CompletedItem {
   id: number;
@@ -12,20 +13,6 @@ export interface CompletedItem {
 export interface CompletedListProps {
   items: CompletedItem[];
 }
-
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return '';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleDateString('es-ES', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
-  } catch {
-    return dateString;
-  }
-};
 
 export default function CompletedList({ items }: CompletedListProps) {
   const theme = useTheme();
@@ -52,7 +39,7 @@ export default function CompletedList({ items }: CompletedListProps) {
                 variant="bodySmall"
                 style={[styles.date, { color: theme.colors.onSurfaceVariant }]}
               >
-                {formatDate(item.finishedAt || item.deadline)}
+                {formatYMDToShort(item.finishedAt || item.deadline || '')}
               </Text>
             )}
           </View>

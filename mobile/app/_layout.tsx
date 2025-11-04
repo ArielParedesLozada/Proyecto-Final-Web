@@ -3,15 +3,23 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider, useTheme } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LogBox } from 'react-native';
 import 'react-native-reanimated';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications',
+  'expo-notifications functionality is not fully supported',
+]);
+
 import { lightTheme as paperLightTheme, darkTheme as paperDarkTheme } from '@/constants/paper-theme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import { GoalsProvider } from '@/contexts/GoalsContext';
+import { TransactionsNavigationProvider } from '@/contexts/TransactionsNavigationContext';
+import FixedMovementNotificationChecker from '@/components/notifications/FixedMovementNotificationChecker';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
@@ -71,7 +79,9 @@ function RootLayoutContent() {
     <PaperProvider theme={paperTheme}>
       <AuthProvider>
           <GoalsProvider>
+            <TransactionsNavigationProvider>
         <ThemedNavigationProvider>
+          <FixedMovementNotificationChecker />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
@@ -81,6 +91,7 @@ function RootLayoutContent() {
           </Stack>
             <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
         </ThemedNavigationProvider>
+            </TransactionsNavigationProvider>
           </GoalsProvider>
       </AuthProvider>
     </PaperProvider>

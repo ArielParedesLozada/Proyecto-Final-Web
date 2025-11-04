@@ -26,6 +26,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'ngrok-skip-browser-warning': 'true',
+    'X-Client-Type': 'mobile', 
   },
 });
 

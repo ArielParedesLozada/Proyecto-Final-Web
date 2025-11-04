@@ -20,7 +20,9 @@ import {
   AddTransactionPayload,
 } from '@/services/goals';
 import { calculateProgress } from '@/services/goals';
-import { notifySuggestedMonthlySavings } from '@/utils/notifications';
+import { notifyGoalCompleted, notifySuggestedSavings } from '@/utils/notifications';
+import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
+import { triggerRefresh } from '@/utils/notifications/countManager';
 
 export default function GoalsScreen() {
   const theme = useTheme();
@@ -52,6 +54,8 @@ export default function GoalsScreen() {
     });
   };
 
+  const { checkNotifications: checkFixedMovementNotifications } = useCheckFixedMovementNotifications();
+
   const loadGoals = useCallback(async (skipLoading = false) => {
     if (!skipLoading) setLoading(true);
     try {
@@ -65,6 +69,9 @@ export default function GoalsScreen() {
         const filtered = filterCompletedGoals(response.data);
         setGoals(filtered);
       }
+      
+      // Verificar notificaciones de movimientos fijos después de cargar metas
+      checkFixedMovementNotifications();
     } catch (error: any) {
       console.error('Error al cargar metas:', error);
       showToast('Error al cargar las metas', 'error');
@@ -72,18 +79,16 @@ export default function GoalsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [checkFixedMovementNotifications]);
 
   useEffect(() => {
     loadGoals();
   }, [loadGoals]);
 
-  // Recargar metas cuando cambie la versión (se actualizó desde otra pantalla)
   useEffect(() => {
     if (goalsVersion > 0) {
       loadGoals(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goalsVersion]);
 
   const handleRefresh = useCallback(() => {
@@ -110,17 +115,22 @@ export default function GoalsScreen() {
       showToast('Meta creada correctamente', 'success');
       setModalOpen(false);
       await loadGoals(true);
-      // Notificar a Dashboard y otras pantallas que se creó una meta
       refreshDashboard();
       refreshGoals();
       
-      // Enviar notificación local con el ahorro mensual sugerido
-      await notifySuggestedMonthlySavings(
-        payload.name,
-        payload.target_amount,
-        payload.target_date,
-        0 // Al crear una meta nueva, el monto acumulado es 0
-      );
+      // Actualizar badge de notificaciones inmediatamente
+      triggerRefresh();
+      
+      try {
+        await notifySuggestedSavings(
+          payload.name,
+          payload.target_amount,
+          payload.target_date,
+          0 
+        );
+      } catch (error) {
+        console.warn('No se pudo enviar la notificación:', error);
+      }
     } catch (error: any) {
       console.error('Error al crear meta:', error);
       showToast(error.message || 'Error al crear la meta', 'error');
@@ -150,7 +160,6 @@ export default function GoalsScreen() {
       setModalOpen(false);
       setEditingGoal(null);
       await loadGoals(true);
-      // Notificar a Dashboard que se actualizó una meta
       refreshDashboard();
       refreshGoals();
     } catch (error: any) {
@@ -175,7 +184,6 @@ export default function GoalsScreen() {
       await deleteGoal(goalId);
       showToast('Meta eliminada', 'success');
       await loadGoals(true);
-      // Notificar a Dashboard que se eliminó una meta
       refreshDashboard();
       refreshGoals();
     } catch (error: any) {
@@ -196,7 +204,6 @@ export default function GoalsScreen() {
     payload: AddTransactionPayload & { goalId: number }
   ) => {
     try {
-      // Si es una regla fija (Fijo), crear la regla fija en lugar de una transacción simple
       if (payload.is_fixed && payload.frequency) {
         const { createFixedMovement } = await import('@/services/fixedMovements');
         
@@ -205,7 +212,7 @@ export default function GoalsScreen() {
           type: payload.type,
           amount: payload.amount,
           frequency: payload.frequency,
-          apply_now: true, // Aplicar la transacción inmediatamente
+          apply_now: true, 
         });
 
         const frequencyLabel =
@@ -221,8 +228,16 @@ export default function GoalsScreen() {
           'success'
         );
       } else {
-        // Transacción variable normal
-        await addTransactionToGoal(payload.goalId, {
+        const goalBefore = goals.find((g) => g.id === payload.goalId);
+        const wasCompletedBefore = goalBefore?.status === 'completed';
+        const progressBefore = goalBefore 
+          ? calculateProgress(
+              goalBefore.accumulated || goalBefore.current_amount || 0,
+              goalBefore.target_amount
+            )
+          : 0;
+
+        const response = await addTransactionToGoal(payload.goalId, {
           type: payload.type,
           amount: payload.amount,
           is_fixed: false,
@@ -233,9 +248,35 @@ export default function GoalsScreen() {
           `${typeLabel} registrado: ${payload.type === 'income' ? '+' : '-'}$${payload.amount.toLocaleString()}`,
           'success'
         );
+
+        const responseData = response as any;
+        
+        if (payload.type === 'income' && responseData.goal?.status === 'completed') {
+          triggerRefresh();
+        }
+        
+        if (payload.type === 'income' && responseData.goal) {
+          const goal = responseData.goal;
+          const progressPct = responseData.progress_pct || calculateProgress(
+            goal.accumulated || goal.current_amount || 0,
+            goal.target_amount
+          );
+
+          if (
+            progressPct >= 100 && 
+            goal.status === 'completed' && 
+            !wasCompletedBefore &&
+            progressBefore < 100
+          ) {
+            try {
+              await notifyGoalCompleted(goal.name, goal.id);
+            } catch (error) {
+              console.warn('No se pudo enviar notificación de completado:', error);
+            }
+          }
+        }
       }
 
-      // Recargar metas y actualizar dashboard
       await loadGoals(true);
       refreshDashboard();
       refreshGoals();

@@ -208,6 +208,19 @@ export async function resetPassword(
   }
 }
 
+// Obtener tiempo restante del código de verificación
+export async function getCodeTimeRemaining(email: string) {
+  try {
+    const response = await api.post('/password/time-remaining', { email });
+    return response.data;
+  } catch (error: any) {
+    console.error('Get code time remaining error:', error);
+    throw new Error(
+      error.response?.data?.message || 'Error al obtener tiempo restante'
+    );
+  }
+}
+
 export { getToken, setToken, removeToken };
 
 export async function getGoogleAuthUrl(redirectTo?: string) {

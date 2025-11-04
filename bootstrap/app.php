@@ -35,9 +35,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
 
     ->withSchedule(function (Schedule $schedule) {
-        $schedule->command('fixed:run')->hourly();
+        $schedule->command('fixed:run')->everyFiveMinutes();
 
-        $schedule->command('goals:expire')->dailyAt('00:01');
+        $schedule->command('goals:expire')->everyFiveMinutes();
+        $schedule->command('goals:check-decline')->everyFiveMinutes();
+
     })
 
     ->create();

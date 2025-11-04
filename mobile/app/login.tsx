@@ -190,10 +190,7 @@ export default function LoginScreen() {
             <View style={{ alignItems: 'flex-end', marginBottom: 24 }}>
               <Button
                 variant="text"
-                onPress={() => {
-                  // TODO: Implementar pantalla de recuperación de contraseña
-                  console.log('Recuperar contraseña - Pendiente');
-                }}
+                onPress={() => router.push('/forgot-password')}
               >
                 ¿Olvidaste tu contraseña?
               </Button>

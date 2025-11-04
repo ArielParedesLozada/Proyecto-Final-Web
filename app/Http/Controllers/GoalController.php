@@ -6,6 +6,7 @@ use App\Http\Requests\StoreGoalRequest;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Goal;
 use App\Models\Transaction;
+use App\Models\GoalNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -195,12 +196,79 @@ class GoalController extends Controller
             'status'        => 'active',
         ]);
 
+        // Crear notificación de meta creada con ahorro sugerido
+        $this->createGoalCreatedNotification($goal);
+
         $goal = $this->loadGoalWithSums($goal->id);
 
         return response()->json([
             'message' => 'Meta creada correctamente',
             'data'    => $goal
         ], 201);
+    }
+
+    private function createGoalCreatedNotification(Goal $goal)
+    {
+        $today = Carbon::today();
+        $targetDate = Carbon::parse($goal->target_date);
+        $diasRestantes = $today->diffInDays($targetDate, false);
+        $montoRestante = $goal->target_amount;
+
+        if ($diasRestantes <= 0 || $montoRestante <= 0) {
+            return;
+        }
+
+        $ahorroSugerido = 0;
+        $unidadTexto = 'mensual';
+        $periodoTexto = '';
+
+        if ($diasRestantes <= 7) {
+            $ahorroSugerido = ceil($montoRestante / max(1, $diasRestantes));
+            $unidadTexto = 'diario';
+            $periodoTexto = $diasRestantes . ' ' . ($diasRestantes === 1 ? 'día' : 'días');
+        } else if ($diasRestantes <= 30) {
+            $semanasRestantes = ceil($diasRestantes / 7);
+            $ahorroSugerido = ceil($montoRestante / $semanasRestantes);
+            $unidadTexto = 'semanal';
+            $periodoTexto = $semanasRestantes . ' ' . ($semanasRestantes === 1 ? 'semana' : 'semanas');
+        } else {
+            $mesesRestantes = $today->diffInMonths($targetDate) + 1;
+            $ahorroSugerido = ceil($montoRestante / max(1, $mesesRestantes));
+            $unidadTexto = 'mensual';
+            $periodoTexto = $mesesRestantes . ' ' . ($mesesRestantes === 1 ? 'mes' : 'meses');
+        }
+
+        GoalNotification::create([
+            'user_id' => $goal->user_id,
+            'goal_id' => $goal->id,
+            'type' => 'goal_created',
+            'goal_name' => $goal->name,
+            'suggested_savings' => $ahorroSugerido,
+            'savings_unit' => $unidadTexto,
+            'target_amount' => $goal->target_amount,
+            'remaining_amount' => $montoRestante,
+            'remaining_period' => $periodoTexto,
+        ]);
+    }
+
+    private function createGoalCompletedNotification(Goal $goal, float $completedAmount)
+    {
+        // Verificar si ya existe una notificación de completado para esta meta
+        $exists = GoalNotification::where('goal_id', $goal->id)
+            ->where('type', 'goal_completed')
+            ->exists();
+
+        if ($exists) {
+            return; // Ya existe, no crear duplicado
+        }
+
+        GoalNotification::create([
+            'user_id' => $goal->user_id,
+            'goal_id' => $goal->id,
+            'type' => 'goal_completed',
+            'goal_name' => $goal->name,
+            'completed_amount' => $completedAmount,
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -256,6 +324,8 @@ class GoalController extends Controller
         $accumulated = (float) (($totals->inc ?? 0) - ($totals->exp ?? 0));
         $progressPct = min(100, (int) round(($accumulated / max($goal->target_amount, 1)) * 100));
 
+        $wasCompleted = $goal->status === 'completed';
+        
         if (
             $progressPct >= 100
             && (is_null($goal->target_date) || now()->toDateString() <= $goal->target_date)
@@ -263,6 +333,9 @@ class GoalController extends Controller
         ) {
             $goal->status = 'completed';
             $goal->save();
+            
+            // Crear notificación de meta completada
+            $this->createGoalCompletedNotification($goal, $accumulated);
         }
 
         $goal = $this->loadGoalWithSums($goal->id);
