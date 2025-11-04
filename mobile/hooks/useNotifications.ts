@@ -10,6 +10,7 @@ import {
   getGoalNotificationsUnreadCount,
   GoalNotification,
 } from '@/services/notifications';
+import { triggerRefresh } from '@/utils/notifications/countManager';
 
 export type NotificationFilter = 'all' | 'unread';
 
@@ -86,6 +87,8 @@ export function useNotifications() {
       }
 
       setUnreadCount(fixedMovementsCount + goalsCount);
+      // Notificar al badge que debe actualizarse cuando se cargan notificaciones
+      triggerRefresh();
     } catch (error: any) {
       console.error('Error al cargar notificaciones:', error);
     } finally {
@@ -145,6 +148,8 @@ export function useNotifications() {
           )
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
+        // Notificar al badge que debe actualizarse
+        triggerRefresh();
       } catch (error) {
         console.error('Error al marcar notificación como leída:', error);
       }
@@ -161,6 +166,8 @@ export function useNotifications() {
           )
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
+        // Notificar al badge que debe actualizarse
+        triggerRefresh();
       } catch (error) {
         console.error('Error al marcar notificación como leída:', error);
       }
@@ -191,6 +198,8 @@ export function useNotifications() {
         prev.map((n) => (unreadGoalIds.includes(n.id) ? { ...n, read: true, read_at: new Date().toISOString() } : n))
       );
       setUnreadCount(0);
+      // Notificar al badge que debe actualizarse
+      triggerRefresh();
     } catch (error) {
       console.error('Error al marcar todas como leídas:', error);
     }

@@ -9,6 +9,7 @@ import {
   notifyFixedMovement,
   notifyMultipleFixedMovements,
 } from '../utils/notifications/fixedMovements';
+import { triggerRefresh } from '../utils/notifications/countManager';
 
 const globalProcessedIds = new Set<number>();
 let isChecking = false; 
@@ -37,7 +38,6 @@ export function useFixedMovementNotifications(
       );
 
       if (newNotifications.length > 0) {
-        // Marcar como procesadas localmente para evitar duplicados
         newNotifications.forEach((n) => {
           globalProcessedIds.add(n.id);
         });
@@ -47,6 +47,8 @@ export function useFixedMovementNotifications(
         } else {
           await notifyMultipleFixedMovements(newNotifications);
         }
+        
+        triggerRefresh();
       }
     } catch (error) {
       console.error('Error al verificar notificaciones de movimientos fijos:', error);
