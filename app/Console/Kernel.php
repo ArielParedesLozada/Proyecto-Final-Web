@@ -21,13 +21,13 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Corre todos los días a las 00:10
-        $schedule->command('goals:expire')->dailyAt('00:01');
-        $schedule->command('fixed:run')->hourly();
+        $schedule->command('goals:expire')->everyFiveMinutes();
+        $schedule->command('fixed:run')->everyFiveMinutes();
         // Verificar metas completadas cada hora
-        $schedule->command('goals:check-completion')->hourly();
+        $schedule->command('goals:check-completion')->everyFiveMinutes();
         
         // Verificar metas en declive diariamente a las 09:00
-        $schedule->command('goals:check-decline')->dailyAt('09:00');
+        $schedule->command('goals:check-decline')->everyFiveMinutes();
     }
 
     /**

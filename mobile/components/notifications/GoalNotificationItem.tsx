@@ -51,6 +51,54 @@ export default function GoalNotificationItem({
     );
   }
 
+  if (notification.type === 'goal_declining') {
+    const title = 'Meta en Declive';
+    const daysText = notification.days_until_deadline === 1 
+      ? '1 día' 
+      : `${notification.days_until_deadline} días`;
+    const message = `Tu meta "${notification.goal_name}" está por debajo del progreso esperado.\nTienes ${daysText} para recuperar el ritmo.`;
+
+    return (
+      <NotificationCard
+        title={title}
+        message={message}
+        icon="warning"
+        iconColor="#F59E0B"
+        read={notification.read}
+        createdAt={notification.created_at}
+        currentTime={currentTime}
+        onPress={onPress}
+      >
+        <View style={styles.decliningDetails}>
+          <View style={styles.decliningRow}>
+            <MaterialIcons name="trending-down" size={16} color={theme.colors.error} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }} numberOfLines={1}>
+              Déficit: ${Number(notification.deficit || 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.decliningRow}>
+            <MaterialIcons name="account-balance-wallet" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }} numberOfLines={1}>
+              Actual: ${Number(notification.current_saved || 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.decliningRow}>
+            <MaterialIcons name="account-balance-wallet" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }} numberOfLines={1}>
+              Esperado: ${Number(notification.expected_amount || 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.decliningRow}>
+            <MaterialIcons name="event" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }} numberOfLines={1}>
+              {daysText} restantes
+            </Text>
+          </View>
+        </View>
+      </NotificationCard>
+    );
+  }
+
   // goal_completed
   const title = '¡Meta Completada!';
   const message = `Has alcanzado tu meta "${notification.goal_name}". ¡Felicitaciones!`;
@@ -91,6 +139,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  decliningDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  decliningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    width: '48%',
+    flexShrink: 0,
+    flexBasis: '48%',
+    maxWidth: '48%',
   },
 });
 

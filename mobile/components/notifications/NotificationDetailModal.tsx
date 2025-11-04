@@ -56,6 +56,23 @@ Detalles:
 • Ahorro ${gn.savings_unit} sugerido: $${Number(gn.suggested_savings || 0).toLocaleString()}`;
     }
 
+    if (gn.type === 'goal_declining') {
+      const daysText = gn.days_until_deadline === 1 
+        ? '1 día' 
+        : `${gn.days_until_deadline} días`;
+      return `Tu meta "${gn.goal_name}" está por debajo del progreso esperado.
+
+Detalles:
+• Monto objetivo: $${Number(gn.target_amount || 0).toLocaleString()}
+• Ahorrado actual: $${Number(gn.current_saved || 0).toLocaleString()}
+• Esperado al día de hoy: $${Number(gn.expected_amount || 0).toLocaleString()}
+• Déficit: $${Number(gn.deficit || 0).toLocaleString()}
+• Progreso: ${Number(gn.progress_percentage || 0).toFixed(1)}%
+• Tiempo restante: ${daysText}
+
+Tu progreso está por debajo de lo esperado. Considera aumentar tus aportes para alcanzar tu meta a tiempo.`;
+    }
+
     return `Has alcanzado tu meta "${gn.goal_name}". ¡Felicitaciones!
 
 Detalles:
@@ -72,6 +89,9 @@ Detalles:
     const gn = notification as GoalNotification;
     if (gn.type === 'goal_created') {
       return 'Meta de Ahorro Creada';
+    }
+    if (gn.type === 'goal_declining') {
+      return 'Meta en Declive';
     }
     return '¡Meta Completada!';
   };

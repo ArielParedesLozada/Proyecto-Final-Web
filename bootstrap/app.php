@@ -38,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('fixed:run')->everyFiveMinutes();
 
         $schedule->command('goals:expire')->everyFiveMinutes();
+        $schedule->command('goals:check-decline')->everyFiveMinutes();
+
     })
 
     ->create();

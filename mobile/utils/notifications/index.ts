@@ -15,3 +15,7 @@ export {
   notifyMultipleFixedMovements,
 } from './fixedMovements';
 
+export {
+  notifyGoalDeclining,
+} from './goalDeclining';
+

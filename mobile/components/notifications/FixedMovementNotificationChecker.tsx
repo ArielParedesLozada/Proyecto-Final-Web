@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useFixedMovementNotifications } from '@/hooks/useFixedMovementNotifications';
+import { useGoalDecliningNotifications } from '@/hooks/useGoalDecliningNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 
 let globalCheckNotifications: (() => Promise<void>) | null = null;
@@ -22,11 +23,17 @@ export default function FixedMovementNotificationChecker() {
     15 * 1000, 
     !!user 
   );
+  
+  const { checkNotifications: checkGoalDecliningNotifications } = useGoalDecliningNotifications(
+    15 * 1000,
+    !!user
+  );
 
   useEffect(() => {
     if (user) {
       globalCheckNotifications = checkNotifications;
       checkNotifications();
+      checkGoalDecliningNotifications();
     } else {
       globalCheckNotifications = null;
     }
@@ -34,7 +41,7 @@ export default function FixedMovementNotificationChecker() {
     return () => {
       globalCheckNotifications = null;
     };
-  }, [user, checkNotifications]);
+  }, [user, checkNotifications, checkGoalDecliningNotifications]);
 
   return null; 
 }

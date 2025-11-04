@@ -17,6 +17,11 @@ class GoalNotification extends Model
         'remaining_amount',
         'remaining_period',
         'completed_amount',
+        'current_saved',
+        'expected_amount',
+        'days_until_deadline',
+        'deficit',
+        'progress_percentage',
         'read',
         'read_at',
     ];
@@ -26,6 +31,11 @@ class GoalNotification extends Model
         'target_amount' => 'decimal:2',
         'remaining_amount' => 'decimal:2',
         'completed_amount' => 'decimal:2',
+        'current_saved' => 'decimal:2',
+        'expected_amount' => 'decimal:2',
+        'deficit' => 'decimal:2',
+        'days_until_deadline' => 'integer',
+        'progress_percentage' => 'decimal:2',
         'read' => 'boolean',
         'read_at' => 'datetime',
     ];
