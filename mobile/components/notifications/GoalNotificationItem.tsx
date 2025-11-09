@@ -99,6 +99,60 @@ export default function GoalNotificationItem({
     );
   }
 
+  if (notification.type === 'goal_weekly_progress') {
+    const progress = Number(notification.progress_percentage || 0);
+    const currentSaved = Number(notification.current_saved || 0);
+    const targetAmount = Number(notification.target_amount || 0);
+    const remainingAmount =
+      notification.remaining_amount !== undefined && notification.remaining_amount !== null
+        ? Number(notification.remaining_amount)
+        : Math.max(0, targetAmount - currentSaved);
+
+    let encouragement =
+      '¡Estás a punto de alcanzar tu meta! Mantén el ritmo y completa los últimos detalles.';
+    if (progress < 50) {
+      encouragement = '¡No te rindas! Aún estás a tiempo para alcanzar tu meta.';
+    } else if (progress < 90) {
+      encouragement = 'Vas por muy buen camino, sigue ahorrando.';
+    }
+
+    const message = `${encouragement}\nMeta: "${notification.goal_name}"`;
+
+    return (
+      <NotificationCard
+        title="Recordatorio de Ahorro"
+        message={message}
+        icon="insights"
+        iconColor="#3B82F6"
+        read={notification.read}
+        createdAt={notification.created_at}
+        currentTime={currentTime}
+        onPress={onPress}
+      >
+        <View style={styles.progressDetails}>
+          <View style={styles.progressRow}>
+            <MaterialIcons name="percent" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Progreso: {progress.toFixed(1)}%
+            </Text>
+          </View>
+          <View style={styles.progressRow}>
+            <MaterialIcons name="savings" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Ahorrado: ${currentSaved.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.progressRow}>
+            <MaterialIcons name="pie-chart" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Restante: ${remainingAmount.toLocaleString()}
+            </Text>
+          </View>
+        </View>
+      </NotificationCard>
+    );
+  }
+
   // goal_completed
   const title = '¡Meta Completada!';
   const message = `Has alcanzado tu meta "${notification.goal_name}". ¡Felicitaciones!`;
@@ -159,6 +213,20 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexBasis: '48%',
     maxWidth: '48%',
+  },
+  progressDetails: {
+    flexDirection: 'column',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    width: '100%',
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 });
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { BarChart } from 'react-native-chart-kit';
@@ -18,7 +18,7 @@ export interface BarChartViewProps {
 const CHART_HEIGHT = 260;
 const CHART_WIDTH = Dimensions.get('window').width - 64;
 
-export default function BarChartView({
+function BarChartViewComponent({
   data,
   dataKeys,
   labelKey,
@@ -189,6 +189,8 @@ export default function BarChartView({
     </View>
   );
 }
+
+export default memo(BarChartViewComponent);
 
 const styles = StyleSheet.create({
   container: {

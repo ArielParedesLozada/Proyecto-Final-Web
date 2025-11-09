@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { PieChart } from 'react-native-chart-kit';
@@ -13,10 +13,14 @@ export interface PieChartViewProps {
   colors?: string[];
 }
 
-const DEFAULT_COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#8B5CF6'];
+const DEFAULT_COLORS = [
+  '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#8B5CF6',
+  '#EC4899', '#14B8A6', '#F97316', '#84CC16', '#0EA5E9', '#A855F7',
+  '#F43F5E', '#22D3EE', '#Facc15', '#4ADE80', '#F472B6', '#38BDF8',
+];
 const CHART_WIDTH = Dimensions.get('window').width - 64;
 
-export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChartViewProps) {
+function PieChartViewComponent({ data, colors = DEFAULT_COLORS }: PieChartViewProps) {
   const theme = useTheme();
 
   if (data.length === 0) {
@@ -87,6 +91,8 @@ export default function PieChartView({ data, colors = DEFAULT_COLORS }: PieChart
     </View>
   );
 }
+
+export default memo(PieChartViewComponent);
 
 const styles = StyleSheet.create({
   container: {

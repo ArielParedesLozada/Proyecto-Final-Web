@@ -116,7 +116,8 @@ function StatsPageInner() {
     loadAll();
   }, []);
 
-  const lastDateStateRef = useRef("init");
+  const lastRangeStateRef = useRef("init");
+  const lastAppliedRangeRef = useRef("");
   useEffect(() => {
     const { start, end } = range;
 
@@ -126,36 +127,48 @@ function StatsPageInner() {
     else if (start && end && end < start) state = "invalid";
     else if (start && end) state = "ok";
 
-    if (state === lastDateStateRef.current) return;
-    lastDateStateRef.current = state;
+    if (state !== lastRangeStateRef.current) {
+      lastRangeStateRef.current = state;
 
-    if (state === "start-only") {
-      toast.push({
-        tone: "info",
-        title: "Rango incompleto",
-        message: 'Selecciona también "Fecha fin" para aplicar el rango.',
-      });
-      return;
-    }
-    if (state === "end-only") {
-      toast.push({
-        tone: "info",
-        title: "Rango incompleto",
-        message: 'Selecciona también "Fecha inicio" para aplicar el rango.',
-      });
-      return;
-    }
-    if (state === "invalid") {
-      toast.push({
-        tone: "error",
-        title: "Rango inválido",
-        message: "La fecha fin no puede ser anterior a la fecha inicio.",
-      });
-      return;
+      if (state === "start-only") {
+        toast.push({
+          tone: "info",
+          title: "Rango incompleto",
+          message: 'Selecciona también "Fecha fin" para aplicar el rango.',
+        });
+      } else if (state === "end-only") {
+        toast.push({
+          tone: "info",
+          title: "Rango incompleto",
+          message: 'Selecciona también "Fecha inicio" para aplicar el rango.',
+        });
+      } else if (state === "invalid") {
+        toast.push({
+          tone: "error",
+          title: "Rango inválido",
+          message: "La fecha fin no puede ser anterior a la fecha inicio.",
+        });
+      }
     }
 
-    if (state === "ok" || state === "none") {
-      invalidateCache('stats-');
+    if (state === "invalid" || state === "start-only" || state === "end-only") {
+      return;
+    }
+
+    const key = `${start || ""}|${end || ""}`;
+
+    if (state === "ok") {
+      if (lastAppliedRangeRef.current === key) return;
+      lastAppliedRangeRef.current = key;
+      invalidateCache("stats-");
+      loadAll(true);
+      return;
+    }
+
+    if (state === "none") {
+      if (lastAppliedRangeRef.current === "") return;
+      lastAppliedRangeRef.current = "";
+      invalidateCache("stats-");
       loadAll(true);
     }
   }, [range, toast]);

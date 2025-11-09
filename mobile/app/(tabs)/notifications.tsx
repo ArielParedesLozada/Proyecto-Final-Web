@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
-import { RefreshControl, EmptyState } from '@/components/ui';
+import { RefreshControl, EmptyState, LoadingState } from '@/components/ui';
 import { NotificationsFilters, NotificationsList, NotificationDetailModal } from '@/components/notifications';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useTransactionsNavigation } from '@/contexts/TransactionsNavigationContext';
@@ -52,11 +52,7 @@ export default function NotificationsScreen() {
   }, [navigateToTransactions]);
 
   if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+    return <LoadingState message="Cargando notificaciones..." />;
   }
 
   return (
@@ -121,10 +117,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

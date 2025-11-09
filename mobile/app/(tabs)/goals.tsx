@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { ActivityIndicator, useTheme } from 'react-native-paper';
+import { useTheme } from 'react-native-paper';
 import {
   GoalCard,
   GoalsHeader,
   NewGoalModal,
   AddTransactionModal,
 } from '@/components/goals';
-import { Modal, Toast, RefreshControl, EmptyState } from '@/components/ui';
+import { Modal, Toast, RefreshControl, EmptyState, LoadingState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
 import {
   listGoals,
@@ -288,11 +288,7 @@ export default function GoalsScreen() {
   };
 
   if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+    return <LoadingState message="Cargando metas..." />;
   }
 
   return (
@@ -387,10 +383,6 @@ export default function GoalsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

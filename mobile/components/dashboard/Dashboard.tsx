@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, useTheme, Card, ActivityIndicator } from 'react-native-paper';
 import { getDashboardSummary, DashboardSummary } from '@/services/stats';
-import { RefreshControl, EmptyState } from '@/components/ui';
+import { RefreshControl, EmptyState, LoadingState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
 import { useCheckFixedMovementNotifications } from '@/components/notifications/FixedMovementNotificationChecker';
 import StatCard from './StatCard';
@@ -55,6 +55,10 @@ export default function Dashboard() {
     setRefreshing(true);
     loadData(true);
   };
+
+  if (loading && !refreshing) {
+    return <LoadingState message="Cargando dashboard..." />;
+  }
 
   return (
     <ScrollView
