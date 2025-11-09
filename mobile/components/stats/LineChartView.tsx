@@ -187,16 +187,6 @@ function LineChartViewComponent({
       if (type === 'money') {
         if (num === 0) return '0';
 
-        if (maxValue >= 1_000_000) {
-          const divided = num / 1_000_000;
-          return `${divided.toFixed(maxValue >= 10_000_000 ? 0 : 1)}M`;
-        }
-
-        if (maxValue >= 10_000) {
-          const divided = num / 1_000;
-          return `${divided.toFixed(maxValue >= 100_000 ? 0 : 1)}K`;
-        }
-
         const fractionDigits = maxValue < 10 ? 2 : maxValue < 100 ? 1 : 0;
         return num.toLocaleString('en-US', {
           maximumFractionDigits: fractionDigits,
