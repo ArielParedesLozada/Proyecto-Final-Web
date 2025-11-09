@@ -31,84 +31,76 @@ function BarChartViewComponent({
     return null;
   }
 
-  // Preparar labels para el eje X - truncar para mejor espaciado
-  const labels = data.map((item, index) => {
-    const label = String(item[labelKey] || '');
-    // Si el label es muy largo, truncarlo
-    if (label.length > 8) {
-      // Para nombres de metas, mostrar primeros 7 caracteres
-      return label.substring(0, 7) + '...';
-    }
-    // Para fechas, formatear mejor si es posible
-    if (label.length >= 7 && label.includes('-')) {
-      // Formato YYYY-MM: mostrar MM/YY
-      const parts = label.split('-');
+  const labels: string[] = [];
+  const dataPoints: number[] = [];
+  const barColors: Array<(opacity?: number) => string> = [];
+
+  const labelFromRaw = (raw: string) => {
+    if (raw.length >= 7 && raw.includes('-')) {
+      const parts = raw.split('-');
       if (parts.length >= 2) {
         return `${parts[1]}/${parts[0].substring(2)}`;
       }
     }
-    return label;
-  });
+    return raw.length > 6 ? `${raw.substring(0, 6)}…` : raw;
+  };
 
-  // Preparar datasets con colores específicos para cada barra
-  const datasets = dataKeys.map((dk) => {
-    const dataset: any = {
-      data: data.map((item) => {
-        const val = item[dk.key];
-        if (val === null || val === undefined) return 0;
-        if (typeof val === 'number') return val; 
-        const numVal = parseFloat(String(val));
-        return isNaN(numVal) ? 0 : numVal;
-      }),
-    };
-    
-    // Si hay un solo dataset, usar colores diferentes para cada barra (como Top 5 metas)
-    if (dataKeys.length === 1 && data.length > 0) {
-      // Generar colores diferentes para cada barra (rotación de colores)
-      const colorPalette = [
-        '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#8B5CF6',
-        '#EC4899', '#14B8A6', '#F97316', '#84CC16'
-      ];
-      // react-native-chart-kit espera colors como array de funciones
-      dataset.colors = data.map((_, index) => {
-        const color = colorPalette[index % colorPalette.length];
-        return (opacity = 1) => {
-          // Convertir hex a rgba con opacidad
-          const hex = color.replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-        };
-      });
-    } else {
+  data.forEach((item) => {
+    const rawLabel = String(item[labelKey] || '');
+    const baseLabel = labelFromRaw(rawLabel);
+
+    dataKeys.forEach((dk, idx) => {
+      const value = item[dk.key];
+      const numeric = typeof value === 'number' ? value : parseFloat(String(value));
+      const safeValue = Number.isFinite(numeric) ? Math.abs(numeric) : 0;
+
+      labels.push(idx === 0 ? baseLabel : '');
+      dataPoints.push(safeValue);
+
       const hex = dk.color.replace('#', '');
       const r = parseInt(hex.substring(0, 2), 16);
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
-      
-      // Crear un array de funciones con el mismo color para todas las barras
-      dataset.colors = data.map(() => (opacity = 1) => `rgba(${r}, ${g}, ${b}, ${opacity})`);
-      
-      // También mantener la propiedad color como fallback
-      dataset.color = (opacity = 1) => `rgba(${r}, ${g}, ${b}, ${opacity})`;
-    }
-    
-    return dataset;
+      barColors.push((opacity = 1) => `rgba(${r}, ${g}, ${b}, ${opacity})`);
+    });
   });
+
+  if (labels.length === 0) {
+    return null;
+  }
 
   const chartData = {
     labels,
-    datasets,
+    datasets: [
+      {
+        data: dataPoints,
+        colors: barColors,
+      },
+    ],
     legend: dataKeys.map((dk) => dk.label),
   };
+
+  const allValues = dataPoints;
+  const rawMaxValue = allValues.length > 0 ? Math.max(...allValues) : 0;
+  const maxValue = rawMaxValue <= 0 ? 1 : rawMaxValue;
 
 
   const chartConfig = {
     backgroundColor: theme.colors.surface,
     backgroundGradientFrom: theme.colors.surface,
     backgroundGradientTo: theme.colors.surface,
-    decimalPlaces: 3, // Permitir más decimales para mostrar valores exactos, especialmente valores pequeños
+    decimalPlaces:
+      yAxisType === 'money'
+        ? maxValue < 10
+          ? 2
+          : maxValue < 100
+          ? 1
+          : 0
+        : yAxisType === 'percentage'
+        ? maxValue < 10
+          ? 1
+          : 0
+        : 2,
     color: (opacity = 1) => theme.colors.onSurface,
     labelColor: (opacity = 1) => theme.colors.onSurfaceVariant,
     style: {
@@ -127,19 +119,27 @@ function BarChartViewComponent({
       }
       
       if (type === 'money') {
-        // Para valores de dinero, redondear al múltiplo de 1000 más cercano
         if (num === 0) return '0';
-        const rounded = Math.round(num / 1000) * 1000;
-        const finalValue = rounded === 0 && num > 0 ? 1000 : rounded;
-        // Retornar solo el número sin $ ya que yAxisLabel lo agrega
-        // Asegurar que siempre muestre comas para miles (usar formato inglés)
-        return finalValue.toLocaleString('en-US');
+
+        if (maxValue >= 1_000_000) {
+          const divided = num / 1_000_000;
+          return `${divided.toFixed(maxValue >= 10_000_000 ? 0 : 1)}M`;
+        }
+
+        if (maxValue >= 10_000) {
+          const divided = num / 1_000;
+          return `${divided.toFixed(maxValue >= 100_000 ? 0 : 1)}K`;
+        }
+
+        const fractionDigits = maxValue < 10 ? 2 : maxValue < 100 ? 1 : 0;
+        return num.toLocaleString('en-US', {
+          maximumFractionDigits: fractionDigits,
+          minimumFractionDigits: 0,
+        });
       }
       
       if (type === 'percentage') {
-        // Para porcentajes, redondear al múltiplo de 25 más cercano (0, 25, 50, 75, 100)
         const rounded = Math.round(num / 25) * 25;
-        // Retornar solo el número sin % ya que yAxisSuffix lo agrega
         return rounded.toString();
       }
       
@@ -174,8 +174,6 @@ function BarChartViewComponent({
           flatColor={true}
         />
       </View>
-      {/* Nota: react-native-chart-kit BarChart no soporta onDataPointClick */}
-      {/* Los tooltips están disponibles solo para LineChart */}
       <View style={styles.legend}>
         {dataKeys.map((dk) => (
           <View key={dk.key} style={styles.legendItem}>

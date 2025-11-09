@@ -9,16 +9,14 @@ import Button from '../ui/Button';
 
 export interface GoalCardProps {
   goal: Goal;
-  onEdit?: (goal: Goal) => void;
-  onDelete?: (goalId: number) => void;
   onAddTransaction?: (goal: Goal) => void;
+  onOpenDetails?: (goal: Goal) => void;
 }
 
 export default function GoalCard({
   goal,
-  onEdit,
-  onDelete,
   onAddTransaction,
+  onOpenDetails,
 }: GoalCardProps) {
   const theme = useTheme();
 
@@ -98,23 +96,13 @@ export default function GoalCard({
               </Text>
             </View>
             <Pressable
-              onPress={() => onEdit?.(goal)}
+              onPress={() => onOpenDetails?.(goal)}
               style={styles.actionButton}
             >
               <MaterialIcons
-                name="edit"
-                size={20}
+                name="chevron-right"
+                size={22}
                 color={theme.colors.onSurfaceVariant}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => onDelete?.(goal.id)}
-              style={styles.actionButton}
-            >
-              <MaterialIcons
-                name="delete-outline"
-                size={20}
-                color={theme.colors.error}
               />
             </Pressable>
           </View>

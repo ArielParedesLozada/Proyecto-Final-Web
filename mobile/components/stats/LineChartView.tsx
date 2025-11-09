@@ -92,7 +92,11 @@ function LineChartViewComponent({
     color: (opacity = 1) => dk.color,
     strokeWidth: 2,
   }));
-  
+
+  const allValues = filteredDatasets.flatMap((dataset) => dataset.data);
+  const rawMaxValue = allValues.length > 0 ? Math.max(...allValues) : 0;
+  const maxValue = rawMaxValue <= 0 ? 1 : rawMaxValue;
+
   const chartData = {
     labels,
     datasets: filteredDatasets,
@@ -139,7 +143,18 @@ function LineChartViewComponent({
     backgroundColor: theme.colors.surface,
     backgroundGradientFrom: theme.colors.surface,
     backgroundGradientTo: theme.colors.surface,
-    decimalPlaces: 2, // Permitir decimales para mostrar valores exactos en los puntos
+    decimalPlaces:
+      yAxisType === 'money'
+        ? maxValue < 10
+          ? 2
+          : maxValue < 100
+          ? 1
+          : 0
+        : yAxisType === 'percentage'
+        ? maxValue < 10
+          ? 1
+          : 0
+        : 2,
     color: (opacity = 1) => theme.colors.onSurface,
     labelColor: (opacity = 1) => theme.colors.onSurfaceVariant,
     style: {
@@ -170,35 +185,31 @@ function LineChartViewComponent({
       }
       
       if (type === 'money') {
-        // Para valores de dinero, redondear al múltiplo de 1000 más cercano
-        // Si es 0, mantenerlo como 0
         if (num === 0) return '0';
-        const rounded = Math.round(num / 1000) * 1000;
-        // Si el redondeo es 0 pero el número es mayor que 0, usar 1000 como mínimo
-        const finalValue = rounded === 0 && num > 0 ? 1000 : rounded;
-        // Retornar solo el número sin $ ya que yAxisLabel lo agrega
-        // Asegurar que siempre muestre comas para miles (usar formato inglés)
-        // Usar parseInt para asegurar que es entero antes de formatear
-        return parseInt(finalValue.toString(), 10).toLocaleString('en-US');
+
+        const fractionDigits = maxValue < 10 ? 2 : maxValue < 100 ? 1 : 0;
+        return num.toLocaleString('en-US', {
+          maximumFractionDigits: fractionDigits,
+          minimumFractionDigits: 0,
+        });
       }
       
       if (type === 'percentage') {
-        // Para porcentajes, redondear de manera más precisa para evitar duplicados
-        // Redondear a múltiplos de 10 para tener mejor distribución y evitar repeticiones
         if (num === 0) return '0';
-        
-        // Redondear al múltiplo de 10 más cercano para mejor distribución
-        // Esto evita que valores cercanos colapsen al mismo valor
-        const rounded10 = Math.round(num / 10) * 10;
-        
-        // Asegurar límites válidos
-        const finalValue = Math.min(100, Math.max(0, rounded10));
-        
-        // Si el valor redondeado es 0 pero el original no lo era, usar el siguiente múltiplo de 10
-        if (finalValue === 0 && num > 0) {
-          return '10';
+
+        if (maxValue <= 10) {
+          const digits = maxValue < 1 ? 2 : 1;
+          return Number(num.toFixed(digits)).toString();
         }
-        
+
+        const step = maxValue <= 50 ? 5 : 10;
+        const rounded = Math.round(num / step) * step;
+        const finalValue = Math.min(100, Math.max(0, rounded));
+
+        if (finalValue === 0 && num > 0) {
+          return step.toString();
+        }
+
         return finalValue.toString();
       }
       

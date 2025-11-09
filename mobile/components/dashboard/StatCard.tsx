@@ -88,14 +88,17 @@ export default function StatCard({
         </View>
 
         {/* Sublabel */}
-        {sublabel && (
-          <Text
-            variant="bodySmall"
-            style={[styles.sublabel, { color: theme.colors.onSurfaceVariant }]}
-          >
-            {sublabel}
-          </Text>
-        )}
+        <View style={styles.sublabelContainer}>
+          {sublabel ? (
+            <Text
+              variant="bodySmall"
+              style={[styles.sublabel, { color: theme.colors.onSurfaceVariant }]}
+              numberOfLines={2}
+            >
+              {sublabel}
+            </Text>
+          ) : null}
+        </View>
 
         {/* Franja decorativa inferior */}
         <View
@@ -116,7 +119,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    minHeight: 120,
+    minHeight: 150,
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
@@ -153,8 +157,12 @@ const styles = StyleSheet.create({
   },
   sublabel: {
     fontSize: 12,
-    marginTop: 8,
     opacity: 0.7,
+  },
+  sublabelContainer: {
+    minHeight: 32,
+    justifyContent: 'flex-start',
+    marginTop: 8,
   },
   stripe: {
     position: 'absolute',
