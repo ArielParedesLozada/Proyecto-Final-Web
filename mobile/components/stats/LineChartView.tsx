@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { View, StyleSheet, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { Text, useTheme, Portal } from 'react-native-paper';
 import { LineChart } from 'react-native-chart-kit';
@@ -19,7 +19,7 @@ export interface LineChartViewProps {
 const CHART_HEIGHT = 260;
 const CHART_WIDTH = Dimensions.get('window').width - 64;
 
-export default function LineChartView({
+function LineChartViewComponent({
   data,
   dataKeys,
   valueFormatter = (v) => v.toString(),
@@ -254,6 +254,8 @@ export default function LineChartView({
     </View>
   );
 }
+
+export default memo(LineChartViewComponent);
 
 const styles = StyleSheet.create({
   container: {
