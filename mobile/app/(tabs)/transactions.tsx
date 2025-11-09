@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import {
   TransactionsFilters,
   TransactionsKpis,
   GoalSummary,
   TransactionsList,
 } from '@/components/transactions';
-import { RefreshControl, Toast, EmptyState } from '@/components/ui';
+import { RefreshControl, Toast, EmptyState, LoadingState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
 import { useTransactionsNavigation } from '@/contexts/TransactionsNavigationContext';
 import {
@@ -234,11 +234,7 @@ export default function TransactionsScreen() {
   }, [incomes, expenses]);
 
   if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+    return <LoadingState message="Cargando movimientos..." />;
   }
 
   if (goals.length === 0) {
@@ -356,10 +352,6 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

@@ -9,7 +9,7 @@ import {
   LineChartView,
   BarChartView,
 } from '@/components/stats';
-import { RefreshControl, Toast, EmptyState } from '@/components/ui';
+import { RefreshControl, Toast, EmptyState, LoadingState } from '@/components/ui';
 import {
   getGoalsStatusDistribution,
   getMonthlyRealVsSuggested,
@@ -168,6 +168,10 @@ export default function StatsScreen() {
       value: Number(x.value) || 0,
     }));
   }, [categoryDist]);
+
+  if (loading && !refreshing) {
+    return <LoadingState message="Cargando estadísticas..." />;
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, updateProfile, changePassword } from '@/services/profile';
-import { Toast, RefreshControl } from '@/components/ui';
+import { Toast, RefreshControl, LoadingState } from '@/components/ui';
 import {
   ProfileHeader,
   IdentitySection,
@@ -170,16 +170,7 @@ export default function ProfileScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 16 }}>
-            Cargando perfil...
-          </Text>
-        </View>
-      </View>
-    );
+    return <LoadingState message="Cargando perfil..." />;
   }
 
   return (
