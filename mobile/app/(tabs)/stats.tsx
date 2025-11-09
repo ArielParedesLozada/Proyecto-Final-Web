@@ -55,7 +55,7 @@ export default function StatsScreen() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
-  const lastDateStateRef = useRef<string>('init');
+  const lastAppliedRangeRef = useRef<string>('');
 
   const validRange = useMemo(() => {
     const { start, end } = dateRange;
@@ -110,29 +110,36 @@ export default function StatsScreen() {
 
   useEffect(() => {
     const { start, end } = dateRange;
+    const key = `${start || ''}|${end || ''}`;
 
-    let state = 'none';
-    if (start && !end) state = 'start-only';
-    else if (!start && end) state = 'end-only';
-    else if (start && end && compareYMDDates(start, end) > 0) {
+    if (start && end && compareYMDDates(start, end) > 0) {
       showToast('Rango de fechas inválido', 'error');
       setDateRange({ start: '', end: '' });
       return;
-    } else if (start && end) state = 'ok';
-
-    if (state === lastDateStateRef.current) return;
-    lastDateStateRef.current = state;
-
-    if (state === 'start-only') {
-      return; // Esperar a que se complete
-    }
-    if (state === 'end-only') {
-      return; // Esperar a que se complete
     }
 
-    if (state === 'ok' || state === 'none') {
+    if (start && !end) {
+      return;
+    }
+
+    if (!start && end) {
+      return;
+    }
+
+    if (start && end) {
+      if (lastAppliedRangeRef.current === key) {
+        return;
+      }
+      lastAppliedRangeRef.current = key;
       loadAll(true);
+      return;
     }
+
+    if (lastAppliedRangeRef.current === '') {
+      return;
+    }
+    lastAppliedRangeRef.current = '';
+    loadAll(true);
   }, [dateRange]);
 
   const handleRefresh = () => {
