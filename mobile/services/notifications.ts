@@ -30,7 +30,7 @@ export interface GoalNotification {
   id: number;
   user_id: number;
   goal_id: number;
-  type: 'goal_created' | 'goal_completed' | 'goal_declining';
+  type: 'goal_created' | 'goal_completed' | 'goal_declining' | 'goal_weekly_progress';
   goal_name: string;
   suggested_savings?: number | null;
   savings_unit?: string | null;

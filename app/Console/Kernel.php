@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         \App\Console\Commands\RunFixedMovements::class,
         \App\Console\Commands\MarkExpiredGoals::class,
+        \App\Console\Commands\CheckGoalWeeklyProgress::class,
     ];
 
     /**
@@ -28,6 +29,8 @@ class Kernel extends ConsoleKernel
         
         // Verificar metas en declive diariamente a las 09:00
         $schedule->command('goals:check-decline')->everyFiveMinutes();
+        // Recordatorios semanales (lunes 09:00)
+        $schedule->command('goals:weekly-progress')->weeklyOn(1, '09:00');
     }
 
     /**

@@ -19,3 +19,5 @@ export {
   notifyGoalDeclining,
 } from './goalDeclining';
 
+export { notifyGoalWeeklyProgress } from './goalWeeklyProgress';
+

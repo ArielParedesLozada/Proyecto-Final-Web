@@ -73,6 +73,34 @@ Detalles:
 Tu progreso está por debajo de lo esperado. Considera aumentar tus aportes para alcanzar tu meta a tiempo.`;
     }
 
+    if (gn.type === 'goal_weekly_progress') {
+      const progress = Number(gn.progress_percentage || 0);
+      const currentSaved = Number(gn.current_saved || 0);
+      const targetAmount = Number(gn.target_amount || 0);
+      const remainingAmount =
+        gn.remaining_amount !== undefined && gn.remaining_amount !== null
+          ? Number(gn.remaining_amount)
+          : Math.max(0, targetAmount - currentSaved);
+
+      let encouragement =
+        '¡Estás a punto de alcanzar tu meta! Mantén el ritmo y completa los últimos detalles.';
+      if (progress < 50) {
+        encouragement = '¡No te rindas! Aún estás a tiempo para alcanzar tu meta.';
+      } else if (progress < 90) {
+        encouragement = 'Vas por muy buen camino, sigue ahorrando.';
+      }
+
+      return `Meta: "${gn.goal_name}"
+
+${encouragement}
+
+Detalles:
+• Progreso: ${progress.toFixed(1)}%
+• Ahorrado: $${currentSaved.toLocaleString()}
+• Restante: $${remainingAmount.toLocaleString()}
+• Objetivo: $${targetAmount.toLocaleString()}`;
+    }
+
     return `Has alcanzado tu meta "${gn.goal_name}". ¡Felicitaciones!
 
 Detalles:
@@ -92,6 +120,9 @@ Detalles:
     }
     if (gn.type === 'goal_declining') {
       return 'Meta en Declive';
+    }
+    if (gn.type === 'goal_weekly_progress') {
+      return 'Recordatorio de Ahorro';
     }
     return '¡Meta Completada!';
   };

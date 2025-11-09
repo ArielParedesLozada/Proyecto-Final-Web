@@ -39,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $schedule->command('goals:expire')->everyFiveMinutes();
         $schedule->command('goals:check-decline')->everyFiveMinutes();
+        $schedule->command('goals:weekly-progress')->weeklyOn(1, '09:00');
 
     })
 
