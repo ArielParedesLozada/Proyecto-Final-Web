@@ -26,7 +26,6 @@ import {
 
 const MAX_LINE_POINTS = 12;
 const MAX_BAR_POINTS = 12;
-const MAX_CATEGORY_SLICES = 6;
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -93,31 +92,6 @@ function downsampleSeries<T>(data: T[] | null | undefined, maxPoints: number): T
   }
 
   return result;
-}
-
-function aggregateCategories(
-  data: CategoryDistribution[] | null | undefined,
-  maxSlices: number,
-): CategoryDistribution[] {
-  if (!Array.isArray(data)) return [];
-  if (data.length <= maxSlices) return data;
-
-  const sorted = [...data].sort(
-    (a, b) => Number(b.value ?? 0) - Number(a.value ?? 0),
-  );
-
-  const main = sorted.slice(0, Math.max(1, maxSlices - 1));
-  const rest = sorted.slice(Math.max(1, maxSlices - 1));
-  const otherValue = rest.reduce((sum, item) => sum + Number(item.value ?? 0), 0);
-
-  if (otherValue > 0) {
-    main.push({
-      category: 'Otros',
-      value: otherValue,
-    });
-  }
-
-  return main;
 }
 
 export function useStatsScreen() {
@@ -313,11 +287,6 @@ export function useStatsScreen() {
     [topGoals],
   );
 
-  const aggregatedCategories = useMemo(
-    () => aggregateCategories(categoryDist, MAX_CATEGORY_SLICES),
-    [categoryDist],
-  );
-
   const pieData = useMemo(() => {
     return (Array.isArray(statusData) ? statusData : []).map((x) => ({
       name: x.status,
@@ -328,11 +297,11 @@ export function useStatsScreen() {
   const statusTotal = useMemo(() => pieData.reduce((acc, it) => acc + (it.value || 0), 0), [pieData]);
 
   const categoryData = useMemo(
-    () => (Array.isArray(aggregatedCategories) ? aggregatedCategories : []).map((x) => ({
+    () => (Array.isArray(categoryDist) ? categoryDist : []).map((x) => ({
       name: x.category,
       value: Number(x.value) || 0,
     })),
-    [aggregatedCategories],
+    [categoryDist],
   );
 
   const realVsSuggestedKeys = useMemo(
