@@ -10,3 +10,6 @@ export type { NewGoalModalProps } from './NewGoalModal';
 export { default as AddTransactionModal } from './AddTransactionModal';
 export type { AddTransactionModalProps } from './AddTransactionModal';
 
+export { default as GoalDetailModal } from './GoalDetailModal';
+export type { GoalDetailModalProps } from './GoalDetailModal';
+

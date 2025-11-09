@@ -18,6 +18,7 @@ export interface ModalProps {
     onPress: () => void;
   };
   cancelable?: boolean;
+  actionsAlignment?: 'end' | 'center';
 }
 
 export default function Modal({
@@ -29,6 +30,7 @@ export default function Modal({
   primaryAction,
   secondaryAction,
   cancelable = true,
+  actionsAlignment = 'end',
 }: ModalProps) {
   const theme = useTheme();
 
@@ -69,7 +71,12 @@ export default function Modal({
             {children}
           </View>
 
-          <View style={styles.actions}>
+          <View
+            style={[
+              styles.actions,
+              actionsAlignment === 'center' && styles.actionsCenter,
+            ]}
+          >
             {secondaryAction && (
               <Button
                 mode="text"
@@ -163,6 +170,9 @@ const styles = StyleSheet.create({
   actionButtonContent: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  actionsCenter: {
+    justifyContent: 'center',
   },
 });
 

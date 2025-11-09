@@ -6,14 +6,13 @@ import {
   GoalsHeader,
   NewGoalModal,
   AddTransactionModal,
+  GoalDetailModal,
 } from '@/components/goals';
-import { Modal, Toast, RefreshControl, EmptyState, LoadingState } from '@/components/ui';
+import { Toast, RefreshControl, EmptyState, LoadingState } from '@/components/ui';
 import { useGoalsContext } from '@/contexts/GoalsContext';
 import {
   listGoals,
   createGoal,
-  updateGoal,
-  deleteGoal,
   addTransactionToGoal,
   Goal,
   CreateGoalPayload,
@@ -32,14 +31,12 @@ export default function GoalsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [toDeleteId, setToDeleteId] = useState<number | null>(null);
 
   const [txModalOpen, setTxModalOpen] = useState(false);
   const [txGoal, setTxGoal] = useState<Goal | null>(null);
+
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
 
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -137,67 +134,19 @@ export default function GoalsScreen() {
     }
   };
 
-  const handleEditGoal = (goal: Goal) => {
-    setEditingGoal(goal);
-    setModalMode('edit');
-    setModalOpen(true);
-  };
-
-  const handleSubmitEdit = async (payload: CreateGoalPayload & { id?: number; status?: string }) => {
-    if (!editingGoal?.id) return;
-
-    try {
-      await updateGoal(editingGoal.id, {
-        name: payload.name,
-        category: payload.category,
-        description: payload.description,
-        target_amount: payload.target_amount,
-        target_date: payload.target_date,
-        status: payload.status || editingGoal.status,
-      });
-
-      showToast('Cambios guardados', 'success');
-      setModalOpen(false);
-      setEditingGoal(null);
-      await loadGoals(true);
-      refreshDashboard();
-      refreshGoals();
-    } catch (error: any) {
-      console.error('Error al actualizar meta:', error);
-      showToast(error.message || 'Error al actualizar la meta', 'error');
-    }
-  };
-
-  const askDelete = (id: number) => {
-    setToDeleteId(id);
-    setConfirmDeleteOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (toDeleteId === null) return;
-
-    const goalId = toDeleteId;
-    setGoals((prev) => prev.filter((g) => g.id !== goalId));
-    setConfirmDeleteOpen(false);
-
-    try {
-      await deleteGoal(goalId);
-      showToast('Meta eliminada', 'success');
-      await loadGoals(true);
-      refreshDashboard();
-      refreshGoals();
-    } catch (error: any) {
-      console.error('Error al eliminar meta:', error);
-      showToast(error.message || 'Error al eliminar la meta', 'error');
-      await loadGoals(true);
-    } finally {
-      setToDeleteId(null);
-    }
-  };
-
   const handleAddTransaction = (goal: Goal) => {
     setTxGoal(goal);
     setTxModalOpen(true);
+  };
+
+  const handleOpenDetails = (goal: Goal) => {
+    setDetailGoal(goal);
+    setDetailVisible(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailVisible(false);
+    setDetailGoal(null);
   };
 
   const handleSaveTransaction = async (
@@ -302,11 +251,11 @@ export default function GoalsScreen() {
       >
         <View style={styles.content}>
           <View style={styles.headerContainer}>
-            <GoalsHeader onCreateGoal={() => {
-              setModalMode('create');
-              setEditingGoal(null);
-              setModalOpen(true);
-            }} />
+            <GoalsHeader
+              onCreateGoal={() => {
+                setModalOpen(true);
+              }}
+            />
           </View>
 
           {goals.length === 0 ? (
@@ -323,9 +272,8 @@ export default function GoalsScreen() {
                 <GoalCard
                   key={goal.id}
                   goal={goal}
-                  onEdit={handleEditGoal}
-                  onDelete={askDelete}
                   onAddTransaction={handleAddTransaction}
+                  onOpenDetails={handleOpenDetails}
                 />
               ))}
             </View>
@@ -337,11 +285,8 @@ export default function GoalsScreen() {
         visible={modalOpen}
         onDismiss={() => {
           setModalOpen(false);
-          setEditingGoal(null);
         }}
-        onSubmit={modalMode === 'edit' ? handleSubmitEdit : handleCreateGoal}
-        mode={modalMode}
-        initialGoal={editingGoal}
+        onSubmit={handleCreateGoal}
       />
 
       <AddTransactionModal
@@ -354,20 +299,10 @@ export default function GoalsScreen() {
         onSubmit={handleSaveTransaction}
       />
 
-      <Modal
-        visible={confirmDeleteOpen}
-        onDismiss={() => setConfirmDeleteOpen(false)}
-        title="Eliminar meta"
-        message="¿Estás seguro de eliminar esta meta? Esta acción no se puede deshacer."
-        primaryAction={{
-          label: 'Sí, eliminar',
-          onPress: confirmDelete,
-          variant: 'danger',
-        }}
-        secondaryAction={{
-          label: 'Cancelar',
-          onPress: () => setConfirmDeleteOpen(false),
-        }}
+      <GoalDetailModal
+        visible={detailVisible}
+        goal={detailGoal}
+        onDismiss={handleCloseDetails}
       />
 
       <Toast
