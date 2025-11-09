@@ -237,26 +237,6 @@ export default function TransactionsScreen() {
     return <LoadingState message="Cargando movimientos..." />;
   }
 
-  if (goals.length === 0) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView
-          contentContainerStyle={styles.emptyContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        >
-          <EmptyState
-            variant="goals"
-            title="No hay metas disponibles"
-            subtitle="Crea una meta para poder ver sus transacciones y movimientos financieros."
-            description="Necesitas tener al menos una meta de ahorro para poder registrar y visualizar tus ingresos y gastos."
-          />
-        </ScrollView>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
@@ -278,52 +258,61 @@ export default function TransactionsScreen() {
           </Text>
         </View>
 
-        {/* Filtros */}
-        <TransactionsFilters
-          goals={goals}
-          selectedGoal={selectedGoal}
-          onGoalChange={setSelectedGoal}
-          transactionType={transactionType}
-          onTransactionTypeChange={setTransactionType}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          onClear={handleClearFilters}
-          loading={loading}
-        />
-
-        {/* Resumen de Meta */}
-        {selectedGoal && <GoalSummary goal={selectedGoal} />}
-
-        {/* KPIs */}
-        <TransactionsKpis
-          totalIncome={totals.income}
-          totalExpense={totals.expense}
-          netBalance={totals.balance}
-        />
-
-        {/* Listas de Transacciones */}
-        <View style={styles.listsContainer}>
-          <View style={styles.listColumn}>
-            <TransactionsList
-              title="Ingresos"
-              transactions={incomes}
-              loading={transactionsLoading}
-              onAdd={selectedGoal ? () => handleAddTransaction('income') : undefined}
-              fabIcon="arrow-up"
-              fabColor={theme.colors.primary}
+        {goals.length === 0 ? (
+          <View style={styles.emptyContent}>
+            <EmptyState
+              variant="goals"
+              title="No hay metas disponibles"
+              subtitle="Crea una meta para poder ver sus transacciones y movimientos financieros."
+              description="Necesitas tener al menos una meta de ahorro para poder registrar y visualizar tus ingresos y gastos."
             />
           </View>
-          <View style={styles.listColumn}>
-            <TransactionsList
-              title="Gastos"
-              transactions={expenses}
-              loading={transactionsLoading}
-              onAdd={selectedGoal ? () => handleAddTransaction('expense') : undefined}
-              fabIcon="arrow-down"
-              fabColor={theme.colors.error}
+        ) : (
+          <>
+            <TransactionsFilters
+              goals={goals}
+              selectedGoal={selectedGoal}
+              onGoalChange={setSelectedGoal}
+              transactionType={transactionType}
+              onTransactionTypeChange={setTransactionType}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onClear={handleClearFilters}
+              loading={loading}
             />
-          </View>
-        </View>
+
+            {selectedGoal && <GoalSummary goal={selectedGoal} />}
+
+            <TransactionsKpis
+              totalIncome={totals.income}
+              totalExpense={totals.expense}
+              netBalance={totals.balance}
+            />
+
+            <View style={styles.listsContainer}>
+              <View style={styles.listColumn}>
+                <TransactionsList
+                  title="Ingresos"
+                  transactions={incomes}
+                  loading={transactionsLoading}
+                  onAdd={selectedGoal ? () => handleAddTransaction('income') : undefined}
+                  fabIcon="arrow-up"
+                  fabColor={theme.colors.primary}
+                />
+              </View>
+              <View style={styles.listColumn}>
+                <TransactionsList
+                  title="Gastos"
+                  transactions={expenses}
+                  loading={transactionsLoading}
+                  onAdd={selectedGoal ? () => handleAddTransaction('expense') : undefined}
+                  fabIcon="arrow-down"
+                  fabColor={theme.colors.error}
+                />
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Modal para agregar transacción */}
@@ -360,12 +349,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 400,
-  },
   header: {
     marginTop: 8,
     marginBottom: 20,
@@ -382,6 +365,12 @@ const styles = StyleSheet.create({
   },
   listColumn: {
     width: '100%',
+  },
+  emptyContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 320,
   },
 });
 

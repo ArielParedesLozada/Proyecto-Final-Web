@@ -103,12 +103,27 @@ function BarChartViewComponent({
     legend: dataKeys.map((dk) => dk.label),
   };
 
+  const allValues = datasets.flatMap((dataset: any) => dataset.data as number[]);
+  const rawMaxValue = allValues.length > 0 ? Math.max(...allValues) : 0;
+  const maxValue = rawMaxValue <= 0 ? 1 : rawMaxValue;
+
 
   const chartConfig = {
     backgroundColor: theme.colors.surface,
     backgroundGradientFrom: theme.colors.surface,
     backgroundGradientTo: theme.colors.surface,
-    decimalPlaces: 3, // Permitir más decimales para mostrar valores exactos, especialmente valores pequeños
+    decimalPlaces:
+      yAxisType === 'money'
+        ? maxValue < 10
+          ? 2
+          : maxValue < 100
+          ? 1
+          : 0
+        : yAxisType === 'percentage'
+        ? maxValue < 10
+          ? 1
+          : 0
+        : 2,
     color: (opacity = 1) => theme.colors.onSurface,
     labelColor: (opacity = 1) => theme.colors.onSurfaceVariant,
     style: {
@@ -127,13 +142,23 @@ function BarChartViewComponent({
       }
       
       if (type === 'money') {
-        // Para valores de dinero, redondear al múltiplo de 1000 más cercano
         if (num === 0) return '0';
-        const rounded = Math.round(num / 1000) * 1000;
-        const finalValue = rounded === 0 && num > 0 ? 1000 : rounded;
-        // Retornar solo el número sin $ ya que yAxisLabel lo agrega
-        // Asegurar que siempre muestre comas para miles (usar formato inglés)
-        return finalValue.toLocaleString('en-US');
+
+        if (maxValue >= 1_000_000) {
+          const divided = num / 1_000_000;
+          return `${divided.toFixed(maxValue >= 10_000_000 ? 0 : 1)}M`;
+        }
+
+        if (maxValue >= 10_000) {
+          const divided = num / 1_000;
+          return `${divided.toFixed(maxValue >= 100_000 ? 0 : 1)}K`;
+        }
+
+        const fractionDigits = maxValue < 10 ? 2 : maxValue < 100 ? 1 : 0;
+        return num.toLocaleString('en-US', {
+          maximumFractionDigits: fractionDigits,
+          minimumFractionDigits: 0,
+        });
       }
       
       if (type === 'percentage') {
