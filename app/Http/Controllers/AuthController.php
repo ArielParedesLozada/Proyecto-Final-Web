@@ -19,12 +19,19 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        
+        $isMobile = $request->header('X-Client-Type') === 'mobile';
+        
+        $profileImageRules = $isMobile 
+            ? ['required', 'string', 'max:1000000'] 
+            : ['nullable', 'string', 'max:1000000'];
+        
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:60'],
             'last_name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'string', 'email', 'max:191', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'profile_image_url' => ['required', 'string', 'max:1000000'], // Máximo 1MB
+            'profile_image_url' => $profileImageRules,
         ]);
 
         if ($validator->fails()) {
@@ -41,7 +48,7 @@ class AuthController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'password_hash' => Hash::make($request->password),
-            'profile_image_url' => $request->profile_image_url,
+            'profile_image_url' => $request->profile_image_url ?? null,
         ]);
 
         $token = JWTAuth::fromUser($user);
