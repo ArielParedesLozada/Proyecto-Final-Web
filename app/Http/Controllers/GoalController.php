@@ -233,6 +233,7 @@ class GoalController extends Controller
             $periodoTexto = $semanasRestantes . ' ' . ($semanasRestantes === 1 ? 'semana' : 'semanas');
         } else {
             $mesesRestantes = $today->diffInMonths($targetDate) + 1;
+            $mesesRestantes = max(1, (int) round($mesesRestantes));
             $ahorroSugerido = ceil($montoRestante / max(1, $mesesRestantes));
             $unidadTexto = 'mensual';
             $periodoTexto = $mesesRestantes . ' ' . ($mesesRestantes === 1 ? 'mes' : 'meses');
