@@ -177,6 +177,13 @@ export default function TransactionsScreen() {
 
   const handleAddTransaction = (type: 'income' | 'expense') => {
     if (!selectedGoal) return;
+    
+    if (selectedGoal.status === 'expired' || selectedGoal.status === 'completed') {
+      const statusLabel = selectedGoal.status === 'expired' ? 'vencida' : 'completada';
+      showToast(`No se pueden agregar transacciones a una meta ${statusLabel}`, 'info');
+      return;
+    }
+    
     setAddTxType(type);
     setAddTxModalOpen(true);
   };
@@ -295,7 +302,11 @@ export default function TransactionsScreen() {
                   title="Ingresos"
                   transactions={incomes}
                   loading={transactionsLoading}
-                  onAdd={selectedGoal ? () => handleAddTransaction('income') : undefined}
+                  onAdd={
+                    selectedGoal && selectedGoal.status === 'active'
+                      ? () => handleAddTransaction('income')
+                      : undefined
+                  }
                   fabIcon="arrow-up"
                   fabColor={theme.colors.primary}
                 />
@@ -305,7 +316,11 @@ export default function TransactionsScreen() {
                   title="Gastos"
                   transactions={expenses}
                   loading={transactionsLoading}
-                  onAdd={selectedGoal ? () => handleAddTransaction('expense') : undefined}
+                  onAdd={
+                    selectedGoal && selectedGoal.status === 'active'
+                      ? () => handleAddTransaction('expense')
+                      : undefined
+                  }
                   fabIcon="arrow-down"
                   fabColor={theme.colors.error}
                 />
