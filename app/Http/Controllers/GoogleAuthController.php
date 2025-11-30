@@ -53,7 +53,12 @@ class GoogleAuthController extends Controller
                     $updateData['provider'] = 'google';
                 }
                 
-                if ($googleUser->avatar && $user->profile_image_url !== $googleUser->avatar) {
+                $hasCustomPhoto = !empty($user->profile_image_url) && 
+                                  $user->profile_image_url !== $googleUser->avatar &&
+                                  !str_contains($user->profile_image_url, 'googleusercontent.com') &&
+                                  !str_contains($user->profile_image_url, 'googleapis.com');
+                
+                if ($googleUser->avatar && !$hasCustomPhoto && $user->profile_image_url !== $googleUser->avatar) {
                     $updateData['profile_image_url'] = $googleUser->avatar;
                 }
                 
