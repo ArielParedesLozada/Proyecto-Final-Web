@@ -11,6 +11,19 @@ export interface GoalNotificationItemProps {
   onPress?: () => void;
 }
 
+function formatPeriod(period: string | null | undefined): string {
+  if (!period) return '';
+  
+  const decimalMatch = period.match(/(\d+\.\d+)/);
+  if (decimalMatch) {
+    const decimalValue = parseFloat(decimalMatch[1]);
+    const roundedValue = Math.round(decimalValue);
+    return period.replace(decimalMatch[1], roundedValue.toString());
+  }
+  
+  return period;
+}
+
 export default function GoalNotificationItem({
   notification,
   currentTime,
@@ -19,8 +32,9 @@ export default function GoalNotificationItem({
   const theme = useTheme();
 
   if (notification.type === 'goal_created') {
+    const formattedPeriod = formatPeriod(notification.remaining_period);
     const title = 'Meta de Ahorro Creada';
-    const message = `${notification.goal_name}\nAhorro ${notification.savings_unit} sugerido: $${Number(notification.suggested_savings || 0).toLocaleString()}\nMonto restante: $${Number(notification.remaining_amount || 0).toLocaleString()} en ${notification.remaining_period || ''}`;
+    const message = `${notification.goal_name}\nAhorro ${notification.savings_unit} sugerido: $${Number(notification.suggested_savings || 0).toLocaleString()}\nMonto restante: $${Number(notification.remaining_amount || 0).toLocaleString()} en ${formattedPeriod}`;
 
     return (
       <NotificationCard
@@ -43,7 +57,7 @@ export default function GoalNotificationItem({
           <View style={styles.detailRow}>
             <MaterialIcons name="event" size={16} color={theme.colors.onSurfaceVariant} />
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              {notification.remaining_period}
+              {formattedPeriod}
             </Text>
           </View>
         </View>
