@@ -4,6 +4,19 @@ import { Text, useTheme, Divider } from 'react-native-paper';
 import Modal from '../ui/Modal';
 import { FixedMovementNotification, GoalNotification } from '@/services/notifications';
 
+function formatPeriod(period: string | null | undefined): string {
+  if (!period) return '';
+  
+  const decimalMatch = period.match(/(\d+\.\d+)/);
+  if (decimalMatch) {
+    const decimalValue = parseFloat(decimalMatch[1]);
+    const roundedValue = Math.round(decimalValue);
+    return period.replace(decimalMatch[1], roundedValue.toString());
+  }
+  
+  return period;
+}
+
 export interface NotificationDetailModalProps {
   visible: boolean;
   onDismiss: () => void;
@@ -45,6 +58,7 @@ Detalles:
 
     const gn = notification as GoalNotification;
     if (gn.type === 'goal_created') {
+      const formattedPeriod = formatPeriod(gn.remaining_period);
       return `${gn.goal_name}
 
 Ahorro ${gn.savings_unit} sugerido: $${Number(gn.suggested_savings || 0).toLocaleString()}
@@ -52,7 +66,7 @@ Ahorro ${gn.savings_unit} sugerido: $${Number(gn.suggested_savings || 0).toLocal
 Detalles:
 • Monto objetivo: $${Number(gn.target_amount || 0).toLocaleString()}
 • Monto restante: $${Number(gn.remaining_amount || 0).toLocaleString()}
-• Periodo restante: ${gn.remaining_period || ''}
+• Periodo restante: ${formattedPeriod}
 • Ahorro ${gn.savings_unit} sugerido: $${Number(gn.suggested_savings || 0).toLocaleString()}`;
     }
 
