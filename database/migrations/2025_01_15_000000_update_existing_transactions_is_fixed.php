@@ -12,6 +12,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Verificar si la tabla transactions existe antes de intentar actualizarla
+        if (!Schema::hasTable('transactions')) {
+            return;
+        }
+        
+        // Verificar si la columna is_fixed existe
+        if (!Schema::hasColumn('transactions', 'is_fixed')) {
+            return;
+        }
+        
         // Actualizar transacciones existentes que no tienen is_fixed configurado
         // Por defecto, las transacciones existentes serán marcadas como 'variable' (false)
         DB::table('transactions')
