@@ -3,12 +3,8 @@ import Input from "../common/Input";
 import Button from "../common/Button";
 import FormError from "../common/FormError";
 import PasswordInput from "./PasswordInput";
-
-async function fakeLogin({ email, password }) {
-  await new Promise((r) => setTimeout(r, 700));
-  if (email === "fail@demo.com") throw new Error("invalid");
-  return { token: "demo-token", email };
-}
+import GoogleAuthButton from "../auth/GoogleAuthButton";
+import { login } from "../../services/auth";
 
 export default function LoginForm({ onSuccess }) {
   const [values, setValues] = useState({ email: "", password: "", remember: false });
@@ -39,10 +35,14 @@ export default function LoginForm({ onSuccess }) {
     setLoading(true);
     setFormError("");
     try {
-      await fakeLogin(values);
-      onSuccess?.();
-    } catch {
-      setFormError("Credenciales inválidas. Inténtalo nuevamente.");
+      const response = await login(values.email, values.password);
+      if (response && response.success) {
+        onSuccess?.(response);
+      } else {
+        setFormError(response?.message || "Error al iniciar sesión");
+      }
+    } catch (error) {
+      setFormError(error.message || "Credenciales inválidas. Inténtalo nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,6 @@ export default function LoginForm({ onSuccess }) {
     <form onSubmit={handleSubmit} noValidate>
       <FormError message={formError} />
 
-      {/* Campos */}
       <Input
         id="email"
         name="email"
@@ -62,7 +61,6 @@ export default function LoginForm({ onSuccess }) {
         value={values.email}
         onChange={handleChange}
         error={errors.email}
-        hint="Usa el correo con el que verificaste tu cuenta"
         left={<span>@</span>}
       />
 
@@ -78,35 +76,18 @@ export default function LoginForm({ onSuccess }) {
         {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
       </label>
 
-      {/* Ayudas sobre el password */}
-      <div className="mb-4 flex items-center justify-between">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-          <input
-            type="checkbox"
-            name="remember"
-            checked={values.remember}
-            onChange={handleChange}
-            className="checkbox"
-          />
-          Recordarme
-        </label>
-
-        <p className="mt-4 text-center text-sm">
-  <a href="/forgot-password" className="text-indigo-600 hover:underline">
-    ¿Olvidaste tu contraseña?
-  </a>
-</p>
-
+      <div className="mb-4 flex justify-end">
+        <a href="/forgot-password" className="text-sm text-indigo-600 hover:underline">
+          ¿Olvidaste tu contraseña?
+        </a>
       </div>
 
-      {/* ACCIÓN PRINCIPAL */}
-      <div className="mt-6">
-        <Button type="submit" loading={loading}>
+      <div className="mt-4">
+        <Button type="submit" className="btn btn-primary w-full cursor-pointer" loading={loading}>
           Ingresar
         </Button>
       </div>
 
-      {/* Separador visual */}
       <div className="my-6 relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-200 dark:border-gray-700" />
@@ -116,17 +97,14 @@ export default function LoginForm({ onSuccess }) {
         </div>
       </div>
 
+      <div className="mb-4">
+        <GoogleAuthButton
+          onSuccess={onSuccess}
+          onError={(error) => setFormError(error)}
+          disabled={loading}
+        />
+      </div>
 
-      {/* ACCIÓN SECUNDARIA */}
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => alert("Demo: SSO pronto")}
-      >
-        Ingresar con SSO (próximamente)
-      </Button>
-
-      {/* Registro */}
       <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
         ¿No tienes cuenta?{" "}
         <a href="/register" className="text-primary-600 hover:underline">Crear cuenta</a>

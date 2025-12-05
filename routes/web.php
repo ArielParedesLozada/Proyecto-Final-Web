@@ -1,20 +1,24 @@
 <?php
 
+use App\Http\Controllers\StatsPdfController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SampleController;
 
-Route::get('/', function () {
-    return view('index'); // resources/views/index.blade.php
-});
+Route::redirect('/', '/login'); // ← default a login
 
-Route::get('/sample', [SampleController::class, 'index']);
-
-// Páginas React (Login y placeholder Dashboard)
+// Páginas React (SPA)
 Route::view('/login', 'app');
-Route::view('/dashboard', 'app');
 Route::view('/register', 'app');
 Route::view('/forgot-password', 'app');
 Route::view('/reset-password', 'app');
+Route::view('/goals', 'app'); 
+Route::view('/dashboard', 'app');
+Route::view('/profile', 'app');
 
+Route::view('/transactions', 'app');
+Route::view('/statistics', 'app');
+Route::view('/history', 'app'); // Nueva ruta para el historial
+
+Route::view('/auth/google/callback', 'app'); // Callback de Google OAuth
+Route::middleware('jwt.auth')->get('/reports/stats', [StatsPdfController::class, 'download']);
 
 

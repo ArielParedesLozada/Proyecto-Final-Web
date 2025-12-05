@@ -60,3 +60,66 @@ body {
   @apply rounded border-gray-300 text-primary-600 focus-visible:ring-primary-600/30
          dark:border-gray-600;
 }
+
+/* Gradiente para barras de progreso */
+.progress-gradient {
+  background: linear-gradient(90deg, var(--color-primary-600), #7c3aed);
+}
+
+/* Cards con hover sutil */
+.card-hover {
+  @apply transition-shadow hover:shadow-2xl hover:shadow-black/10;
+}
+
+/* Oculta scrollbars sin romper el scroll (para nav del sidebar) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+/* Oculta barras de scroll sin desactivar el desplazamiento */
+.scroll-invisible{
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge legacy */
+}
+.scroll-invisible::-webkit-scrollbar{
+  width: 0;
+  height: 0;                   /* Chrome/Safari/Opera */
+}
+
+
+
+
+/* 8) Layout global: evita el scroll de la página y habilita 100% de alto */
+html, body, #root, #__next {
+  height: 100%;
+}
+html, body {
+  overflow-y: auto; /* quita la barra de la derecha */
+}
+
+/* 9) Utilidades para el dashboard (opcionales) */
+/* Ajuste al wrapper del Dashboard */
+.app-viewport {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100svh;   /* <- agregado */
+  overflow: hidden;
+}
+
+/* Ajuste al contenedor de contenido */
+.app-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* <- cambiado */
+}
+.list-scroll {                /* aplica a las listas que deben scrollear */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* (opcional) permitir scroll global en móviles si lo prefieres */
+@media (max-width: 1279px){
+  html, body { overflow: auto; }
+}

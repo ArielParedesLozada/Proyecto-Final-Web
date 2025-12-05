@@ -1,13 +1,34 @@
+import { useState } from "react";
 import AuthLayout from "../layouts/AuthLayout";
-import ForgotPasswordForm from "../components/recover/ForgotPasswordForm";
+import RequestResetCode from "../components/auth/RequestResetCode";
+import ResetPasswordForm from "../components/auth/ResetPasswordForm";
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [step, setStep] = useState("request"); 
+
+  const handleCodeSent = (userEmail) => {
+    setEmail(userEmail);
+    setStep("reset");
+  };
+
+  const handleBack = () => {
+    setStep("request");
+    setEmail("");
+  };
+
   return (
-    <AuthLayout
-      title="Recuperar contraseña"
-      subtitle="Te enviaremos un enlace para que puedas restablecer tu contraseña"
+    <AuthLayout 
+      title="Recuperar contraseña" 
+      subtitle="Te ayudaremos a restablecer tu contraseña de forma segura"
+      step={step} 
+      email={email}
     >
-      <ForgotPasswordForm />
+      {step === "request" ? (
+        <RequestResetCode onSuccess={handleCodeSent} />
+      ) : (
+        <ResetPasswordForm email={email} onBack={handleBack} />
+      )}
     </AuthLayout>
   );
 }
